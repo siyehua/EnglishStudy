@@ -43,16 +43,26 @@ python -m venv .venv
 ## Run On A Server
 
 On a Linux server, run the backend without `--reload` and write logs to a fixed
-directory:
+directory. The virtual environment name is intentionally project-specific so it
+is easy to recognize on the server:
 
 ```bash
 cd /path/to/EnglishStudy/Backend
-python3 -m venv .venv
-./.venv/bin/python -m pip install -r requirements.txt
+python3 -m venv .venv-englishstudy-backend
+./.venv-englishstudy-backend/bin/python -m pip install -r requirements.txt
 mkdir -p logs
-nohup ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 \
+nohup ./.venv-englishstudy-backend/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 \
   > logs/uvicorn.out.log 2> logs/uvicorn.err.log &
 echo $! > logs/uvicorn.pid
+```
+
+`.venv-englishstudy-backend` is created by `python3 -m venv` and stores the
+Python runtime plus installed packages. `.env` is a separate config file that
+you create yourself for API keys:
+
+```bash
+cp .env.example .env
+nano .env
 ```
 
 Check whether it is running:

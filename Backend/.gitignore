@@ -1,3 +1,6 @@
 .env
+.venv/
+.venv-englishstudy-backend/
+logs/
 __pycache__/
 *.py[cod]
