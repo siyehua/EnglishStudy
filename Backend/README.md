@@ -32,13 +32,59 @@ MIMO_AUDIO_FORMAT=wav
 MIMO_BASE_URL=https://api.xiaomimimo.com/v1
 ```
 
-## Run
+## Run Locally
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+## Run On A Server
+
+On a Linux server, run the backend without `--reload` and write logs to a fixed
+directory:
+
+```bash
+cd /path/to/EnglishStudy/Backend
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements.txt
+mkdir -p logs
+nohup ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 \
+  > logs/uvicorn.out.log 2> logs/uvicorn.err.log &
+echo $! > logs/uvicorn.pid
+```
+
+Check whether it is running:
+
+```bash
+cat logs/uvicorn.pid
+ps -p "$(cat logs/uvicorn.pid)" -f
+curl http://127.0.0.1:8000/contents
+```
+
+Watch logs:
+
+```bash
+tail -f logs/uvicorn.out.log
+tail -f logs/uvicorn.err.log
+```
+
+Stop the backend:
+
+```bash
+kill "$(cat logs/uvicorn.pid)"
+```
+
+If the pid file is missing, find and stop the process by port:
+
+```bash
+lsof -i :8000
+kill <pid>
+```
+
+Keep `Backend/.env` on the server and put `DEEPSEEK_API_KEY` and `MIMO_API_KEY`
+there. Do not commit that file.
 
 ## Test
 
