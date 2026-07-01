@@ -30,18 +30,24 @@ class WordPhonicsClient:
             return not_found(word=word, normalized="", message="No English word was provided.")
 
         if pronouncing is None:
+            fallback = self.llm_fallback_response(word=word, normalized=normalized, sentence=sentence)
+            if fallback is not None:
+                return fallback
             return not_found(
                 word=word,
                 normalized=normalized,
-                message="Local pronunciation dictionaries are not installed. Run pip install -r requirements.txt.",
+                message="Local pronunciation dictionaries are not installed and LLM fallback is unavailable.",
             )
 
         phones_string = select_pronunciation(normalized, ipa)
         if not phones_string:
+            fallback = self.llm_fallback_response(word=word, normalized=normalized, sentence=sentence)
+            if fallback is not None:
+                return fallback
             return not_found(
                 word=word,
                 normalized=normalized,
-                message="No local CMUdict pronunciation was found for this word.",
+                message="No local CMUdict pronunciation was found for this word and LLM fallback is unavailable.",
         )
 
         phonemes = phones_string.split()
@@ -72,6 +78,45 @@ class WordPhonicsClient:
             note=chunk_note(chunks, normalized),
             verification="matched" if len(chunks) > 1 else "whole_word",
             source="cmudict+deepseek+wordninja" if self._enable_llm else "cmudict+wordninja",
+            found=True,
+        )
+
+    def llm_fallback_response(
+        self,
+        word: str,
+        normalized: str,
+        sentence: str,
+    ) -> WordPhonicsResponse | None:
+        if not self._enable_llm:
+            return None
+
+        chunks = lookup_llm_memory_chunks(
+            word=word,
+            normalized=normalized,
+            sentence=sentence,
+            ipa="",
+            phonemes=[],
+        )
+        if not chunks:
+            return None
+
+        return WordPhonicsResponse(
+            word=word,
+            normalized=normalized,
+            ipa=chunks_to_ipa(chunks) or None,
+            phonemes=chunks_to_phonemes(chunks),
+            segments=[
+                WordPhonicsSegment(
+                    text=chunk.text,
+                    phonemes=chunk.phonemes,
+                    ipa=chunk.ipa,
+                )
+                for chunk in chunks
+            ],
+            chunks=chunks,
+            note=chunk_note(chunks, normalized),
+            verification="llm_fallback",
+            source="deepseek",
             found=True,
         )
 
@@ -329,6 +374,20 @@ def chunks_are_valid(chunks: list[WordPhonicsChunk], normalized: str) -> bool:
         return False
     joined = "".join(chunk.text for chunk in chunks)
     return normalize_phonics_word(joined) == normalized
+
+
+def chunks_to_ipa(chunks: list[WordPhonicsChunk]) -> str:
+    parts = [chunk.ipa.strip().strip("/") for chunk in chunks if chunk.ipa.strip()]
+    return f"/{''.join(parts)}/" if parts else ""
+
+
+def chunks_to_phonemes(chunks: list[WordPhonicsChunk]) -> list[str]:
+    return [
+        phoneme
+        for chunk in chunks
+        for phoneme in chunk.phonemes
+        if phoneme
+    ]
 
 
 def clean_chunk_text(value: object) -> str:

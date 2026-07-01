@@ -127,7 +127,7 @@ class WordFormApiClient(
         }
 
     companion object {
-        const val DEFAULT_BASE_URL = "http://10.0.2.2:8000"
+        const val DEFAULT_BASE_URL = "https://river-software-visible-son.trycloudflare.com"
         private const val REQUEST_TIMEOUT_MS = 60_000L
         private const val CONTENT_REQUEST_TIMEOUT_MS = 120_000L
     }

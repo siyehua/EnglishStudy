@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import patch
 
 from app.phonics.client import WordPhonicsClient, phones_to_ipa, split_phonemes_into_segments
+from app.schemas import WordPhonicsChunk, WordPhonicsSpan
 
 
 class WordPhonicsClientTest(unittest.TestCase):
@@ -40,6 +42,43 @@ class WordPhonicsClientTest(unittest.TestCase):
 
         self.assertTrue(response.found)
         self.assertEqual([segment.text for segment in response.segments], ["limited"])
+
+    def test_lookup_uses_llm_fallback_when_cmudict_has_no_pronunciation(self) -> None:
+        fallback_chunks = [
+            WordPhonicsChunk(
+                text="clas",
+                ipa="/klæs/",
+                phonemes=["K", "L", "AE1", "S"],
+                spans=[WordPhonicsSpan(text="clas", silent=False)],
+                stress="primary",
+                rule="clas 按 /klæs/ 记忆。",
+            ),
+            WordPhonicsChunk(
+                text="si",
+                ipa="/ə/",
+                phonemes=["AH0"],
+                spans=[WordPhonicsSpan(text="si", silent=False)],
+                stress="unstressed",
+                rule="si 在非重读位置弱读。",
+            ),
+            WordPhonicsChunk(
+                text="fier",
+                ipa="/faɪər/",
+                phonemes=["F", "AY2", "ER0"],
+                spans=[WordPhonicsSpan(text="fier", silent=False)],
+                stress="secondary",
+                rule="fier 近似 /faɪər/。",
+            ),
+        ]
+
+        with patch("app.phonics.client.lookup_llm_memory_chunks", return_value=fallback_chunks):
+            response = WordPhonicsClient(enable_llm=True).lookup("classifier")
+
+        self.assertTrue(response.found)
+        self.assertEqual(response.verification, "llm_fallback")
+        self.assertEqual(response.source, "deepseek")
+        self.assertEqual(response.ipa, "/klæsəfaɪər/")
+        self.assertEqual([segment.text for segment in response.segments], ["clas", "si", "fier"])
 
 
 if __name__ == "__main__":
