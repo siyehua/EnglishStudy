@@ -1,6 +1,8 @@
 import logging
+import os
 
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.content.client import ContentClient
 from app.dictionary.client import DictionaryClient
@@ -24,6 +26,15 @@ from app.word_forms.enricher import WordFormEnricher
 from app.word_forms.resolver import WordFormResolver
 
 app = FastAPI(title="English Study Backend")
+
+# CORS — 允许 Cloudflare 隧道跨域访问
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 resolver = WordFormResolver()
 form_enricher = WordFormEnricher()
 dictionary_client = DictionaryClient()
@@ -86,3 +97,10 @@ def fetch_contents(request: ContentFetchRequest) -> ContentFetchResponse:
         sources=request.sources,
     )
     return ContentFetchResponse(items=items, filters=filters)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    reload = os.getenv("ENV", "prod") == "dev"
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=reload)
