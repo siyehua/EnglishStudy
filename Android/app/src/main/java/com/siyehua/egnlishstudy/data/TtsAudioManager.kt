@@ -310,22 +310,7 @@ class TtsAudioManager(context: Context) {
         }
 
     private fun String.splitIntoSentences(): List<String> =
-        trim()
-            .lines()
-            .flatMap { line ->
-                line.trim()
-                    .replace(Regex("[ \\t]+"), " ")
-                    .split(SENTENCE_SPLIT_REGEX)
-            }
-            .mapNotNull { it.toTtsSentenceOrNull() }
-
-    private fun String.toTtsSentenceOrNull(): String? {
-        val sentence = trim()
-        if (sentence.length < MIN_SENTENCE_LENGTH) {
-            return null
-        }
-        return sentence
-    }
+        SentenceSplitter.split(this, minLength = MIN_SENTENCE_LENGTH)
 
     private fun String.logSnippet(): String =
         replace(Regex("\\s+"), " ")
@@ -362,7 +347,6 @@ class TtsAudioManager(context: Context) {
         private const val LOG_TEXT_LIMIT = 180
         private const val USER_AGENT =
             "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
-        private val SENTENCE_SPLIT_REGEX = Regex("(?<=[.!?])\\s+")
     }
 }
 

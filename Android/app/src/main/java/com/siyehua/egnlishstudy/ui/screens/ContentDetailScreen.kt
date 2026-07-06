@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.siyehua.egnlishstudy.data.SentenceSplitter
 import com.siyehua.egnlishstudy.model.Article
 import com.siyehua.egnlishstudy.model.Blog
 import com.siyehua.egnlishstudy.model.Content
@@ -847,16 +848,7 @@ private fun String.estimatedMinutes(): Int {
 }
 
 private fun String.splitIntoDisplaySentences(): List<String> =
-    trim()
-        .lines()
-        .flatMap { line ->
-            line.trim()
-                .replace(Regex("[ \\t]+"), " ")
-                .split(SENTENCE_SPLIT_REGEX)
-        }
-        .mapNotNull { sentence ->
-            sentence.trim().takeIf { it.length >= MIN_DISPLAY_SENTENCE_LENGTH }
-        }
+    SentenceSplitter.split(this, minLength = MIN_DISPLAY_SENTENCE_LENGTH)
 
 private fun ContentType.displayName(): String =
     name.lowercase().replaceFirstChar { it.uppercase() }
@@ -873,7 +865,6 @@ private fun lerpTextUnit(start: TextUnit, stop: TextUnit, fraction: Float): Text
     (start.value + (stop.value - start.value) * fraction.coerceIn(0f, 1f)).sp
 
 private const val MIN_DISPLAY_SENTENCE_LENGTH = 2
-private val SENTENCE_SPLIT_REGEX = Regex("(?<=[.!?])\\s+")
 
 @Preview(showBackground = true)
 @Composable

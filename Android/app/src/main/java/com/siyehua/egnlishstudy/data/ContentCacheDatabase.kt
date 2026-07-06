@@ -139,6 +139,9 @@ class ContentCacheDatabase(context: Context) :
         if (oldVersion < 20) {
             createWordPhonicsTable(db)
         }
+        if (oldVersion < 21) {
+            db.execSQL("DELETE FROM $TABLE_TTS_AUDIO")
+        }
     }
 
     private fun createTtsTable(db: SQLiteDatabase) {
@@ -966,7 +969,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 20
+        private const val DATABASE_VERSION = 21
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"

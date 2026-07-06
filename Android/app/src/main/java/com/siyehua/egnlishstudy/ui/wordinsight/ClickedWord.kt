@@ -1,5 +1,7 @@
 package com.siyehua.egnlishstudy.ui.wordinsight
 
+import com.siyehua.egnlishstudy.data.SentenceSplitter
+
 data class ClickedWord(
     val word: String,
     val normalized: String,
@@ -62,9 +64,17 @@ private fun Char.isWordCoreChar(): Boolean =
     isLetter()
 
 private fun String.sentenceAround(start: Int, endExclusive: Int): String {
-    val sentenceStart = lastIndexOfAny(charArrayOf('.', '!', '?', '\n'), startIndex = start)
-        .let { if (it == -1) 0 else it + 1 }
-    val sentenceEnd = indexOfAny(charArrayOf('.', '!', '?', '\n'), startIndex = endExclusive)
-        .let { if (it == -1) length else it + 1 }
-    return substring(sentenceStart, sentenceEnd).trim()
+    val normalized = replace(Regex("[ \\t]+"), " ")
+    var searchStart = 0
+    SentenceSplitter.split(normalized).forEach { sentence ->
+        val sentenceStart = normalized.indexOf(sentence, startIndex = searchStart)
+        if (sentenceStart >= 0) {
+            val sentenceEnd = sentenceStart + sentence.length
+            if (start in sentenceStart until sentenceEnd || endExclusive in (sentenceStart + 1)..sentenceEnd) {
+                return sentence
+            }
+            searchStart = sentenceEnd
+        }
+    }
+    return trim()
 }

@@ -52,18 +52,6 @@ import com.siyehua.egnlishstudy.data.wordform.WordMeaningEntry
 import com.siyehua.egnlishstudy.data.wordform.WordPhonicsChunk
 import com.siyehua.egnlishstudy.data.wordform.WordPhonicsResponse
 import com.siyehua.egnlishstudy.data.wordform.WordPhonicsSpan
-import com.siyehua.egnlishstudy.ui.theme.StudyBlue
-import com.siyehua.egnlishstudy.ui.theme.StudyBlueSoft
-import com.siyehua.egnlishstudy.ui.theme.StudyCoral
-import com.siyehua.egnlishstudy.ui.theme.StudyCoralSoft
-import com.siyehua.egnlishstudy.ui.theme.StudyGreen
-import com.siyehua.egnlishstudy.ui.theme.StudyGreenDark
-import com.siyehua.egnlishstudy.ui.theme.StudyInk
-import com.siyehua.egnlishstudy.ui.theme.StudyMint
-import com.siyehua.egnlishstudy.ui.theme.StudyOrange
-import com.siyehua.egnlishstudy.ui.theme.StudyOrangeSoft
-import com.siyehua.egnlishstudy.ui.theme.StudyYellow
-import com.siyehua.egnlishstudy.ui.theme.StudyYellowSoft
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -123,13 +111,13 @@ fun WordInsightSheet(
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
-                    color = StudyMint,
-                    border = BorderStroke(1.dp, StudyGreen.copy(alpha = 0.22f))
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
                 ) {
                     Icon(
                         imageVector = Icons.Default.GraphicEq,
                         contentDescription = null,
-                        tint = StudyGreenDark,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .padding(10.dp)
                             .size(22.dp)
@@ -265,7 +253,7 @@ private fun WordPhonicsSection(phonicsState: WordPhonicsUiState) {
                 onClick = { showColorGuide = !showColorGuide },
                 modifier = Modifier.size(28.dp),
                 colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = StudyGreenDark
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Icon(
@@ -293,12 +281,12 @@ private fun WordPhonicsSection(phonicsState: WordPhonicsUiState) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(16.dp),
                     strokeWidth = 2.dp,
-                    color = StudyGreenDark
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = "正在拆分读音...",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = StudyGreenDark
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -333,7 +321,7 @@ private fun PhonicsColorGuide() {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, StudyGreen.copy(alpha = 0.16f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.16f))
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -433,7 +421,7 @@ private fun MeaningLoadingRow() {
         CircularProgressIndicator(
             modifier = Modifier.size(16.dp),
             strokeWidth = 2.dp,
-            color = StudyGreenDark
+            color = MaterialTheme.colorScheme.primary
         )
         Text(
             text = "正在整理中文释义...",
@@ -460,14 +448,14 @@ private fun MeaningRow(
         ) {
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = StudyMint,
-                border = BorderStroke(1.dp, StudyGreen.copy(alpha = 0.18f))
+                color = MaterialTheme.colorScheme.primaryContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f))
             ) {
                 Text(
                     text = entry.label,
                     modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    color = StudyGreenDark,
+                    color = MaterialTheme.colorScheme.primary,
                     maxLines = 1
                 )
             }
@@ -562,13 +550,13 @@ private fun SpeakableTextRow(
                     .padding(top = 2.dp)
                     .size(13.dp),
                 strokeWidth = 2.dp,
-                color = StudyGreenDark
+                color = MaterialTheme.colorScheme.primary
             )
         } else {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                 contentDescription = null,
-                tint = StudyGreenDark,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .padding(top = 2.dp)
                     .size(13.dp)
@@ -577,7 +565,7 @@ private fun SpeakableTextRow(
         Text(
             text = trimmed,
             style = MaterialTheme.typography.bodySmall.copy(lineHeight = 14.sp),
-            color = StudyInk
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -587,11 +575,16 @@ private fun HeaderWordTitle(
     word: String,
     chunks: List<WordPhonicsChunk>
 ) {
+    val chunkColors = chunks.chunkColors()
     Text(
-        text = if (chunks.isNotEmpty()) chunks.toColoredSpellingText(word) else buildAnnotatedString { append(word) },
+        text = if (chunks.isNotEmpty()) {
+            chunks.toColoredSpellingText(chunkColors, word)
+        } else {
+            buildAnnotatedString { append(word) }
+        },
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.SemiBold,
-        color = StudyInk,
+        color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
     )
@@ -608,8 +601,9 @@ private fun HeaderPhonicsLine(
     onSpeakWord: (String, String?) -> Unit
 ) {
     val canSpeak = ipa?.isNotBlank() == true || chunks.hasChunkIpa()
+    val chunkColors = chunks.chunkColors()
     val label = when {
-        chunks.hasChunkIpa() -> chunks.toColoredIpaText()
+        chunks.hasChunkIpa() -> chunks.toColoredIpaText(chunkColors)
         ipa?.isNotBlank() == true -> buildAnnotatedString { append(ipa) }
         else -> buildAnnotatedString { append("正在识别读音...") }
     }
@@ -621,13 +615,13 @@ private fun HeaderPhonicsLine(
             CircularProgressIndicator(
                 modifier = Modifier.size(12.dp),
                 strokeWidth = 2.dp,
-                color = StudyGreenDark
+                color = MaterialTheme.colorScheme.primary
             )
         } else if (canSpeak) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                 contentDescription = null,
-                tint = StudyGreenDark,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(14.dp)
             )
         }
@@ -667,8 +661,8 @@ private fun LoadingSection() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = StudyMint.copy(alpha = 0.7f),
-        border = BorderStroke(1.dp, StudyGreen.copy(alpha = 0.16f))
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.16f))
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -678,12 +672,12 @@ private fun LoadingSection() {
             CircularProgressIndicator(
                 modifier = Modifier.size(18.dp),
                 strokeWidth = 2.dp,
-                color = StudyGreenDark
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = "正在识别单词形态...",
                 style = MaterialTheme.typography.bodyMedium,
-                color = StudyGreenDark
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -717,13 +711,13 @@ private fun WordFormVariantGroupSection(group: WordFormVariantGroup) {
                 text = group.label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = StudyInk
+                color = MaterialTheme.colorScheme.onSurface
             )
             if (group.isCurrent) {
                 Text(
                     text = "当前",
                     style = MaterialTheme.typography.labelSmall,
-                    color = StudyGreenDark
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -746,8 +740,8 @@ private fun ErrorSection(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = StudyYellowSoft,
-        border = BorderStroke(1.dp, StudyYellow.copy(alpha = 0.36f))
+        color = MaterialTheme.colorScheme.errorContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.36f))
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -761,7 +755,7 @@ private fun ErrorSection(
                 Text(
                     text = "单词形态服务暂时不可用",
                     style = MaterialTheme.typography.labelLarge,
-                    color = StudyInk
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = message,
@@ -775,8 +769,8 @@ private fun ErrorSection(
                 onClick = onRetry,
                 modifier = Modifier.size(36.dp),
                 colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = StudyYellow,
-                    contentColor = StudyInk
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 )
             ) {
                 Icon(
@@ -845,7 +839,7 @@ private fun InfoPill(
             Text(
                 text = value,
                 style = MaterialTheme.typography.labelMedium,
-                color = StudyInk,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -865,31 +859,33 @@ private fun WordInsightUiState.subtitleText(wordForm: WordFormResponse?): String
 
 private data class ChunkColor(
     val container: Color,
-    val content: Color
+    val content: Color,
+    val silentContent: Color
 )
 
+@Composable
 private fun chunkColor(index: Int, silent: Boolean): ChunkColor {
+    val colors = MaterialTheme.colorScheme
     if (silent) {
         return ChunkColor(
-            container = MaterialThemeLikeColors.silentContainer,
-            content = MaterialThemeLikeColors.silentContent
+            container = colors.surfaceVariant,
+            content = colors.onSurfaceVariant,
+            silentContent = colors.onSurfaceVariant
         )
     }
     return when (index % 6) {
-        0 -> ChunkColor(StudyMint, StudyGreenDark)
-        1 -> ChunkColor(StudyYellowSoft, StudyOrange)
-        2 -> ChunkColor(StudyBlueSoft, StudyBlue)
-        3 -> ChunkColor(StudyOrangeSoft, StudyCoral)
-        4 -> ChunkColor(StudyCoralSoft, StudyCoral)
-        else -> ChunkColor(MaterialThemeLikeColors.softSurface, StudyGreen)
+        0 -> ChunkColor(colors.primaryContainer, colors.primary, colors.onSurfaceVariant)
+        1 -> ChunkColor(colors.tertiaryContainer, colors.tertiary, colors.onSurfaceVariant)
+        2 -> ChunkColor(colors.secondaryContainer, colors.secondary, colors.onSurfaceVariant)
+        3 -> ChunkColor(colors.errorContainer, colors.error, colors.onSurfaceVariant)
+        4 -> ChunkColor(colors.surfaceVariant, colors.error, colors.onSurfaceVariant)
+        else -> ChunkColor(colors.surfaceVariant, colors.primary, colors.onSurfaceVariant)
     }
 }
 
-private object MaterialThemeLikeColors {
-    val silentContainer = Color(0xFFE5E8E3)
-    val silentContent = Color(0xFF7A837C)
-    val softSurface = Color(0xFFEAF0E5)
-}
+@Composable
+private fun List<WordPhonicsChunk>.chunkColors(): List<ChunkColor> =
+    mapIndexed { index, chunk -> chunkColor(index, chunk.silent) }
 
 private fun WordPhonicsResponse.displayChunks(): List<WordPhonicsChunk> =
     chunks.ifEmpty {
@@ -906,7 +902,10 @@ private fun WordPhonicsResponse.displayChunks(): List<WordPhonicsChunk> =
         }
     }
 
-private fun List<WordPhonicsChunk>.toColoredSpellingText(displayWord: String? = null): AnnotatedString {
+private fun List<WordPhonicsChunk>.toColoredSpellingText(
+    chunkColors: List<ChunkColor>,
+    displayWord: String? = null
+): AnnotatedString {
     val original = displayWord?.takeIf { word -> word.length == sumOf { chunk -> chunk.text.length } }
     var offset = 0
     return buildAnnotatedString {
@@ -914,7 +913,11 @@ private fun List<WordPhonicsChunk>.toColoredSpellingText(displayWord: String? = 
             val spans = chunk.displaySpans()
             spans.forEach { span ->
                 val text = original?.substring(offset, offset + span.text.length) ?: span.text
-                val color = chunkColor(index, chunk.silent || span.silent).content
+                val color = if (chunk.silent || span.silent) {
+                    chunkColors.getOrNull(index)?.silentContent ?: Color.Gray
+                } else {
+                    chunkColors.getOrNull(index)?.content ?: Color.Unspecified
+                }
                 withStyle(SpanStyle(color = color, fontWeight = FontWeight.SemiBold)) {
                     append(text)
                 }
@@ -924,12 +927,17 @@ private fun List<WordPhonicsChunk>.toColoredSpellingText(displayWord: String? = 
     }
 }
 
-private fun List<WordPhonicsChunk>.toColoredIpaText() = buildAnnotatedString {
+private fun List<WordPhonicsChunk>.toColoredIpaText(chunkColors: List<ChunkColor>) = buildAnnotatedString {
     append("/")
     forEachIndexed { index, chunk ->
         val body = chunk.ipa.ipaBody()
         if (body.isNotBlank()) {
-            withStyle(SpanStyle(color = chunkColor(index, chunk.silent).content, fontWeight = FontWeight.Medium)) {
+            withStyle(
+                SpanStyle(
+                    color = chunkColors.getOrNull(index)?.content ?: Color.Unspecified,
+                    fontWeight = FontWeight.Medium
+                )
+            ) {
                 append(body)
             }
         }
@@ -948,7 +956,7 @@ private fun WordPhonicsChunk.toColoredChunkText(color: ChunkColor): AnnotatedStr
     buildAnnotatedString {
         displaySpans().forEach { span ->
             val spanColor = if (silent || span.silent) {
-                MaterialThemeLikeColors.silentContent
+                color.silentContent
             } else {
                 color.content
             }
