@@ -160,11 +160,35 @@ class ContentViewModel(application: Application) : AndroidViewModel(application)
                     limit = PAGE_SIZE,
                     offset = nextOffset
                 )
-                mergeDisplayedContent(nextPage)
-                nextOffset += nextPage.size
-                hasMore = nextPage.size == PAGE_SIZE
+                if (nextPage.isNotEmpty()) {
+                    mergeDisplayedContent(nextPage)
+                    nextOffset += nextPage.size
+                    hasMore = nextPage.size == PAGE_SIZE
+                } else if (!isRefreshingRemote) {
+                    // 本地缓存已耗尽，自动拉取更多远程内容
+                    isRefreshingRemote = true
+                    val remote = fetchDataManager.refreshRemoteContent(
+                        fetchMore = true,
+                        types = selectedTypes,
+                        levels = selectedLevels,
+                        sources = selectedSources,
+                        replaceCache = false
+                    )
+                    updateRemoteFilterOptions(remote.filters)
+                    if (remote.content.isNotEmpty()) {
+                        replaceDisplayedContent(remote.content)
+                        nextOffset = remote.content.size
+                        hasMore = false
+                        refreshFilterCounts()
+                    } else {
+                        hasMore = false
+                    }
+                } else {
+                    hasMore = false
+                }
             } finally {
                 isLoadingPage = false
+                isRefreshingRemote = false
                 emitSuccess()
             }
         }
