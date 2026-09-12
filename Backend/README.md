@@ -96,6 +96,29 @@ kill <pid>
 Keep `Backend/.env` on the server and put `DEEPSEEK_API_KEY` and `MIMO_API_KEY`
 there. Do not commit that file.
 
+## Content Sources
+
+`POST /contents` returns learning content that is fetched entirely from the
+EnglishPod 365 podcast transcripts (the community-maintained `bitter999/EnglishPod`
+repository):
+
+- Index: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data_index.js`
+- Lessons: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data/lesson_{N}.json` (`N` = 1..365)
+
+Each lesson is mapped to a `DIALOGUE` content item. The level is inferred from
+the audio filename first and the title as a fallback:
+
+| Source level | Mapped level |
+| --- | --- |
+| Elementary | A2 |
+| Intermediate | B1 |
+| Upper Intermediate | B2 |
+| Advanced / Advanced Media | C1 |
+| Unspecified | B1 |
+
+By default the first 20 lessons are returned; `fetchMore=true` returns the
+first 100. The implementation lives in `app/content/client.py`.
+
 ## Test
 
 ```powershell

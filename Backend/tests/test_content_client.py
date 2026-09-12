@@ -1,109 +1,117 @@
 import unittest
 
 from app.content.client import (
-    ContentFeed,
-    clean_text,
-    clean_gutenberg_text,
-    infer_publication_date,
-    normalize_title,
-    parse_dialogue_lines,
-    parse_englishclub_reference_body,
-    parse_rss_items,
+    ENGLISH_POD_SOURCE_NAME,
+    build_content_filters,
+    englishpod_level,
+    lesson_to_content,
+    normalize_filter_values,
+    normalize_source_values,
+    stable_id,
 )
 
 
 class ContentClientTest(unittest.TestCase):
-    def test_parse_rss_items(self) -> None:
-        items = parse_rss_items(
-            """
-            <rss><channel><item>
-                <title>Hello</title>
-                <link>https://example.com/hello</link>
-                <guid>item-1</guid>
-                <pubDate>Fri, 26 Jun 2026 10:00:00 GMT</pubDate>
-                <description><![CDATA[<p>Readable text.</p>]]></description>
-            </item></channel></rss>
-            """
+    def test_englishpod_level_from_audio_letter(self) -> None:
+        self.assertEqual(englishpod_level("1 Elementary - X", "./assets/englishpod_B0001pb.mp3"), "A2")
+        self.assertEqual(englishpod_level("2 Intermediate - X", "./assets/englishpod_C0002pb.mp3"), "B1")
+        self.assertEqual(englishpod_level("3 Upper Intermediate - X", "./assets/englishpod_D0003pb.mp3"), "B2")
+        self.assertEqual(englishpod_level("4 Advanced - X", "./assets/englishpod_E0004pb.mp3"), "C1")
+
+    def test_englishpod_level_from_title(self) -> None:
+        self.assertEqual(englishpod_level("1 Elementary - Difficult Customer", ""), "A2")
+        self.assertEqual(englishpod_level("37 Intermediate - X", ""), "B1")
+        self.assertEqual(englishpod_level("18 Upper Intermediate - X", ""), "B2")
+        self.assertEqual(englishpod_level("29 Advanced - X", ""), "C1")
+
+    def test_englishpod_level_defaults_to_b1(self) -> None:
+        self.assertEqual(englishpod_level("10 The Office - Driving Sales", ""), "B1")
+        self.assertEqual(englishpod_level("365 Daily Life - Household Chores", ""), "B1")
+
+    def test_lesson_to_content_maps_fields(self) -> None:
+        lesson = {
+            "title": "1 Elementary - Difficult Customer",
+            "audio": "./assets/englishpod_B0001pb.mp3",
+            "content": [
+                {"text": "Good evening.", "trans": "晚上好。", "start": 0.0, "end": 2.0},
+                {"text": "May I take your order?", "trans": "请问点餐吗？", "start": 2.0, "end": 4.0},
+            ],
+        }
+
+        item = lesson_to_content(1, lesson)
+
+        self.assertIsNotNone(item)
+        assert item is not None
+        self.assertEqual(item.title, "1 Elementary - Difficult Customer")
+        self.assertEqual(item.type, "DIALOGUE")
+        self.assertEqual(item.level, "A2")
+        self.assertEqual(item.source, ENGLISH_POD_SOURCE_NAME)
+        self.assertEqual(item.id, stable_id("englishpod-1"))
+        self.assertEqual(item.body, "Good evening.\nMay I take your order?")
+        self.assertEqual(len(item.lines), 2)
+        self.assertEqual(item.lines[0].speaker, "Narrator")
+        self.assertEqual(item.lines[0].text, "Good evening.")
+
+    def test_lesson_to_content_skips_empty_text(self) -> None:
+        lesson = {
+            "title": "1 Elementary - X",
+            "audio": "",
+            "content": [
+                {"text": "", "trans": "", "start": 0.0, "end": 1.0},
+                {"text": "  ", "trans": "", "start": 1.0, "end": 2.0},
+                {"text": "Hello.", "trans": "你好。", "start": 2.0, "end": 3.0},
+            ],
+        }
+
+        item = lesson_to_content(1, lesson)
+
+        self.assertIsNotNone(item)
+        assert item is not None
+        self.assertEqual(item.body, "Hello.")
+        self.assertEqual(len(item.lines), 1)
+
+    def test_lesson_to_content_returns_none_for_empty_body(self) -> None:
+        lesson = {
+            "title": "1 Elementary - X",
+            "audio": "",
+            "content": [{"text": " ", "trans": "", "start": 0.0, "end": 1.0}],
+        }
+
+        self.assertIsNone(lesson_to_content(1, lesson))
+
+    def test_lesson_to_content_filters_by_level(self) -> None:
+        lesson = {
+            "title": "1 Elementary - X",
+            "audio": "",
+            "content": [{"text": "Hello.", "trans": "你好。", "start": 0.0, "end": 1.0}],
+        }
+
+        self.assertIsNone(lesson_to_content(1, lesson, requested_levels={"B1"}))
+        self.assertIsNotNone(lesson_to_content(1, lesson, requested_levels={"A2"}))
+
+    def test_normalize_filter_values(self) -> None:
+        self.assertEqual(normalize_filter_values(["dialogue", " NEWS ", "", "news"]), {"DIALOGUE", "NEWS"})
+
+    def test_normalize_source_values(self) -> None:
+        self.assertEqual(normalize_source_values(["EnglishPod", "", " "]), {"EnglishPod"})
+
+    def test_build_content_filters_counts_sources(self) -> None:
+        item = lesson_to_content(
+            1,
+            {
+                "title": "1 Elementary - X",
+                "audio": "",
+                "content": [{"text": "Hello.", "trans": "你好。", "start": 0.0, "end": 1.0}],
+            },
         )
+        assert item is not None
 
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0]["title"], "Hello")
-        self.assertEqual(items[0]["link"], "https://example.com/hello")
-        self.assertEqual(items[0]["description"], "<p>Readable text.</p>")
+        filters = build_content_filters([item])
 
-    def test_clean_text_removes_markup(self) -> None:
-        self.assertEqual(
-            clean_text("<p>Hello&nbsp;world</p><script>bad()</script><p>Again</p>"),
-            "Hello world\nAgain",
-        )
-
-    def test_parse_dialogue_lines(self) -> None:
-        lines = parse_dialogue_lines("Alice\nHello Bob.\nBob\nHi Alice.")
-
-        self.assertEqual(len(lines), 2)
-        self.assertEqual(lines[0].speaker, "Alice")
-        self.assertEqual(lines[0].text, "Hello Bob.")
-
-    def test_normalize_title(self) -> None:
-        self.assertEqual(
-            normalize_title("BBC Learning English - 6 Minute English / A useful topic", "Fallback"),
-            "A useful topic",
-        )
-
-    def test_parse_englishclub_reference_body_expands_short_forms(self) -> None:
-        body = parse_englishclub_reference_body(
-            "If you keep somebody on, you continue to employ them. "
-            "Examples: keep sb on If I could, I'd keep everybody on. "
-            "keep on sb We'll do our best to keep on everyone."
-        )
-
-        self.assertIn("For example:", body)
-        self.assertIn("keep somebody on:", body)
-        self.assertIn("keep on somebody:", body)
-        self.assertNotIn(" sb ", body)
-
-    def test_content_feed_defaults(self) -> None:
-        feed = ContentFeed("Name", "https://example.com/rss", "NEWS", "B1")
-
-        self.assertEqual(feed.limit, 10)
-        self.assertEqual(feed.expanded_limit, 50)
-
-    def test_infer_bbc_publication_date_from_episode_link(self) -> None:
-        self.assertEqual(
-            infer_publication_date(
-                pub_date="",
-                link="https://www.bbc.co.uk/learningenglish/english/features/6-minute-english_2026/ep-260625",
-                feed=ContentFeed("BBC", "https://example.com/rss", "DIALOGUE", "B1"),
-            ),
-            "Thu, 25 Jun 2026 00:00:00 +0000",
-        )
-
-    def test_infer_publication_date_from_slash_date_link(self) -> None:
-        self.assertEqual(
-            infer_publication_date(
-                pub_date="",
-                link="https://www.economist.com/finance-and-economics/2026/06/25/will-ai-lower-interest-rates",
-                feed=ContentFeed("Economist", "https://example.com/rss", "NEWS", "C1"),
-            ),
-            "Thu, 25 Jun 2026 00:00:00 +0000",
-        )
-
-    def test_clean_gutenberg_text_removes_boilerplate(self) -> None:
-        body = clean_gutenberg_text(
-            "Project metadata\n"
-            "*** START OF THE PROJECT GUTENBERG EBOOK SAMPLE ***\n"
-            "Title: Sample\n"
-            "Author: Someone\n"
-            "CHAPTER I\n"
-            "This is the first readable paragraph.\n"
-            "\n"
-            "This is another paragraph.\n"
-            "*** END OF THE PROJECT GUTENBERG EBOOK SAMPLE ***"
-        )
-
-        self.assertNotIn("START OF", body)
-        self.assertNotIn("Title:", body)
-        self.assertIn("This is the first readable paragraph.", body)
+        self.assertEqual([source.id for source in filters.sources], [ENGLISH_POD_SOURCE_NAME])
+        self.assertEqual(filters.sources[0].count, 1)
+        self.assertEqual([type_.id for type_ in filters.types], ["DIALOGUE"])
+        self.assertEqual([level.id for level in filters.levels], ["A2"])
 
 
 if __name__ == "__main__":
