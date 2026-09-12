@@ -5,6 +5,7 @@ from app.content.client import (
     build_content_filters,
     englishpod_audio_url,
     englishpod_level,
+    format_lesson_title,
     lesson_to_content,
     normalize_filter_values,
     normalize_source_values,
@@ -29,6 +30,12 @@ class ContentClientTest(unittest.TestCase):
         self.assertEqual(englishpod_level("10 The Office - Driving Sales", ""), "B1")
         self.assertEqual(englishpod_level("365 Daily Life - Household Chores", ""), "B1")
 
+    def test_format_lesson_title(self) -> None:
+        self.assertEqual(format_lesson_title(1, "1 Elementary - Difficult Customer"), "1: Difficult Customer")
+        self.assertEqual(format_lesson_title(10, "10 The Office - Driving Sales"), "10: Driving Sales")
+        self.assertEqual(format_lesson_title(18, "18 Upper-Intermediate - Protest!"), "18: Protest!")
+        self.assertEqual(format_lesson_title(1, "1 Elementary"), "1: Elementary")
+
     def test_lesson_to_content_maps_fields(self) -> None:
         lesson = {
             "title": "1 Elementary - Difficult Customer",
@@ -43,7 +50,7 @@ class ContentClientTest(unittest.TestCase):
 
         self.assertIsNotNone(item)
         assert item is not None
-        self.assertEqual(item.title, "1 Elementary - Difficult Customer")
+        self.assertEqual(item.title, "1: Difficult Customer")
         self.assertEqual(item.type, "DIALOGUE")
         self.assertEqual(item.level, "A2")
         self.assertEqual(item.source, ENGLISH_POD_SOURCE_NAME)

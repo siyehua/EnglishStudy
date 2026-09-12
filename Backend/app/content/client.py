@@ -155,9 +155,10 @@ def lesson_to_content(
     lesson: dict,
     requested_levels: set[str] | None = None,
 ) -> ContentItemResponse | None:
-    title = str(lesson.get("title") or f"Lesson {number}").strip()
+    raw_title = str(lesson.get("title") or f"Lesson {number}").strip()
+    title = format_lesson_title(number, raw_title)
     audio = str(lesson.get("audio") or "")
-    level = englishpod_level(title=title, audio=audio)
+    level = englishpod_level(title=raw_title, audio=audio)
     if requested_levels and level not in requested_levels:
         return None
 
@@ -207,6 +208,15 @@ def englishpod_level(title: str, audio: str) -> str:
     if "advanced" in lowered:
         return "C1"
     return "B1"
+
+
+def format_lesson_title(number: int, raw_title: str) -> str:
+    without_number = re.sub(r"^\d+\s+", "", raw_title.strip())
+    if " - " in without_number:
+        subtitle = without_number.split(" - ", 1)[1].strip()
+    else:
+        subtitle = without_number
+    return f"{number}: {subtitle}"
 
 
 def englishpod_audio_url(audio: str) -> str | None:
