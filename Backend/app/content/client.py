@@ -6,12 +6,14 @@ import json
 import re
 import urllib.request
 from collections.abc import Iterable
+from pathlib import Path
 from time import monotonic
 
 from app.schemas import (
     ContentFilterOptionResponse,
     ContentFiltersResponse,
     ContentItemResponse,
+    ContentSectionResponse,
     DialogueLineResponse,
 )
 
@@ -28,6 +30,31 @@ ENGLISH_POD_LESSON_URL_TEMPLATE = (
     "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/data/lesson_{number}.json"
 )
 ENGLISH_POD_RAW_BASE = "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/"
+LINYUANZKY_BASE = "https://cdn.jsdelivr.net/gh/linyuanzky/englishpod365@main/"
+AUDIO_MAP_PATH = Path(__file__).resolve().parent / "englishpod_audio_map.json"
+
+
+def load_audio_map() -> dict[str, dict[str, str | None]]:
+    try:
+        return json.loads(AUDIO_MAP_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+AUDIO_MAP = load_audio_map()
+
+
+def englishpod_audio_urls(number: int) -> tuple[str | None, str | None]:
+    """Return (full audio URL, dialogue audio URL) for a lesson number."""
+    entry = AUDIO_MAP.get(str(number))
+    if not entry:
+        return None, None
+    full = entry.get("full")
+    dialogue = entry.get("dialogue")
+    return (
+        LINYUANZKY_BASE + full if full else None,
+        LINYUANZKY_BASE + dialogue if dialogue else None,
+    )
 
 USER_AGENT = "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
 REQUEST_TIMEOUT_SECONDS = 15
@@ -175,12 +202,15 @@ def lesson_to_content(
                 text=text,
                 trans=str(item.get("trans") or "").strip(),
                 section=sections[index] if index < len(sections) else "",
+                start=float(item.get("start") or 0.0),
+                end=float(item.get("end") or 0.0),
             )
         )
     body = "\n".join(line.text for line in lines)
     if not body:
         return None
 
+    full_url, dialogue_url = englishpod_audio_urls(number)
     return ContentItemResponse(
         id=stable_id(f"englishpod-{number}"),
         title=title,
@@ -191,7 +221,9 @@ def lesson_to_content(
         source=ENGLISH_POD_SOURCE_NAME,
         date="",
         lines=lines,
-        audioUrl=englishpod_audio_url(str(lesson.get("audio") or "")),
+        audioUrl=full_url or englishpod_audio_url(str(lesson.get("audio") or "")),
+        dialogueAudioUrl=dialogue_url,
+        sections=build_sections(content, sections),
     )
 
 
@@ -261,6 +293,44 @@ def annotate_sections(content: list[dict]) -> list[str]:
             current = classified
         sections.append(current)
     return sections
+
+
+def build_sections(
+    content: list[dict],
+    section_marks: list[str],
+) -> list[ContentSectionResponse]:
+    result: list[ContentSectionResponse] = []
+    current_name: str | None = None
+    current_start = 0.0
+    current_end = 0.0
+
+    for item, section in zip(content, section_marks):
+        start = float(item.get("start") or 0.0)
+        end = float(item.get("end") or start)
+        if section != current_name:
+            if current_name is not None:
+                result.append(
+                    ContentSectionResponse(
+                        name=current_name,
+                        start=current_start,
+                        end=current_end,
+                    )
+                )
+            current_name = section
+            current_start = start
+            current_end = end
+        else:
+            current_end = max(current_end, end)
+
+    if current_name is not None:
+        result.append(
+            ContentSectionResponse(
+                name=current_name,
+                start=current_start,
+                end=current_end,
+            )
+        )
+    return result
 
 
 def englishpod_audio_url(audio: str) -> str | None:

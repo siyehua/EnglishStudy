@@ -197,12 +197,18 @@ class TtsAudioManager(context: Context) {
             onFailure = { WordAudioResult.Failure(it.message ?: "Dictionary audio download failed.") }
         )
 
-    suspend fun ensureRealAudioForContent(content: Content): WordAudioResult = withContext(Dispatchers.IO) {
-        val url = content.audioUrl?.takeIf { it.isNotBlank() }
-            ?: return@withContext WordAudioResult.Failure("No real audio is available for this lesson.")
+    suspend fun ensureRealAudioForContent(content: Content): WordAudioResult =
+        ensureContentAudio(content.audioUrl, "content")
+
+    suspend fun ensureDialogueAudioForContent(content: Content): WordAudioResult =
+        ensureContentAudio(content.dialogueAudioUrl, "dialogue")
+
+    private suspend fun ensureContentAudio(audioUrl: String?, keyPrefix: String): WordAudioResult = withContext(Dispatchers.IO) {
+        val url = audioUrl?.takeIf { it.isNotBlank() }
+            ?: return@withContext WordAudioResult.Failure("No audio is available for this lesson.")
 
         val hash = stableHash(url)
-        val key = "content_" + stableHash(url)
+        val key = "${keyPrefix}_" + stableHash(url)
         val cached = database.loadWordAudio(key)
         if (cached != null && cached.wordHash == hash && File(cached.filePath).exists()) {
             return@withContext WordAudioResult.Success(Uri.fromFile(File(cached.filePath)))
@@ -224,7 +230,7 @@ class TtsAudioManager(context: Context) {
             ).also(database::upsertWordAudio)
         }.fold(
             onSuccess = { WordAudioResult.Success(Uri.fromFile(File(it.filePath))) },
-            onFailure = { WordAudioResult.Failure(it.message ?: "Real audio download failed.") }
+            onFailure = { WordAudioResult.Failure(it.message ?: "Audio download failed.") }
         )
     }
 

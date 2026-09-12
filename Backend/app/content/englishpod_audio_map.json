@@ -1,0 +1,1462 @@
+{
+  "1": {
+    "dialogue": "0001-0010/0001/englishpod_B0001rv.mp3",
+    "full": "0001-0010/0001/englishpod_B0001pr.mp3"
+  },
+  "2": {
+    "dialogue": "0001-0010/0002/englishpod_B0002rv.mp3",
+    "full": "0001-0010/0002/englishpod_B0002pr.mp3"
+  },
+  "3": {
+    "dialogue": "0001-0010/0003/englishpod_B0003rv.mp3",
+    "full": "0001-0010/0003/englishpod_B0003pr.mp3"
+  },
+  "4": {
+    "dialogue": "0001-0010/0004/englishpod_B0004rv.mp3",
+    "full": "0001-0010/0004/englishpod_B0004pr.mp3"
+  },
+  "5": {
+    "dialogue": "0001-0010/0005/englishpod_B0005rv.mp3",
+    "full": "0001-0010/0005/englishpod_B0005pr.mp3"
+  },
+  "6": {
+    "dialogue": "0001-0010/0006/englishpod_B0006rv.mp3",
+    "full": "0001-0010/0006/englishpod_B0006pr.mp3"
+  },
+  "7": {
+    "dialogue": "0001-0010/0007/englishpod_B0007rv.mp3",
+    "full": "0001-0010/0007/englishpod_B0007pr.mp3"
+  },
+  "8": {
+    "dialogue": "0001-0010/0008/englishpod_B0008rv.mp3",
+    "full": "0001-0010/0008/englishpod_B0008pr.mp3"
+  },
+  "9": {
+    "dialogue": "0001-0010/0009/englishpod_B0009rv.mp3",
+    "full": "0001-0010/0009/englishpod_B0009pr.mp3"
+  },
+  "10": {
+    "dialogue": "0001-0010/0010/englishpod_C0010dg.mp3",
+    "full": "0001-0010/0010/englishpod_C0010pb.mp3"
+  },
+  "11": {
+    "dialogue": "0011-0020/0011/englishpod_C0011dg.mp3",
+    "full": "0011-0020/0011/englishpod_C0011pb.mp3"
+  },
+  "12": {
+    "dialogue": "0011-0020/0012/englishpod_C0012dg.mp3",
+    "full": "0011-0020/0012/englishpod_C0012pb.mp3"
+  },
+  "13": {
+    "dialogue": "0011-0020/0013/englishpod_C0013dg.mp3",
+    "full": "0011-0020/0013/englishpod_C0013pb.mp3"
+  },
+  "14": {
+    "dialogue": "0011-0020/0014/englishpod_B0014rv.mp3",
+    "full": "0011-0020/0014/englishpod_B0014pr.mp3"
+  },
+  "15": {
+    "dialogue": "0011-0020/0015/englishpod_C0015dg.mp3",
+    "full": "0011-0020/0015/englishpod_C0015pb.mp3"
+  },
+  "16": {
+    "dialogue": "0011-0020/0016/englishpod_B0016rv.mp3",
+    "full": "0011-0020/0016/englishpod_B0016pr.mp3"
+  },
+  "17": {
+    "dialogue": "0011-0020/0017/englishpod_B0017rv.mp3",
+    "full": "0011-0020/0017/englishpod_B0017pr.mp3"
+  },
+  "18": {
+    "dialogue": "0011-0020/0018/englishpod_D0018dg.mp3",
+    "full": "0011-0020/0018/englishpod_D0018pb.mp3"
+  },
+  "19": {
+    "dialogue": "0011-0020/0019/englishpod_C0019dg.mp3",
+    "full": "0011-0020/0019/englishpod_C0019pb.mp3"
+  },
+  "20": {
+    "dialogue": "0011-0020/0020/englishpod_B0020rv.mp3",
+    "full": "0011-0020/0020/englishpod_B0020pr.mp3"
+  },
+  "21": {
+    "dialogue": "0021-0030/0021/englishpod_C0021dg.mp3",
+    "full": "0021-0030/0021/englishpod_C0021pb.mp3"
+  },
+  "22": {
+    "dialogue": "0021-0030/0022/englishpod_C0022dg.mp3",
+    "full": "0021-0030/0022/englishpod_C0022pb.mp3"
+  },
+  "23": {
+    "dialogue": "0021-0030/0023/englishpod_B0023rv.mp3",
+    "full": "0021-0030/0023/englishpod_B0023pr.mp3"
+  },
+  "24": {
+    "dialogue": "0021-0030/0024/englishpod_B0024rv.mp3",
+    "full": "0021-0030/0024/englishpod_B0024pr.mp3"
+  },
+  "25": {
+    "dialogue": "0021-0030/0025/englishpod_D0025dg.mp3",
+    "full": "0021-0030/0025/englishpod_D0025pb.mp3"
+  },
+  "26": {
+    "dialogue": "0021-0030/0026/englishpod_B0026dg.mp3",
+    "full": "0021-0030/0026/englishpod_B0026pb.mp3"
+  },
+  "27": {
+    "dialogue": "0021-0030/0027/englishpod_B0027dg.mp3",
+    "full": "0021-0030/0027/englishpod_B0027pb.mp3"
+  },
+  "28": {
+    "dialogue": "0021-0030/0028/englishpod_C0028dg.mp3",
+    "full": "0021-0030/0028/englishpod_C0028pb.mp3"
+  },
+  "29": {
+    "dialogue": "0021-0030/0029/englishpod_E0029dg.mp3",
+    "full": "0021-0030/0029/englishpod_E0029pb.mp3"
+  },
+  "30": {
+    "dialogue": "0021-0030/0030/englishpod_C0030dg.mp3",
+    "full": "0021-0030/0030/englishpod_C0030pb.mp3"
+  },
+  "31": {
+    "dialogue": "0031-0040/0031/englishpod_B0031dg.mp3",
+    "full": "0031-0040/0031/englishpod_B0031pb.mp3"
+  },
+  "32": {
+    "dialogue": "0031-0040/0032/englishpod_C0032dg.mp3",
+    "full": "0031-0040/0032/englishpod_C0032pb.mp3"
+  },
+  "33": {
+    "dialogue": "0031-0040/0033/englishpod_B0033dg.mp3",
+    "full": "0031-0040/0033/englishpod_B0033pb.mp3"
+  },
+  "34": {
+    "dialogue": "0031-0040/0034/englishpod_D0034dg.mp3",
+    "full": "0031-0040/0034/englishpod_D0034pb.mp3"
+  },
+  "35": {
+    "dialogue": "0031-0040/0035/englishpod_C0035dg.mp3",
+    "full": "0031-0040/0035/englishpod_C0035pb.mp3"
+  },
+  "36": {
+    "dialogue": "0031-0040/0036/englishpod_B0036dg.mp3",
+    "full": "0031-0040/0036/englishpod_B0036pb.mp3"
+  },
+  "37": {
+    "dialogue": "0031-0040/0037/englishpod_C0037dg.mp3",
+    "full": "0031-0040/0037/englishpod_C0037pb.mp3"
+  },
+  "38": {
+    "dialogue": "0031-0040/0038/englishpod_C0038dg.mp3",
+    "full": "0031-0040/0038/englishpod_C0038pb.mp3"
+  },
+  "39": {
+    "dialogue": "0031-0040/0039/englishpod_B0039dg.mp3",
+    "full": "0031-0040/0039/englishpod_B0039pb.mp3"
+  },
+  "40": {
+    "dialogue": "0031-0040/0040/englishpod_B0040dg.mp3",
+    "full": "0031-0040/0040/englishpod_B0040pb.mp3"
+  },
+  "41": {
+    "dialogue": "0041-0050/0041/englishpod_C0041dg.mp3",
+    "full": "0041-0050/0041/englishpod_C0041pb.mp3"
+  },
+  "42": {
+    "dialogue": "0041-0050/0042/englishpod_B0042dg.mp3",
+    "full": "0041-0050/0042/englishpod_B0042pb.mp3"
+  },
+  "43": {
+    "dialogue": "0041-0050/0043/englishpod_C0043dg.mp3",
+    "full": "0041-0050/0043/englishpod_C0043pb.mp3"
+  },
+  "44": {
+    "dialogue": "0041-0050/0044/englishpod_B0044dg.mp3",
+    "full": "0041-0050/0044/englishpod_B0044pb.mp3"
+  },
+  "45": {
+    "dialogue": "0041-0050/0045/englishpod_C0045dg.mp3",
+    "full": "0041-0050/0045/englishpod_C0045pb.mp3"
+  },
+  "46": {
+    "dialogue": "0041-0050/0046/englishpod_D0046dg.mp3",
+    "full": "0041-0050/0046/englishpod_D0046pb.mp3"
+  },
+  "47": {
+    "dialogue": "0041-0050/0047/englishpod_E0047dg.mp3",
+    "full": "0041-0050/0047/englishpod_E0047pb.mp3"
+  },
+  "48": {
+    "dialogue": "0041-0050/0048/englishpod_C0048dg.mp3",
+    "full": "0041-0050/0048/englishpod_C0048pb.mp3"
+  },
+  "49": {
+    "dialogue": "0041-0050/0049/englishpod_C0049dg.mp3",
+    "full": "0041-0050/0049/englishpod_C0049pb.mp3"
+  },
+  "50": {
+    "dialogue": "0041-0050/0050/englishpod_C0050dg.mp3",
+    "full": "0041-0050/0050/englishpod_C0050pb.mp3"
+  },
+  "51": {
+    "dialogue": "0051-0060/0051/englishpod_C0051dg.mp3",
+    "full": "0051-0060/0051/englishpod_C0051pb.mp3"
+  },
+  "52": {
+    "dialogue": "0051-0060/0052/englishpod_C0052dg.mp3",
+    "full": "0051-0060/0052/englishpod_C0052pb.mp3"
+  },
+  "53": {
+    "dialogue": "0051-0060/0053/englishpod_C0053dg.mp3",
+    "full": "0051-0060/0053/englishpod_C0053pb.mp3"
+  },
+  "54": {
+    "dialogue": "0051-0060/0054/englishpod_C0054dg.mp3",
+    "full": "0051-0060/0054/englishpod_C0054pb.mp3"
+  },
+  "55": {
+    "dialogue": "0051-0060/0055/englishpod_C0055dg.mp3",
+    "full": "0051-0060/0055/englishpod_C0055pb.mp3"
+  },
+  "56": {
+    "dialogue": "0051-0060/0056/englishpod_C0056dg.mp3",
+    "full": "0051-0060/0056/englishpod_C0056pb.mp3"
+  },
+  "57": {
+    "dialogue": "0051-0060/0057/englishpod_C0057dg.mp3",
+    "full": "0051-0060/0057/englishpod_C0057pb.mp3"
+  },
+  "58": {
+    "dialogue": "0051-0060/0058/englishpod_C0058dg.mp3",
+    "full": "0051-0060/0058/englishpod_C0058pb.mp3"
+  },
+  "59": {
+    "dialogue": "0051-0060/0059/englishpod_E0059dg.mp3",
+    "full": "0051-0060/0059/englishpod_E0059pb.mp3"
+  },
+  "60": {
+    "dialogue": "0051-0060/0060/englishpod_C0060dg.mp3",
+    "full": "0051-0060/0060/englishpod_C0060pb.mp3"
+  },
+  "61": {
+    "dialogue": "0061-0070/0061/englishpod_C0061dg.mp3",
+    "full": "0061-0070/0061/englishpod_C0061pb.mp3"
+  },
+  "62": {
+    "dialogue": "0061-0070/0062/englishpod_C0062dg.mp3",
+    "full": "0061-0070/0062/englishpod_C0062pb.mp3"
+  },
+  "63": {
+    "dialogue": "0061-0070/0063/englishpod_C0063dg.mp3",
+    "full": "0061-0070/0063/englishpod_C0063pb.mp3"
+  },
+  "64": {
+    "dialogue": "0061-0070/0064/englishpod_C0064dg.mp3",
+    "full": "0061-0070/0064/englishpod_C0064pb.mp3"
+  },
+  "65": {
+    "dialogue": "0061-0070/0065/englishpod_C0065dg.mp3",
+    "full": "0061-0070/0065/englishpod_C0065pb.mp3"
+  },
+  "66": {
+    "dialogue": "0061-0070/0066/englishpod_B0066dg.mp3",
+    "full": "0061-0070/0066/englishpod_B0066pb.mp3"
+  },
+  "67": {
+    "dialogue": "0061-0070/0067/englishpod_C0067dg.mp3",
+    "full": "0061-0070/0067/englishpod_C0067pb.mp3"
+  },
+  "68": {
+    "dialogue": "0061-0070/0068/englishpod_D0068dg.mp3",
+    "full": "0061-0070/0068/englishpod_D0068pb.mp3"
+  },
+  "69": {
+    "dialogue": "0061-0070/0069/englishpod_C0069dg.mp3",
+    "full": "0061-0070/0069/englishpod_C0069pb.mp3"
+  },
+  "70": {
+    "dialogue": "0061-0070/0070/englishpod_F0070dg.mp3",
+    "full": "0061-0070/0070/englishpod_F0070pb.mp3"
+  },
+  "71": {
+    "dialogue": "0071-0080/0071/englishpod_C0071dg.mp3",
+    "full": "0071-0080/0071/englishpod_C0071pb.mp3"
+  },
+  "72": {
+    "dialogue": "0071-0080/0072/englishpod_C0072dg.mp3",
+    "full": "0071-0080/0072/englishpod_C0072pb.mp3"
+  },
+  "73": {
+    "dialogue": "0071-0080/0073/englishpod_B0073dg.mp3",
+    "full": "0071-0080/0073/englishpod_B0073pb.mp3"
+  },
+  "74": {
+    "dialogue": "0071-0080/0074/englishpod_D0074dg.mp3",
+    "full": "0071-0080/0074/englishpod_D0074pb.mp3"
+  },
+  "75": {
+    "dialogue": "0071-0080/0075/englishpod_C0075dg.mp3",
+    "full": "0071-0080/0075/englishpod_C0075pb.mp3"
+  },
+  "76": {
+    "dialogue": "0071-0080/0076/englishpod_B0076dg.mp3",
+    "full": "0071-0080/0076/englishpod_B0076pb.mp3"
+  },
+  "77": {
+    "dialogue": "0071-0080/0077/englishpod_C0077dg.mp3",
+    "full": "0071-0080/0077/englishpod_C0077pb.mp3"
+  },
+  "78": {
+    "dialogue": "0071-0080/0078/englishpod_E0078dg.mp3",
+    "full": "0071-0080/0078/englishpod_E0078pb.mp3"
+  },
+  "79": {
+    "dialogue": "0071-0080/0079/englishpod_B0079dg.mp3",
+    "full": "0071-0080/0079/englishpod_B0079pb.mp3"
+  },
+  "80": {
+    "dialogue": "0071-0080/0080/englishpod_D0080dg.mp3",
+    "full": "0071-0080/0080/englishpod_D0080pb.mp3"
+  },
+  "81": {
+    "dialogue": "0081-0090/0081/englishpod_B0081dg.mp3",
+    "full": "0081-0090/0081/englishpod_B0081pb.mp3"
+  },
+  "82": {
+    "dialogue": "0081-0090/0082/englishpod_C0082dg.mp3",
+    "full": "0081-0090/0082/englishpod_C0082pb.mp3"
+  },
+  "83": {
+    "dialogue": "0081-0090/0083/englishpod_C0083dg.mp3",
+    "full": "0081-0090/0083/englishpod_C0083pb.mp3"
+  },
+  "84": {
+    "dialogue": "0081-0090/0084/englishpod_B0084dg.mp3",
+    "full": "0081-0090/0084/englishpod_B0084pb.mp3"
+  },
+  "85": {
+    "dialogue": "0081-0090/0085/englishpod_B0085dg.mp3",
+    "full": "0081-0090/0085/englishpod_B0085pb.mp3"
+  },
+  "86": {
+    "dialogue": "0081-0090/0086/englishpod_C0086dg.mp3",
+    "full": "0081-0090/0086/englishpod_C0086pb.mp3"
+  },
+  "87": {
+    "dialogue": "0081-0090/0087/englishpod_B0087dg.mp3",
+    "full": "0081-0090/0087/englishpod_B0087pb.mp3"
+  },
+  "88": {
+    "dialogue": "0081-0090/0088/englishpod_B0088dg.mp3",
+    "full": "0081-0090/0088/englishpod_B0088pb.mp3"
+  },
+  "89": {
+    "dialogue": "0081-0090/0089/englishpod_C0089dg.mp3",
+    "full": "0081-0090/0089/englishpod_C0089pb.mp3"
+  },
+  "90": {
+    "dialogue": "0081-0090/0090/englishpod_D0090dg.mp3",
+    "full": "0081-0090/0090/englishpod_D0090pb.mp3"
+  },
+  "91": {
+    "dialogue": "0091-0100/0091/englishpod_D0091dg.mp3",
+    "full": "0091-0100/0091/englishpod_D0091pb.mp3"
+  },
+  "92": {
+    "dialogue": "0091-0100/0092/englishpod_B0092dg.mp3",
+    "full": "0091-0100/0092/englishpod_B0092pb.mp3"
+  },
+  "93": {
+    "dialogue": "0091-0100/0093/englishpod_D0093dg.mp3",
+    "full": "0091-0100/0093/englishpod_D0093pb.mp3"
+  },
+  "94": {
+    "dialogue": "0091-0100/0094/englishpod_E0094dg.mp3",
+    "full": "0091-0100/0094/englishpod_E0094pb.mp3"
+  },
+  "95": {
+    "dialogue": "0091-0100/0095/englishpod_C0095dg.mp3",
+    "full": "0091-0100/0095/englishpod_C0095pb.mp3"
+  },
+  "96": {
+    "dialogue": "0091-0100/0096/englishpod_C0096dg.mp3",
+    "full": "0091-0100/0096/englishpod_C0096pb.mp3"
+  },
+  "97": {
+    "dialogue": "0091-0100/0097/englishpod_D0097dg.mp3",
+    "full": "0091-0100/0097/englishpod_D0097pb.mp3"
+  },
+  "98": {
+    "dialogue": "0091-0100/0098/englishpod_C0098dg.mp3",
+    "full": "0091-0100/0098/englishpod_C0098pb.mp3"
+  },
+  "99": {
+    "dialogue": "0091-0100/0099/englishpod_E0099dg.mp3",
+    "full": "0091-0100/0099/englishpod_E0099pb.mp3"
+  },
+  "100": {
+    "dialogue": "0091-0100/0100/englishpod_C0100dg.mp3",
+    "full": "0091-0100/0100/englishpod_C0100pb.mp3"
+  },
+  "101": {
+    "dialogue": "0101-0110/0101/englishpod_B0101dg.mp3",
+    "full": "0101-0110/0101/englishpod_B0101pb.mp3"
+  },
+  "102": {
+    "dialogue": "0101-0110/0102/englishpod_E0102dg.mp3",
+    "full": "0101-0110/0102/englishpod_E0102pb.mp3"
+  },
+  "103": {
+    "dialogue": "0101-0110/0103/englishpod_B0103dg.mp3",
+    "full": "0101-0110/0103/englishpod_B0103pb.mp3"
+  },
+  "104": {
+    "dialogue": "0101-0110/0104/englishpod_E0104dg.mp3",
+    "full": "0101-0110/0104/englishpod_E0104pb.mp3"
+  },
+  "105": {
+    "dialogue": "0101-0110/0105/englishpod_C0105dg.mp3",
+    "full": "0101-0110/0105/englishpod_C0105pb.mp3"
+  },
+  "106": {
+    "dialogue": "0101-0110/0106/englishpod_C0106dg.mp3",
+    "full": "0101-0110/0106/englishpod_C0106pb.mp3"
+  },
+  "107": {
+    "dialogue": "0101-0110/0107/englishpod_D0107dg.mp3",
+    "full": "0101-0110/0107/englishpod_D0107pb.mp3"
+  },
+  "108": {
+    "dialogue": "0101-0110/0108/englishpod_D0108dg.mp3",
+    "full": "0101-0110/0108/englishpod_D0108pb.mp3"
+  },
+  "109": {
+    "dialogue": "0101-0110/0109/englishpod_C0109dg.mp3",
+    "full": "0101-0110/0109/englishpod_C0109pb.mp3"
+  },
+  "110": {
+    "dialogue": "0101-0110/0110/englishpod_B0110dg.mp3",
+    "full": "0101-0110/0110/englishpod_B0110pb.mp3"
+  },
+  "111": {
+    "dialogue": "0111-0120/0111/englishpod_B0111dg.mp3",
+    "full": "0111-0120/0111/englishpod_B0111pb.mp3"
+  },
+  "112": {
+    "dialogue": "0111-0120/0112/englishpod_C0112dg.mp3",
+    "full": "0111-0120/0112/englishpod_C0112pb.mp3"
+  },
+  "113": {
+    "dialogue": "0111-0120/0113/englishpod_B0113dg.mp3",
+    "full": "0111-0120/0113/englishpod_B0113pb.mp3"
+  },
+  "114": {
+    "dialogue": "0111-0120/0114/englishpod_C0114dg.mp3",
+    "full": "0111-0120/0114/englishpod_C0114pb.mp3"
+  },
+  "115": {
+    "dialogue": "0111-0120/0115/englishpod_B0115dg.mp3",
+    "full": "0111-0120/0115/englishpod_B0115pb.mp3"
+  },
+  "116": {
+    "dialogue": "0111-0120/0116/englishpod_E0116dg.mp3",
+    "full": "0111-0120/0116/englishpod_E0116pb.mp3"
+  },
+  "117": {
+    "dialogue": "0111-0120/0117/englishpod_D0117dg.mp3",
+    "full": "0111-0120/0117/englishpod_D0117pb.mp3"
+  },
+  "118": {
+    "dialogue": "0111-0120/0118/englishpod_C0118dg.mp3",
+    "full": "0111-0120/0118/englishpod_C0118pb.mp3"
+  },
+  "119": {
+    "dialogue": "0111-0120/0119/englishpod_B0119dg.mp3",
+    "full": "0111-0120/0119/englishpod_B0119pb.mp3"
+  },
+  "120": {
+    "dialogue": "0111-0120/0120/englishpod_D0120dg.mp3",
+    "full": "0111-0120/0120/englishpod_D0120pb.mp3"
+  },
+  "121": {
+    "dialogue": "0121-0130/0121/englishpod_E0121dg.mp3",
+    "full": "0121-0130/0121/englishpod_E0121pb.mp3"
+  },
+  "122": {
+    "dialogue": "0121-0130/0122/englishpod_B0122dg.mp3",
+    "full": "0121-0130/0122/englishpod_B0122pb.mp3"
+  },
+  "123": {
+    "dialogue": "0121-0130/0123/englishpod_C0123dg.mp3",
+    "full": "0121-0130/0123/englishpod_C0123pb.mp3"
+  },
+  "124": {
+    "dialogue": "0121-0130/0124/englishpod_D0124dg.mp3",
+    "full": "0121-0130/0124/englishpod_D0124pb.mp3"
+  },
+  "125": {
+    "dialogue": "0121-0130/0125/englishpod_B0125dg.mp3",
+    "full": "0121-0130/0125/englishpod_B0125pb.mp3"
+  },
+  "126": {
+    "dialogue": "0121-0130/0126/englishpod_C0126dg.mp3",
+    "full": "0121-0130/0126/englishpod_C0126pb.mp3"
+  },
+  "127": {
+    "dialogue": "0121-0130/0127/englishpod_B0127dg.mp3",
+    "full": "0121-0130/0127/englishpod_B0127pb.mp3"
+  },
+  "128": {
+    "dialogue": "0121-0130/0128/englishpod_D0128dg.mp3",
+    "full": "0121-0130/0128/englishpod_D0128pb.mp3"
+  },
+  "129": {
+    "dialogue": "0121-0130/0129/englishpod_E0129dg.mp3",
+    "full": "0121-0130/0129/englishpod_E0129pb.mp3"
+  },
+  "130": {
+    "dialogue": "0121-0130/0130/englishpod_B0130dg.mp3",
+    "full": "0121-0130/0130/englishpod_B0130pb.mp3"
+  },
+  "131": {
+    "dialogue": "0131-0140/0131/englishpod_B0131dg.mp3",
+    "full": "0131-0140/0131/englishpod_B0131pb.mp3"
+  },
+  "132": {
+    "dialogue": "0131-0140/0132/englishpod_D0132dg.mp3",
+    "full": "0131-0140/0132/englishpod_D0132pb.mp3"
+  },
+  "133": {
+    "dialogue": "0131-0140/0133/englishpod_C0133dg.mp3",
+    "full": "0131-0140/0133/englishpod_C0133pb.mp3"
+  },
+  "134": {
+    "dialogue": "0131-0140/0134/englishpod_B0134dg.mp3",
+    "full": "0131-0140/0134/englishpod_B0134pb.mp3"
+  },
+  "135": {
+    "dialogue": "0131-0140/0135/englishpod_B0135dg.mp3",
+    "full": "0131-0140/0135/englishpod_B0135pb.mp3"
+  },
+  "136": {
+    "dialogue": "0131-0140/0136/englishpod_E0136dg.mp3",
+    "full": "0131-0140/0136/englishpod_E0136pb.mp3"
+  },
+  "137": {
+    "dialogue": "0131-0140/0137/englishpod_D0137dg.mp3",
+    "full": "0131-0140/0137/englishpod_D0137pb.mp3"
+  },
+  "138": {
+    "dialogue": "0131-0140/0138/englishpod_B0138dg.mp3",
+    "full": "0131-0140/0138/englishpod_B0138pb.mp3"
+  },
+  "139": {
+    "dialogue": "0131-0140/0139/englishpod_B0139dg.mp3",
+    "full": "0131-0140/0139/englishpod_B0139pb.mp3"
+  },
+  "140": {
+    "dialogue": "0131-0140/0140/englishpod_B0140dg.mp3",
+    "full": "0131-0140/0140/englishpod_B0140pb.mp3"
+  },
+  "141": {
+    "dialogue": "0141-0150/0141/englishpod_C0141dg.mp3",
+    "full": "0141-0150/0141/englishpod_C0141pb.mp3"
+  },
+  "142": {
+    "dialogue": "0141-0150/0142/englishpod_B0142dg.mp3",
+    "full": "0141-0150/0142/englishpod_B0142pb.mp3"
+  },
+  "143": {
+    "dialogue": "0141-0150/0143/englishpod_C0143dg.mp3",
+    "full": "0141-0150/0143/englishpod_C0143pb.mp3"
+  },
+  "144": {
+    "dialogue": "0141-0150/0144/englishpod_E0144dg.mp3",
+    "full": "0141-0150/0144/englishpod_E0144pb.mp3"
+  },
+  "145": {
+    "dialogue": "0141-0150/0145/englishpod_B0145dg.mp3",
+    "full": "0141-0150/0145/englishpod_B0145pb.mp3"
+  },
+  "146": {
+    "dialogue": "0141-0150/0146/englishpod_D0146dg.mp3",
+    "full": "0141-0150/0146/englishpod_D0146pb.mp3"
+  },
+  "147": {
+    "dialogue": "0141-0150/0147/englishpod_C0147dg.mp3",
+    "full": "0141-0150/0147/englishpod_C0147pb.mp3"
+  },
+  "148": {
+    "dialogue": "0141-0150/0148/englishpod_D0148dg.mp3",
+    "full": "0141-0150/0148/englishpod_D0148pb.mp3"
+  },
+  "149": {
+    "dialogue": "0141-0150/0149/englishpod_B0149dg.mp3",
+    "full": "0141-0150/0149/englishpod_B0149pb.mp3"
+  },
+  "150": {
+    "dialogue": "0141-0150/0150/englishpod_B0150dg.mp3",
+    "full": "0141-0150/0150/englishpod_B0150pb.mp3"
+  },
+  "151": {
+    "dialogue": "0151-0160/0151/englishpod_E0151dg.mp3",
+    "full": "0151-0160/0151/englishpod_E0151pb.mp3"
+  },
+  "152": {
+    "dialogue": "0151-0160/0152/englishpod_C0152dg.mp3",
+    "full": "0151-0160/0152/englishpod_C0152pb.mp3"
+  },
+  "153": {
+    "dialogue": "0151-0160/0153/englishpod_D0153dg.mp3",
+    "full": "0151-0160/0153/englishpod_D0153pb.mp3"
+  },
+  "154": {
+    "dialogue": "0151-0160/0154/englishpod_B0154dg.mp3",
+    "full": "0151-0160/0154/englishpod_B0154pb.mp3"
+  },
+  "155": {
+    "dialogue": "0151-0160/0155/englishpod_C0155dg.mp3",
+    "full": "0151-0160/0155/englishpod_C0155pb.mp3"
+  },
+  "156": {
+    "dialogue": "0151-0160/0156/englishpod_F0156dg.mp3",
+    "full": "0151-0160/0156/englishpod_F0156pb.mp3"
+  },
+  "157": {
+    "dialogue": "0151-0160/0157/englishpod_B0157dg.mp3",
+    "full": "0151-0160/0157/englishpod_B0157pb.mp3"
+  },
+  "158": {
+    "dialogue": "0151-0160/0158/englishpod_C0158dg.mp3",
+    "full": "0151-0160/0158/englishpod_C0158pb.mp3"
+  },
+  "159": {
+    "dialogue": "0151-0160/0159/englishpod_C0159dg.mp3",
+    "full": "0151-0160/0159/englishpod_C0159pb.mp3"
+  },
+  "160": {
+    "dialogue": "0151-0160/0160/englishpod_D0160dg.mp3",
+    "full": "0151-0160/0160/englishpod_D0160pb.mp3"
+  },
+  "161": {
+    "dialogue": "0161-0170/0161/englishpod_0161dg.mp3",
+    "full": "0161-0170/0161/englishpod_0161pb.mp3"
+  },
+  "162": {
+    "dialogue": "0161-0170/0162/englishpod_0162dg.mp3",
+    "full": "0161-0170/0162/englishpod_0162pb.mp3"
+  },
+  "163": {
+    "dialogue": "0161-0170/0163/englishpod_0163dg.mp3",
+    "full": "0161-0170/0163/englishpod_0163pb.mp3"
+  },
+  "164": {
+    "dialogue": null,
+    "full": "0161-0170/0164/englishpod_0164pb.mp3"
+  },
+  "165": {
+    "dialogue": "0161-0170/0165/englishpod_0165dg.mp3",
+    "full": "0161-0170/0165/englishpod_0165pb.mp3"
+  },
+  "166": {
+    "dialogue": "0161-0170/0166/englishpod_0166dg.mp3",
+    "full": "0161-0170/0166/englishpod_0166pb.mp3"
+  },
+  "167": {
+    "dialogue": "0161-0170/0167/englishpod_0167dg.mp3",
+    "full": "0161-0170/0167/englishpod_0167pb.mp3"
+  },
+  "168": {
+    "dialogue": "0161-0170/0168/englishpod_0168dg.mp3",
+    "full": "0161-0170/0168/englishpod_0168pb.mp3"
+  },
+  "169": {
+    "dialogue": "0161-0170/0169/englishpod_0169dg.mp3",
+    "full": "0161-0170/0169/englishpod_0169pb.mp3"
+  },
+  "170": {
+    "dialogue": "0161-0170/0170/englishpod_0170dg.mp3",
+    "full": "0161-0170/0170/englishpod_0170pb.mp3"
+  },
+  "171": {
+    "dialogue": "0171-0180/0171/englishpod_0171dg.mp3",
+    "full": "0171-0180/0171/englishpod_0171pb.mp3"
+  },
+  "172": {
+    "dialogue": "0171-0180/0172/englishpod_0172dg.mp3",
+    "full": "0171-0180/0172/englishpod_0172pb.mp3"
+  },
+  "173": {
+    "dialogue": "0171-0180/0173/englishpod_0173dg.mp3",
+    "full": "0171-0180/0173/englishpod_0173pb.mp3"
+  },
+  "174": {
+    "dialogue": "0171-0180/0174/englishpod_0174dg.mp3",
+    "full": "0171-0180/0174/englishpod_0174pb.mp3"
+  },
+  "175": {
+    "dialogue": "0171-0180/0175/englishpod_0175dg.mp3",
+    "full": "0171-0180/0175/englishpod_0175pb.mp3"
+  },
+  "176": {
+    "dialogue": "0171-0180/0176/englishpod_0176dg.mp3",
+    "full": "0171-0180/0176/englishpod_0176pb.mp3"
+  },
+  "177": {
+    "dialogue": "0171-0180/0177/englishpod_0177dg.mp3",
+    "full": "0171-0180/0177/englishpod_0177pb.mp3"
+  },
+  "178": {
+    "dialogue": "0171-0180/0178/englishpod_0178dg.mp3",
+    "full": "0171-0180/0178/englishpod_0178pb.mp3"
+  },
+  "179": {
+    "dialogue": "0171-0180/0179/englishpod_C0179dg.mp3",
+    "full": "0171-0180/0179/englishpod_C0179pb.mp3"
+  },
+  "180": {
+    "dialogue": "0171-0180/0180/englishpod_B0180dg.mp3",
+    "full": "0171-0180/0180/englishpod_B0180pb.mp3"
+  },
+  "181": {
+    "dialogue": "0181-0190/0181/englishpod_0181dg.mp3",
+    "full": "0181-0190/0181/englishpod_0181pb.mp3"
+  },
+  "182": {
+    "dialogue": "0181-0190/0182/englishpod_0182dg.mp3",
+    "full": "0181-0190/0182/englishpod_0182pb.mp3"
+  },
+  "183": {
+    "dialogue": "0181-0190/0183/englishpod_0183dg.mp3",
+    "full": "0181-0190/0183/englishpod_0183pb.mp3"
+  },
+  "184": {
+    "dialogue": "0181-0190/0184/englishpod_0184dg.mp3",
+    "full": "0181-0190/0184/englishpod_0184pb.mp3"
+  },
+  "185": {
+    "dialogue": "0181-0190/0185/englishpod_0185dg.mp3",
+    "full": "0181-0190/0185/englishpod_0185pb.mp3"
+  },
+  "186": {
+    "dialogue": "0181-0190/0186/englishpod_0186dg.mp3",
+    "full": "0181-0190/0186/englishpod_0186pb.mp3"
+  },
+  "187": {
+    "dialogue": "0181-0190/0187/englishpod_0187dg.mp3",
+    "full": "0181-0190/0187/englishpod_0187pb.mp3"
+  },
+  "188": {
+    "dialogue": "0181-0190/0188/englishpod_0188dg.mp3",
+    "full": "0181-0190/0188/englishpod_0188pb.mp3"
+  },
+  "189": {
+    "dialogue": "0181-0190/0189/englishpod_0189dg.mp3",
+    "full": "0181-0190/0189/englishpod_0189pb.mp3"
+  },
+  "190": {
+    "dialogue": "0181-0190/0190/englishpod_0190dg.mp3",
+    "full": "0181-0190/0190/englishpod_0190pb.mp3"
+  },
+  "191": {
+    "dialogue": "0191-0200/0191/englishpod_0191dg.mp3",
+    "full": "0191-0200/0191/englishpod_0191pb.mp3"
+  },
+  "192": {
+    "dialogue": "0191-0200/0192/englishpod_0192dg.mp3",
+    "full": "0191-0200/0192/englishpod_0192pb.mp3"
+  },
+  "193": {
+    "dialogue": "0191-0200/0193/englishpod_0193dg.mp3",
+    "full": "0191-0200/0193/englishpod_0193pb.mp3"
+  },
+  "194": {
+    "dialogue": "0191-0200/0194/englishpod_0194dg.mp3",
+    "full": "0191-0200/0194/englishpod_0194pb.mp3"
+  },
+  "195": {
+    "dialogue": "0191-0200/0195/englishpod_0195dg.mp3",
+    "full": "0191-0200/0195/englishpod_0195pb.mp3"
+  },
+  "196": {
+    "dialogue": "0191-0200/0196/englishpod_0196dg.mp3",
+    "full": "0191-0200/0196/englishpod_0196pb.mp3"
+  },
+  "197": {
+    "dialogue": "0191-0200/0197/englishpod_0197dg.mp3",
+    "full": "0191-0200/0197/englishpod_0197pb.mp3"
+  },
+  "198": {
+    "dialogue": "0191-0200/0198/englishpod_0198dg.mp3",
+    "full": "0191-0200/0198/englishpod_0198pb.mp3"
+  },
+  "199": {
+    "dialogue": "0191-0200/0199/englishpod_0199dg.mp3",
+    "full": "0191-0200/0199/englishpod_0199pb.mp3"
+  },
+  "200": {
+    "dialogue": "0191-0200/0200/englishpod_0200dg.mp3",
+    "full": "0191-0200/0200/englishpod_0200pb.mp3"
+  },
+  "201": {
+    "dialogue": "0201-0210/0201/englishpod_0201dg.mp3",
+    "full": "0201-0210/0201/englishpod_0201pb.mp3"
+  },
+  "202": {
+    "dialogue": "0201-0210/0202/englishpod_0202dg.mp3",
+    "full": "0201-0210/0202/englishpod_0202pb.mp3"
+  },
+  "203": {
+    "dialogue": "0201-0210/0203/englishpod_0203dg.mp3",
+    "full": "0201-0210/0203/englishpod_0203pb.mp3"
+  },
+  "204": {
+    "dialogue": "0201-0210/0204/englishpod_0204dg.mp3",
+    "full": "0201-0210/0204/englishpod_0204pb.mp3"
+  },
+  "205": {
+    "dialogue": "0201-0210/0205/englishpod_0205dg.mp3",
+    "full": "0201-0210/0205/englishpod_0205pb.mp3"
+  },
+  "206": {
+    "dialogue": "0201-0210/0206/englishpod_0206dg.mp3",
+    "full": "0201-0210/0206/englishpod_0206pb.mp3"
+  },
+  "207": {
+    "dialogue": "0201-0210/0207/englishpod_0207dg.mp3",
+    "full": "0201-0210/0207/englishpod_0207pb.mp3"
+  },
+  "208": {
+    "dialogue": "0201-0210/0208/englishpod_0208dg.mp3",
+    "full": "0201-0210/0208/englishpod_0208pb.mp3"
+  },
+  "209": {
+    "dialogue": "0201-0210/0209/englishpod_0209dg.mp3",
+    "full": "0201-0210/0209/englishpod_0209pb.mp3"
+  },
+  "210": {
+    "dialogue": "0201-0210/0210/englishpod_0210dg.mp3",
+    "full": "0201-0210/0210/englishpod_0210pb.mp3"
+  },
+  "211": {
+    "dialogue": "0211-0220/0211/englishpod_0211dg.mp3",
+    "full": "0211-0220/0211/englishpod_0211pb.mp3"
+  },
+  "212": {
+    "dialogue": "0211-0220/0212/englishpod_0212dg.mp3",
+    "full": "0211-0220/0212/englishpod_0212pb.mp3"
+  },
+  "213": {
+    "dialogue": "0211-0220/0213/englishpod_0213dg.mp3",
+    "full": "0211-0220/0213/englishpod_0213pb.mp3"
+  },
+  "214": {
+    "dialogue": "0211-0220/0214/englishpod_0214dg.mp3",
+    "full": "0211-0220/0214/englishpod_0214pb.mp3"
+  },
+  "215": {
+    "dialogue": "0211-0220/0215/englishpod_0215dg.mp3",
+    "full": "0211-0220/0215/englishpod_0215pb.mp3"
+  },
+  "216": {
+    "dialogue": "0211-0220/0216/englishpod_0216dg.mp3",
+    "full": "0211-0220/0216/englishpod_0216pb.mp3"
+  },
+  "217": {
+    "dialogue": "0211-0220/0217/englishpod_0217dg.mp3",
+    "full": "0211-0220/0217/englishpod_0217pb.mp3"
+  },
+  "218": {
+    "dialogue": "0211-0220/0218/englishpod_0218dg.mp3",
+    "full": "0211-0220/0218/englishpod_0218pb.mp3"
+  },
+  "219": {
+    "dialogue": "0211-0220/0219/englishpod_0219dg.mp3",
+    "full": "0211-0220/0219/englishpod_0219pb.mp3"
+  },
+  "220": {
+    "dialogue": "0211-0220/0220/englishpod_0220dg.mp3",
+    "full": "0211-0220/0220/englishpod_0220pb.mp3"
+  },
+  "221": {
+    "dialogue": "0221-0230/0221/englishpod_0221dg.mp3",
+    "full": "0221-0230/0221/englishpod_0221pb.mp3"
+  },
+  "222": {
+    "dialogue": "0221-0230/0222/englishpod_0222dg.mp3",
+    "full": "0221-0230/0222/englishpod_0222pb.mp3"
+  },
+  "223": {
+    "dialogue": "0221-0230/0223/englishpod_0223dg.mp3",
+    "full": "0221-0230/0223/englishpod_0223pb.mp3"
+  },
+  "224": {
+    "dialogue": "0221-0230/0224/englishpod_0224dg.mp3",
+    "full": "0221-0230/0224/englishpod_0224pb.mp3"
+  },
+  "225": {
+    "dialogue": "0221-0230/0225/englishpod_0225dg.mp3",
+    "full": "0221-0230/0225/englishpod_0225pb.mp3"
+  },
+  "226": {
+    "dialogue": "0221-0230/0226/englishpod_0226dg.mp3",
+    "full": "0221-0230/0226/englishpod_0226pb.mp3"
+  },
+  "227": {
+    "dialogue": "0221-0230/0227/englishpod_0227dg.mp3",
+    "full": "0221-0230/0227/englishpod_0227pb.mp3"
+  },
+  "228": {
+    "dialogue": "0221-0230/0228/englishpod_0228dg.mp3",
+    "full": "0221-0230/0228/englishpod_0228pb.mp3"
+  },
+  "229": {
+    "dialogue": "0221-0230/0229/englishpod_0229dg.mp3",
+    "full": "0221-0230/0229/englishpod_0229pb.mp3"
+  },
+  "230": {
+    "dialogue": "0221-0230/0230/englishpod_0230dg.mp3",
+    "full": "0221-0230/0230/englishpod_0230pb.mp3"
+  },
+  "231": {
+    "dialogue": "0231-0240/0231/englishpod_0231dg.mp3",
+    "full": "0231-0240/0231/englishpod_0231pb.mp3"
+  },
+  "232": {
+    "dialogue": "0231-0240/0232/englishpod_0232dg.mp3",
+    "full": "0231-0240/0232/englishpod_0232pb.mp3"
+  },
+  "233": {
+    "dialogue": "0231-0240/0233/englishpod_0233dg.mp3",
+    "full": "0231-0240/0233/englishpod_0233pb.mp3"
+  },
+  "234": {
+    "dialogue": "0231-0240/0234/englishpod_0234dg.mp3",
+    "full": "0231-0240/0234/englishpod_0234pb.mp3"
+  },
+  "235": {
+    "dialogue": "0231-0240/0235/englishpod_0235dg.mp3",
+    "full": "0231-0240/0235/englishpod_0235pb.mp3"
+  },
+  "236": {
+    "dialogue": "0231-0240/0236/englishpod_0236dg.mp3",
+    "full": "0231-0240/0236/englishpod_0236pb.mp3"
+  },
+  "237": {
+    "dialogue": "0231-0240/0237/englishpod_0237dg.mp3",
+    "full": "0231-0240/0237/englishpod_0237pb.mp3"
+  },
+  "238": {
+    "dialogue": "0231-0240/0238/englishpod_0238dg.mp3",
+    "full": "0231-0240/0238/englishpod_0238pb.mp3"
+  },
+  "239": {
+    "dialogue": "0231-0240/0239/englishpod_0239dg.mp3",
+    "full": "0231-0240/0239/englishpod_0239pb.mp3"
+  },
+  "240": {
+    "dialogue": "0231-0240/0240/englishpod_0240dg.mp3",
+    "full": "0231-0240/0240/englishpod_0240pb.mp3"
+  },
+  "241": {
+    "dialogue": "0241-0250/0241/englishpod_0241dg.mp3",
+    "full": "0241-0250/0241/englishpod_0241pb.mp3"
+  },
+  "242": {
+    "dialogue": "0241-0250/0242/englishpod_0242dg.mp3",
+    "full": "0241-0250/0242/englishpod_0242pb.mp3"
+  },
+  "243": {
+    "dialogue": "0241-0250/0243/englishpod_0243dg.mp3",
+    "full": "0241-0250/0243/englishpod_0243pb.mp3"
+  },
+  "244": {
+    "dialogue": "0241-0250/0244/englishpod_0244dg.mp3",
+    "full": "0241-0250/0244/englishpod_0244pb.mp3"
+  },
+  "245": {
+    "dialogue": "0241-0250/0245/englishpod_0245dg.mp3",
+    "full": "0241-0250/0245/englishpod_0245pb.mp3"
+  },
+  "246": {
+    "dialogue": "0241-0250/0246/englishpod_0246dg.mp3",
+    "full": "0241-0250/0246/englishpod_0246pb.mp3"
+  },
+  "247": {
+    "dialogue": "0241-0250/0247/englishpod_0247dg.mp3",
+    "full": "0241-0250/0247/englishpod_0247pb.mp3"
+  },
+  "248": {
+    "dialogue": "0241-0250/0248/englishpod_0248dg.mp3",
+    "full": "0241-0250/0248/englishpod_0248pb.mp3"
+  },
+  "249": {
+    "dialogue": "0241-0250/0249/englishpod_0249dg.mp3",
+    "full": "0241-0250/0249/englishpod_0249pb.mp3"
+  },
+  "250": {
+    "dialogue": "0241-0250/0250/englishpod_0250dg.mp3",
+    "full": "0241-0250/0250/englishpod_0250pb.mp3"
+  },
+  "251": {
+    "dialogue": "0251-0260/0251/englishpod_0251dg.mp3",
+    "full": "0251-0260/0251/englishpod_0251pb.mp3"
+  },
+  "252": {
+    "dialogue": "0251-0260/0252/englishpod_0252dg.mp3",
+    "full": "0251-0260/0252/englishpod_0252pb.mp3"
+  },
+  "253": {
+    "dialogue": "0251-0260/0253/englishpod_0253dg.mp3",
+    "full": "0251-0260/0253/englishpod_0253pb.mp3"
+  },
+  "254": {
+    "dialogue": "0251-0260/0254/englishpod_0254dg.mp3",
+    "full": "0251-0260/0254/englishpod_0254pb.mp3"
+  },
+  "255": {
+    "dialogue": "0251-0260/0255/englishpod_0255dg.mp3",
+    "full": "0251-0260/0255/englishpod_0255pb.mp3"
+  },
+  "256": {
+    "dialogue": "0251-0260/0256/englishpod_0256dg.mp3",
+    "full": "0251-0260/0256/englishpod_0256pb.mp3"
+  },
+  "257": {
+    "dialogue": "0251-0260/0257/englishpod_0257dg.mp3",
+    "full": "0251-0260/0257/englishpod_0257pb.mp3"
+  },
+  "258": {
+    "dialogue": "0251-0260/0258/englishpod_0258dg.mp3",
+    "full": "0251-0260/0258/englishpod_0258pb.mp3"
+  },
+  "259": {
+    "dialogue": "0251-0260/0259/englishpod_0259dg.mp3",
+    "full": "0251-0260/0259/englishpod_0259pb.mp3"
+  },
+  "260": {
+    "dialogue": "0251-0260/0260/englishpod_0260dg.mp3",
+    "full": "0251-0260/0260/englishpod_0260pb.mp3"
+  },
+  "261": {
+    "dialogue": "0261-0270/0261/englishpod_0261dg.mp3",
+    "full": "0261-0270/0261/englishpod_0261pb.mp3"
+  },
+  "262": {
+    "dialogue": "0261-0270/0262/englishpod_0262dg.mp3",
+    "full": "0261-0270/0262/englishpod_0262pb.mp3"
+  },
+  "263": {
+    "dialogue": "0261-0270/0263/englishpod_0263dg.mp3",
+    "full": "0261-0270/0263/englishpod_0263pb.mp3"
+  },
+  "264": {
+    "dialogue": "0261-0270/0264/englishpod_0264dg.mp3",
+    "full": "0261-0270/0264/englishpod_0264pb.mp3"
+  },
+  "265": {
+    "dialogue": "0261-0270/0265/englishpod_0265dg.mp3",
+    "full": "0261-0270/0265/englishpod_0265pb.mp3"
+  },
+  "266": {
+    "dialogue": "0261-0270/0266/englishpod_0266dg.mp3",
+    "full": "0261-0270/0266/englishpod_0266pb.mp3"
+  },
+  "267": {
+    "dialogue": "0261-0270/0267/englishpod_0267dg.mp3",
+    "full": "0261-0270/0267/englishpod_0267pb.mp3"
+  },
+  "268": {
+    "dialogue": "0261-0270/0268/englishpod_0268dg.mp3",
+    "full": "0261-0270/0268/englishpod_0268pb.mp3"
+  },
+  "269": {
+    "dialogue": "0261-0270/0269/englishpod_0269dg.mp3",
+    "full": "0261-0270/0269/englishpod_0269pb.mp3"
+  },
+  "270": {
+    "dialogue": "0261-0270/0270/englishpod_0270dg.mp3",
+    "full": "0261-0270/0270/englishpod_0270pb.mp3"
+  },
+  "271": {
+    "dialogue": "0271-0280/0271/englishpod_0271dg.mp3",
+    "full": "0271-0280/0271/englishpod_0271pb.mp3"
+  },
+  "272": {
+    "dialogue": "0271-0280/0272/englishpod_0272dg.mp3",
+    "full": "0271-0280/0272/englishpod_0272pb.mp3"
+  },
+  "273": {
+    "dialogue": "0271-0280/0273/englishpod_0273dg.mp3",
+    "full": "0271-0280/0273/englishpod_0273pb.mp3"
+  },
+  "274": {
+    "dialogue": "0271-0280/0274/englishpod_0274dg.mp3",
+    "full": "0271-0280/0274/englishpod_0274pb.mp3"
+  },
+  "275": {
+    "dialogue": "0271-0280/0275/englishpod_0275dg.mp3",
+    "full": "0271-0280/0275/englishpod_0275pb.mp3"
+  },
+  "276": {
+    "dialogue": "0271-0280/0276/englishpod_0276dg.mp3",
+    "full": "0271-0280/0276/englishpod_0276pb.mp3"
+  },
+  "277": {
+    "dialogue": "0271-0280/0277/englishpod_0277dg.mp3",
+    "full": "0271-0280/0277/englishpod_0277pb.mp3"
+  },
+  "278": {
+    "dialogue": "0271-0280/0278/englishpod_0278dg.mp3",
+    "full": "0271-0280/0278/englishpod_0278pb.mp3"
+  },
+  "279": {
+    "dialogue": "0271-0280/0279/englishpod_0279dg.mp3",
+    "full": "0271-0280/0279/englishpod_0279pb.mp3"
+  },
+  "280": {
+    "dialogue": "0271-0280/0280/englishpod_0280dg.mp3",
+    "full": "0271-0280/0280/englishpod_0280pb.mp3"
+  },
+  "281": {
+    "dialogue": "0281-0290/0281/englishpod_0281dg.mp3",
+    "full": "0281-0290/0281/englishpod_0281pb.mp3"
+  },
+  "282": {
+    "dialogue": "0281-0290/0282/englishpod_0282dg.mp3",
+    "full": "0281-0290/0282/englishpod_0282pb.mp3"
+  },
+  "283": {
+    "dialogue": "0281-0290/0283/englishpod_0283dg.mp3",
+    "full": "0281-0290/0283/englishpod_0283pb.mp3"
+  },
+  "284": {
+    "dialogue": "0281-0290/0284/englishpod_0284dg.mp3",
+    "full": "0281-0290/0284/englishpod_0284pb.mp3"
+  },
+  "285": {
+    "dialogue": "0281-0290/0285/englishpod_0285dg.mp3",
+    "full": "0281-0290/0285/englishpod_0285pb.mp3"
+  },
+  "286": {
+    "dialogue": "0281-0290/0286/englishpod_0286dg.mp3",
+    "full": "0281-0290/0286/englishpod_0286pb.mp3"
+  },
+  "287": {
+    "dialogue": "0281-0290/0287/englishpod_0287dg.mp3",
+    "full": "0281-0290/0287/englishpod_0287pb.mp3"
+  },
+  "288": {
+    "dialogue": "0281-0290/0288/englishpod_0288dg.mp3",
+    "full": "0281-0290/0288/englishpod_0288pb.mp3"
+  },
+  "289": {
+    "dialogue": "0281-0290/0289/englishpod_0289dg.mp3",
+    "full": "0281-0290/0289/englishpod_0289pb.mp3"
+  },
+  "290": {
+    "dialogue": "0281-0290/0290/englishpod_0290dg.mp3",
+    "full": "0281-0290/0290/englishpod_0290pb.mp3"
+  },
+  "291": {
+    "dialogue": "0291-0300/0291/englishpod_0291dg.mp3",
+    "full": "0291-0300/0291/englishpod_0291pb.mp3"
+  },
+  "292": {
+    "dialogue": "0291-0300/0292/englishpod_0292dg.mp3",
+    "full": "0291-0300/0292/englishpod_0292pb.mp3"
+  },
+  "293": {
+    "dialogue": "0291-0300/0293/englishpod_0293dg.mp3",
+    "full": "0291-0300/0293/englishpod_0293pb.mp3"
+  },
+  "294": {
+    "dialogue": "0291-0300/0294/englishpod_0294dg.mp3",
+    "full": "0291-0300/0294/englishpod_0294pb.mp3"
+  },
+  "295": {
+    "dialogue": "0291-0300/0295/englishpod_0295dg.mp3",
+    "full": "0291-0300/0295/englishpod_0295pb.mp3"
+  },
+  "296": {
+    "dialogue": "0291-0300/0296/englishpod_0296dg.mp3",
+    "full": "0291-0300/0296/englishpod_0296pb.mp3"
+  },
+  "297": {
+    "dialogue": "0291-0300/0297/englishpod_0297dg.mp3",
+    "full": "0291-0300/0297/englishpod_0297pb.mp3"
+  },
+  "298": {
+    "dialogue": "0291-0300/0298/englishpod_0298dg.mp3",
+    "full": "0291-0300/0298/englishpod_0298pb.mp3"
+  },
+  "299": {
+    "dialogue": "0291-0300/0299/englishpod_0299dg.mp3",
+    "full": "0291-0300/0299/englishpod_0299pb.mp3"
+  },
+  "300": {
+    "dialogue": "0291-0300/0300/englishpod_0300dg.mp3",
+    "full": "0291-0300/0300/englishpod_0300pb.mp3"
+  },
+  "301": {
+    "dialogue": "0301-0310/0301/englishpod_0301dg.mp3",
+    "full": "0301-0310/0301/englishpod_0301pb.mp3"
+  },
+  "302": {
+    "dialogue": "0301-0310/0302/englishpod_0302dg.mp3",
+    "full": "0301-0310/0302/englishpod_0302pb.mp3"
+  },
+  "303": {
+    "dialogue": "0301-0310/0303/englishpod_0303dg.mp3",
+    "full": "0301-0310/0303/englishpod_0303pb.mp3"
+  },
+  "304": {
+    "dialogue": "0301-0310/0304/englishpod_0304dg.mp3",
+    "full": "0301-0310/0304/englishpod_0304pb.mp3"
+  },
+  "305": {
+    "dialogue": "0301-0310/0305/englishpod_0305dg.mp3",
+    "full": "0301-0310/0305/englishpod_0305pb.mp3"
+  },
+  "306": {
+    "dialogue": "0301-0310/0306/englishpod_0306dg.mp3",
+    "full": "0301-0310/0306/englishpod_0306pb.mp3"
+  },
+  "307": {
+    "dialogue": "0301-0310/0307/englishpod_0307dg.mp3",
+    "full": "0301-0310/0307/englishpod_0307pb.mp3"
+  },
+  "308": {
+    "dialogue": "0301-0310/0308/englishpod_0308dg.mp3",
+    "full": "0301-0310/0308/englishpod_0308pb.mp3"
+  },
+  "309": {
+    "dialogue": "0301-0310/0309/englishpod_0309dg.mp3",
+    "full": "0301-0310/0309/englishpod_0309pb.mp3"
+  },
+  "310": {
+    "dialogue": "0301-0310/0310/englishpod_0310dg.mp3",
+    "full": "0301-0310/0310/englishpod_0310pb.mp3"
+  },
+  "311": {
+    "dialogue": "0311-0320/0311/englishpod_0311dg.mp3",
+    "full": "0311-0320/0311/englishpod_0311pb.mp3"
+  },
+  "312": {
+    "dialogue": "0311-0320/0312/englishpod_0312dg.mp3",
+    "full": "0311-0320/0312/englishpod_0312pb.mp3"
+  },
+  "313": {
+    "dialogue": "0311-0320/0313/englishpod_0313dg.mp3",
+    "full": "0311-0320/0313/englishpod_0313pb.mp3"
+  },
+  "314": {
+    "dialogue": "0311-0320/0314/englishpod_0314dg.mp3",
+    "full": "0311-0320/0314/englishpod_0314pb.mp3"
+  },
+  "315": {
+    "dialogue": "0311-0320/0315/englishpod_0315dg.mp3",
+    "full": "0311-0320/0315/englishpod_0315pb.mp3"
+  },
+  "316": {
+    "dialogue": "0311-0320/0316/englishpod_0316dg.mp3",
+    "full": "0311-0320/0316/englishpod_0316pb.mp3"
+  },
+  "317": {
+    "dialogue": "0311-0320/0317/englishpod_0317dg.mp3",
+    "full": "0311-0320/0317/englishpod_0317pb.mp3"
+  },
+  "318": {
+    "dialogue": "0311-0320/0318/englishpod_0318dg.mp3",
+    "full": "0311-0320/0318/englishpod_0318pb.mp3"
+  },
+  "319": {
+    "dialogue": "0311-0320/0319/englishpod_0319dg.mp3",
+    "full": "0311-0320/0319/englishpod_0319pb.mp3"
+  },
+  "320": {
+    "dialogue": "0311-0320/0320/englishpod_0320dg.mp3",
+    "full": "0311-0320/0320/englishpod_0320pb.mp3"
+  },
+  "321": {
+    "dialogue": "0321-0330/0321/englishpod_0321dg.mp3",
+    "full": "0321-0330/0321/englishpod_0321pb.mp3"
+  },
+  "322": {
+    "dialogue": "0321-0330/0322/englishpod_0322dg.mp3",
+    "full": "0321-0330/0322/englishpod_0322pb.mp3"
+  },
+  "323": {
+    "dialogue": "0321-0330/0323/englishpod_0323dg.mp3",
+    "full": "0321-0330/0323/englishpod_0323pb.mp3"
+  },
+  "324": {
+    "dialogue": "0321-0330/0324/englishpod_0324dg.mp3",
+    "full": "0321-0330/0324/englishpod_0324pb.mp3"
+  },
+  "325": {
+    "dialogue": "0321-0330/0325/englishpod_0325dg.mp3",
+    "full": "0321-0330/0325/englishpod_0325pb.mp3"
+  },
+  "326": {
+    "dialogue": "0321-0330/0326/englishpod_0326dg.mp3",
+    "full": "0321-0330/0326/englishpod_0326pb.mp3"
+  },
+  "327": {
+    "dialogue": "0321-0330/0327/englishpod_0327dg.mp3",
+    "full": "0321-0330/0327/englishpod_0327pb.mp3"
+  },
+  "328": {
+    "dialogue": "0321-0330/0328/englishpod_0328dg.mp3",
+    "full": "0321-0330/0328/englishpod_0328pb.mp3"
+  },
+  "329": {
+    "dialogue": "0321-0330/0329/englishpod_0329dg.mp3",
+    "full": "0321-0330/0329/englishpod_0329pb.mp3"
+  },
+  "330": {
+    "dialogue": "0321-0330/0330/englishpod_0330dg.mp3",
+    "full": "0321-0330/0330/englishpod_0330pb.mp3"
+  },
+  "331": {
+    "dialogue": "0331-0340/0331/englishpod_0331dg.mp3",
+    "full": "0331-0340/0331/englishpod_0331pb.mp3"
+  },
+  "332": {
+    "dialogue": "0331-0340/0332/englishpod_0332dg.mp3",
+    "full": "0331-0340/0332/englishpod_0332pb.mp3"
+  },
+  "333": {
+    "dialogue": "0331-0340/0333/englishpod_0333dg.mp3",
+    "full": "0331-0340/0333/englishpod_0333pb.mp3"
+  },
+  "334": {
+    "dialogue": "0331-0340/0334/englishpod_0334dg.mp3",
+    "full": "0331-0340/0334/englishpod_0334pb.mp3"
+  },
+  "335": {
+    "dialogue": "0331-0340/0335/englishpod_0335dg.mp3",
+    "full": "0331-0340/0335/englishpod_0335pb.mp3"
+  },
+  "336": {
+    "dialogue": "0331-0340/0336/englishpod_0336dg.mp3",
+    "full": "0331-0340/0336/englishpod_0336pb.mp3"
+  },
+  "337": {
+    "dialogue": "0331-0340/0337/englishpod_0337dg.mp3",
+    "full": "0331-0340/0337/englishpod_0337pb.mp3"
+  },
+  "338": {
+    "dialogue": "0331-0340/0338/englishpod_0338dg.mp3",
+    "full": "0331-0340/0338/englishpod_0338pb.mp3"
+  },
+  "339": {
+    "dialogue": "0331-0340/0339/englishpod_0339dg.mp3",
+    "full": "0331-0340/0339/englishpod_0339pb.mp3"
+  },
+  "340": {
+    "dialogue": "0331-0340/0340/englishpod_0340dg.mp3",
+    "full": "0331-0340/0340/englishpod_0340pb.mp3"
+  },
+  "341": {
+    "dialogue": "0341-0350/0341/englishpod_0341dg.mp3",
+    "full": "0341-0350/0341/englishpod_0341pb.mp3"
+  },
+  "342": {
+    "dialogue": "0341-0350/0342/englishpod_0342dg.mp3",
+    "full": "0341-0350/0342/englishpod_0342pb.mp3"
+  },
+  "343": {
+    "dialogue": "0341-0350/0343/englishpod_0343dg.mp3",
+    "full": "0341-0350/0343/englishpod_0343pb.mp3"
+  },
+  "344": {
+    "dialogue": "0341-0350/0344/englishpod_0344dg.mp3",
+    "full": "0341-0350/0344/englishpod_0344pb.mp3"
+  },
+  "345": {
+    "dialogue": "0341-0350/0345/englishpod_0345dg.mp3",
+    "full": "0341-0350/0345/englishpod_0345pb.mp3"
+  },
+  "346": {
+    "dialogue": "0341-0350/0346/englishpod_0346dg.mp3",
+    "full": "0341-0350/0346/englishpod_0346pb.mp3"
+  },
+  "347": {
+    "dialogue": "0341-0350/0347/englishpod_0347dg.mp3",
+    "full": "0341-0350/0347/englishpod_0347pb.mp3"
+  },
+  "348": {
+    "dialogue": "0341-0350/0348/englishpod_0348dg.mp3",
+    "full": "0341-0350/0348/englishpod_0348pb.mp3"
+  },
+  "349": {
+    "dialogue": "0341-0350/0349/englishpod_0349dg.mp3",
+    "full": "0341-0350/0349/englishpod_0349pb.mp3"
+  },
+  "350": {
+    "dialogue": "0341-0350/0350/englishpod_0350dg.mp3",
+    "full": "0341-0350/0350/englishpod_0350pb.mp3"
+  },
+  "351": {
+    "dialogue": "0351-0360/0351/englishpod_0351dg.mp3",
+    "full": "0351-0360/0351/englishpod_0351pb.mp3"
+  },
+  "352": {
+    "dialogue": "0351-0360/0352/englishpod_0352dg.mp3",
+    "full": "0351-0360/0352/englishpod_0352pb.mp3"
+  },
+  "353": {
+    "dialogue": "0351-0360/0353/englishpod_0353dg.mp3",
+    "full": "0351-0360/0353/englishpod_0353pb.mp3"
+  },
+  "354": {
+    "dialogue": "0351-0360/0354/englishpod_0354dg.mp3",
+    "full": "0351-0360/0354/englishpod_0354pb.mp3"
+  },
+  "355": {
+    "dialogue": "0351-0360/0355/englishpod_0355dg.mp3",
+    "full": "0351-0360/0355/englishpod_0355pb.mp3"
+  },
+  "356": {
+    "dialogue": "0351-0360/0356/englishpod_0356dg.mp3",
+    "full": "0351-0360/0356/englishpod_0356pb.mp3"
+  },
+  "357": {
+    "dialogue": "0351-0360/0357/englishpod_0357dg.mp3",
+    "full": "0351-0360/0357/englishpod_0357pb.mp3"
+  },
+  "358": {
+    "dialogue": "0351-0360/0358/englishpod_0358dg.mp3",
+    "full": "0351-0360/0358/englishpod_0358pb.mp3"
+  },
+  "359": {
+    "dialogue": "0351-0360/0359/englishpod_0359dg.mp3",
+    "full": "0351-0360/0359/englishpod_0359pb.mp3"
+  },
+  "360": {
+    "dialogue": "0351-0360/0360/englishpod_0360dg.mp3",
+    "full": "0351-0360/0360/englishpod_0360pb.mp3"
+  },
+  "361": {
+    "dialogue": "0361-0365/0361/englishpod_0361dg.mp3",
+    "full": "0361-0365/0361/englishpod_0361pb.mp3"
+  },
+  "362": {
+    "dialogue": "0361-0365/0362/englishpod_0362dg.mp3",
+    "full": "0361-0365/0362/englishpod_0362pb.mp3"
+  },
+  "363": {
+    "dialogue": "0361-0365/0363/englishpod_0363dg.mp3",
+    "full": "0361-0365/0363/englishpod_0363pb.mp3"
+  },
+  "364": {
+    "dialogue": "0361-0365/0364/englishpod_0364dg.mp3",
+    "full": "0361-0365/0364/englishpod_0364pb.mp3"
+  },
+  "365": {
+    "dialogue": "0361-0365/0365/englishpod_0365dg.mp3",
+    "full": "0361-0365/0365/englishpod_0365pb.mp3"
+  }
+}

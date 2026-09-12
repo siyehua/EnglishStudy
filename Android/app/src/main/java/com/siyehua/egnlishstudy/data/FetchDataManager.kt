@@ -185,7 +185,8 @@ class FetchDataManager(context: Context? = null) {
                 source = source.orEmpty(),
                 contentLevel = contentLevel,
                 contentId = id,
-                audioUrl = audioUrl
+                audioUrl = audioUrl,
+                dialogueAudioUrl = dialogueAudioUrl
             )
         }
     }

@@ -71,6 +71,7 @@ import com.siyehua.egnlishstudy.model.ContentType
 import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.model.DialogueLine
 import com.siyehua.egnlishstudy.model.News
+import com.siyehua.egnlishstudy.ui.AudioPlayMode
 import com.siyehua.egnlishstudy.ui.AudioUiState
 import com.siyehua.egnlishstudy.ui.ContentAudioViewModel
 import com.siyehua.egnlishstudy.ui.theme.EgnlishStudyTheme
@@ -149,6 +150,8 @@ fun ContentDetailScreen(
 
             AudioPracticeBar(
                 audioState = audioState,
+                playMode = audioViewModel.playMode,
+                onPlayModeChange = audioViewModel::changePlayMode,
                 collapseFraction = collapseFraction,
                 onTogglePlayback = { audioViewModel.togglePlayback(content) },
                 onStop = { audioViewModel.stop() }
@@ -319,6 +322,8 @@ private fun LessonDetailHeader(
 @Composable
 private fun AudioPracticeBar(
     audioState: AudioUiState,
+    playMode: AudioPlayMode,
+    onPlayModeChange: (AudioPlayMode) -> Unit,
     collapseFraction: Float,
     onTogglePlayback: () -> Unit,
     onStop: () -> Unit
@@ -376,6 +381,20 @@ private fun AudioPracticeBar(
                         maxLines = if (isExpanded) 2 else 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    if (isExpanded) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            AudioModeChip(
+                                label = "完整",
+                                selected = playMode == AudioPlayMode.FULL,
+                                onClick = { onPlayModeChange(AudioPlayMode.FULL) }
+                            )
+                            AudioModeChip(
+                                label = "对话",
+                                selected = playMode == AudioPlayMode.DIALOGUE,
+                                onClick = { onPlayModeChange(AudioPlayMode.DIALOGUE) }
+                            )
+                        }
+                    }
                 }
 
                 IconButton(
@@ -446,6 +465,26 @@ private fun AudioPracticeBar(
                 AudioProgress(currentMillis = progress.first, totalMillis = progress.second)
             }
         }
+    }
+}
+
+@Composable
+private fun AudioModeChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.small,
+        color = if (selected) StudyGreen else MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        )
     }
 }
 
