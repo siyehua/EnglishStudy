@@ -46,6 +46,34 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     private fun play(content: Content) {
         stop(resetState = false)
         highlightedSentenceIndex = null
+        if (!content.audioUrl.isNullOrBlank()) {
+            playRealAudio(content)
+        } else {
+            playTtsAudio(content)
+        }
+    }
+
+    private fun playRealAudio(content: Content) {
+        prepareJob = viewModelScope.launch {
+            _uiState.value = AudioUiState.Preparing
+            when (val result = ttsAudioManager.ensureRealAudioForContent(content)) {
+                is WordAudioResult.Success -> {
+                    playlist = listOf(result.uri)
+                    playlistDurations = listOf(readDurationMillis(result.uri))
+                    totalDurationMillis = playlistDurations.sumOf { it.toLong() }
+                    playlistIndex = 0
+                    playCurrent()
+                }
+
+                is WordAudioResult.Failure -> {
+                    // Real audio unavailable, fall back to synthesized TTS.
+                    playTtsAudio(content)
+                }
+            }
+        }
+    }
+
+    private fun playTtsAudio(content: Content) {
         prepareJob = viewModelScope.launch {
             _uiState.value = AudioUiState.Preparing
             val audioUris = when (val result = ttsAudioManager.ensureAudioForContent(content)) {

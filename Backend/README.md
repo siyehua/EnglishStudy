@@ -105,7 +105,9 @@ repository):
 - Index: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data_index.js`
 - Lessons: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data/lesson_{N}.json` (`N` = 1..365)
 
-Each lesson is mapped to a `DIALOGUE` content item. The level is inferred from
+Each lesson is mapped to a `DIALOGUE` content item. Each dialogue line carries
+the English text plus its Chinese translation (`trans`), and the lesson carries
+the original MP3 URL (`audioUrl`) when available. The level is inferred from
 the audio filename first and the title as a fallback:
 
 | Source level | Mapped level |

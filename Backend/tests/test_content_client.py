@@ -3,6 +3,7 @@ import unittest
 from app.content.client import (
     ENGLISH_POD_SOURCE_NAME,
     build_content_filters,
+    englishpod_audio_url,
     englishpod_level,
     lesson_to_content,
     normalize_filter_values,
@@ -48,9 +49,11 @@ class ContentClientTest(unittest.TestCase):
         self.assertEqual(item.source, ENGLISH_POD_SOURCE_NAME)
         self.assertEqual(item.id, stable_id("englishpod-1"))
         self.assertEqual(item.body, "Good evening.\nMay I take your order?")
+        self.assertEqual(item.audioUrl, "https://raw.githubusercontent.com/bitter999/EnglishPod/main/assets/englishpod_B0001pb.mp3")
         self.assertEqual(len(item.lines), 2)
         self.assertEqual(item.lines[0].speaker, "Narrator")
         self.assertEqual(item.lines[0].text, "Good evening.")
+        self.assertEqual(item.lines[0].trans, "晚上好。")
 
     def test_lesson_to_content_skips_empty_text(self) -> None:
         lesson = {
@@ -88,6 +91,14 @@ class ContentClientTest(unittest.TestCase):
 
         self.assertIsNone(lesson_to_content(1, lesson, requested_levels={"B1"}))
         self.assertIsNotNone(lesson_to_content(1, lesson, requested_levels={"A2"}))
+
+    def test_englishpod_audio_url(self) -> None:
+        self.assertEqual(
+            englishpod_audio_url("./assets/englishpod_B0001pb.mp3"),
+            "https://raw.githubusercontent.com/bitter999/EnglishPod/main/assets/englishpod_B0001pb.mp3",
+        )
+        self.assertIsNone(englishpod_audio_url(""))
+        self.assertIsNone(englishpod_audio_url("   "))
 
     def test_normalize_filter_values(self) -> None:
         self.assertEqual(normalize_filter_values(["dialogue", " NEWS ", "", "news"]), {"DIALOGUE", "NEWS"})

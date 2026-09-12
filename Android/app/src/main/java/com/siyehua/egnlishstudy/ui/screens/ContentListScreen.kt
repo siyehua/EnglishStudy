@@ -1293,7 +1293,7 @@ fun ContentListScreenPreview() {
                 selectedLevels = selectedLevel,
                 levelCounts = ContentLevel.values().associateWith { 8 },
                 typeCounts = ContentType.values().associateWith { 5 },
-                sourceCounts = mapOf("BBC 6 Minute English" to 8, "TechCrunch AI" to 6)
+                sourceCounts = mapOf("EnglishPod" to 20)
             ),
             onContentClick = {},
             onTypeToggle = {},

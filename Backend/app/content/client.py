@@ -27,6 +27,7 @@ ENGLISH_POD_INDEX_URL = (
 ENGLISH_POD_LESSON_URL_TEMPLATE = (
     "https://raw.githubusercontent.com/bitter999/EnglishPod/main/data/lesson_{number}.json"
 )
+ENGLISH_POD_RAW_BASE = "https://raw.githubusercontent.com/bitter999/EnglishPod/main/"
 
 USER_AGENT = "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
 REQUEST_TIMEOUT_SECONDS = 15
@@ -161,16 +162,22 @@ def lesson_to_content(
         return None
 
     content = lesson.get("content") or []
-    texts = [
-        str(item.get("text") or "").strip()
-        for item in content
-        if str(item.get("text") or "").strip()
-    ]
-    body = "\n".join(texts)
+    lines: list[DialogueLineResponse] = []
+    for item in content:
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        lines.append(
+            DialogueLineResponse(
+                speaker="Narrator",
+                text=text,
+                trans=str(item.get("trans") or "").strip(),
+            )
+        )
+    body = "\n".join(line.text for line in lines)
     if not body:
         return None
 
-    lines = [DialogueLineResponse(speaker="Narrator", text=text) for text in texts]
     return ContentItemResponse(
         id=stable_id(f"englishpod-{number}"),
         title=title,
@@ -181,6 +188,7 @@ def lesson_to_content(
         source=ENGLISH_POD_SOURCE_NAME,
         date="",
         lines=lines,
+        audioUrl=englishpod_audio_url(str(lesson.get("audio") or "")),
     )
 
 
@@ -199,6 +207,19 @@ def englishpod_level(title: str, audio: str) -> str:
     if "advanced" in lowered:
         return "C1"
     return "B1"
+
+
+def englishpod_audio_url(audio: str) -> str | None:
+    path = audio.strip()
+    if not path:
+        return None
+    if path.startswith("./"):
+        path = path[2:]
+    elif path.startswith("/"):
+        path = path.lstrip("/")
+    if not path:
+        return None
+    return ENGLISH_POD_RAW_BASE + path
 
 
 def download_text(url: str, timeout: float | None = None) -> str:

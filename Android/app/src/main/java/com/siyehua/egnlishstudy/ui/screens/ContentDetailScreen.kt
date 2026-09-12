@@ -756,6 +756,13 @@ private fun DialogueLineCard(
                         onSentenceDoubleClick(SentencePlaybackRequest(sentence, sentenceIndex))
                     }
                 )
+                if (line.trans.isNotBlank()) {
+                    Text(
+                        text = line.trans,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StudyInk.copy(alpha = 0.62f)
+                    )
+                }
             }
         }
     }

@@ -132,6 +132,7 @@ class ContentFetchRequest(BaseModel):
 class DialogueLineResponse(BaseModel):
     speaker: str
     text: str
+    trans: str = ""
 
 
 class ContentItemResponse(BaseModel):
@@ -144,6 +145,7 @@ class ContentItemResponse(BaseModel):
     source: str | None = None
     date: str = ""
     lines: list[DialogueLineResponse] = []
+    audioUrl: str | None = None
 
 
 class ContentFilterOptionResponse(BaseModel):

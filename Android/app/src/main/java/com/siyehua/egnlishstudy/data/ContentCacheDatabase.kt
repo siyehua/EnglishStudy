@@ -41,6 +41,7 @@ class ContentCacheDatabase(context: Context) :
                 $COLUMN_AUTHOR TEXT,
                 $COLUMN_SOURCE TEXT,
                 $COLUMN_DATE TEXT,
+                $COLUMN_AUDIO_URL TEXT,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
                 $COLUMN_CACHE_ORDER INTEGER NOT NULL
             )
@@ -141,6 +142,12 @@ class ContentCacheDatabase(context: Context) :
         }
         if (oldVersion < 21) {
             db.execSQL("DELETE FROM $TABLE_TTS_AUDIO")
+        }
+        if (oldVersion < 22) {
+            db.execSQL(
+                "ALTER TABLE $TABLE_CONTENT ADD COLUMN $COLUMN_AUDIO_URL TEXT"
+            )
+            db.execSQL("DELETE FROM $TABLE_CONTENT")
         }
     }
 
@@ -830,10 +837,11 @@ class ContentCacheDatabase(context: Context) :
 
                 is Dialogue -> {
                     put(COLUMN_BODY, lines.joinToString(LINE_SEPARATOR) { line ->
-                        "${line.speaker}$SPEAKER_SEPARATOR${line.text}"
+                        "${line.speaker}$SPEAKER_SEPARATOR${line.text}$SPEAKER_SEPARATOR${line.trans}"
                     })
                     put(COLUMN_SOURCE, sourceName.ifBlank { source })
                     put(COLUMN_DATE, date)
+                    put(COLUMN_AUDIO_URL, audioUrl)
                 }
             }
         }
@@ -924,16 +932,18 @@ class ContentCacheDatabase(context: Context) :
                 lines = body.split(LINE_SEPARATOR)
                     .filter { it.isNotBlank() }
                     .map { line ->
-                        val parts = line.split(SPEAKER_SEPARATOR, limit = 2)
+                        val parts = line.split(SPEAKER_SEPARATOR, limit = 3)
                         DialogueLine(
-                            speaker = parts.firstOrNull().orEmpty(),
-                            text = parts.getOrElse(1) { "" }
+                            speaker = parts.getOrElse(0) { "" },
+                            text = parts.getOrElse(1) { "" },
+                            trans = parts.getOrElse(2) { "" }
                         )
                     },
                 date = date,
                 source = source.orEmpty(),
                 contentLevel = level,
-                contentId = id
+                contentId = id,
+                audioUrl = getNullableString(COLUMN_AUDIO_URL)
             )
         }
     }
@@ -969,7 +979,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 21
+        private const val DATABASE_VERSION = 22
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"
@@ -980,6 +990,7 @@ class ContentCacheDatabase(context: Context) :
         private const val COLUMN_AUTHOR = "author"
         private const val COLUMN_SOURCE = "source"
         private const val COLUMN_DATE = "date"
+        private const val COLUMN_AUDIO_URL = "audio_url"
         private const val COLUMN_UPDATED_AT = "updated_at"
         private const val COLUMN_CACHE_ORDER = "cache_order"
 

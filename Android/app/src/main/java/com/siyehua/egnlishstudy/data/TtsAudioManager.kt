@@ -197,6 +197,37 @@ class TtsAudioManager(context: Context) {
             onFailure = { WordAudioResult.Failure(it.message ?: "Dictionary audio download failed.") }
         )
 
+    suspend fun ensureRealAudioForContent(content: Content): WordAudioResult = withContext(Dispatchers.IO) {
+        val url = content.audioUrl?.takeIf { it.isNotBlank() }
+            ?: return@withContext WordAudioResult.Failure("No real audio is available for this lesson.")
+
+        val hash = stableHash(url)
+        val key = "content_" + stableHash(url)
+        val cached = database.loadWordAudio(key)
+        if (cached != null && cached.wordHash == hash && File(cached.filePath).exists()) {
+            return@withContext WordAudioResult.Success(Uri.fromFile(File(cached.filePath)))
+        }
+
+        runCatching {
+            val bytes = downloadAudio(url)
+            val extension = url.substringBefore('?')
+                .substringAfterLast('.', "mp3")
+                .takeIf { it.length in 2..5 }
+                ?: "mp3"
+            val file = File(wordAudioDir, "${key}_$hash.$extension")
+            file.writeBytes(bytes)
+            WordAudioRecord(
+                wordKey = key,
+                wordText = url,
+                wordHash = hash,
+                filePath = file.absolutePath
+            ).also(database::upsertWordAudio)
+        }.fold(
+            onSuccess = { WordAudioResult.Success(Uri.fromFile(File(it.filePath))) },
+            onFailure = { WordAudioResult.Failure(it.message ?: "Real audio download failed.") }
+        )
+    }
+
     fun playUri(uri: Uri, onCompletion: () -> Unit = {}, onError: (String) -> Unit = {}): MediaPlayer? =
         runCatching {
             MediaPlayer.create(appContext, uri)?.apply {

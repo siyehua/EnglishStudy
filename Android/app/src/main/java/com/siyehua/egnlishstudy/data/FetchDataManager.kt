@@ -20,16 +20,6 @@ class FetchDataManager(context: Context? = null) {
     private val cacheDatabase = context?.applicationContext?.let(::ContentCacheDatabase)
     private val backendClient = WordFormApiClient()
 
-    suspend fun fetchVOAContent(type: ContentType = ContentType.NEWS): List<Content> =
-        withContext(Dispatchers.IO) {
-            fetchRemoteContent(
-                FetchRequest(
-                    fetchMore = false,
-                    types = setOf(type)
-                )
-            ).content
-        }
-
     suspend fun loadCachedContent(): List<Content> = withContext(Dispatchers.IO) {
         loadCachedContentInternal()
     }
@@ -184,7 +174,8 @@ class FetchDataManager(context: Context? = null) {
                 lines = lines.map { line ->
                     DialogueLine(
                         speaker = line.speaker,
-                        text = line.text
+                        text = line.text,
+                        trans = line.trans
                     )
                 }.ifEmpty {
                     listOf(DialogueLine(speaker = "Narrator", text = body))
@@ -192,7 +183,8 @@ class FetchDataManager(context: Context? = null) {
                 date = date,
                 source = source.orEmpty(),
                 contentLevel = contentLevel,
-                contentId = id
+                contentId = id,
+                audioUrl = audioUrl
             )
         }
     }
