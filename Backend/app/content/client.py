@@ -22,12 +22,12 @@ class ContentFetchError(Exception):
 
 ENGLISH_POD_SOURCE_NAME = "EnglishPod"
 ENGLISH_POD_INDEX_URL = (
-    "https://raw.githubusercontent.com/bitter999/EnglishPod/main/data_index.js"
+    "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/data_index.js"
 )
 ENGLISH_POD_LESSON_URL_TEMPLATE = (
-    "https://raw.githubusercontent.com/bitter999/EnglishPod/main/data/lesson_{number}.json"
+    "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/data/lesson_{number}.json"
 )
-ENGLISH_POD_RAW_BASE = "https://raw.githubusercontent.com/bitter999/EnglishPod/main/"
+ENGLISH_POD_RAW_BASE = "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/"
 
 USER_AGENT = "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
 REQUEST_TIMEOUT_SECONDS = 15

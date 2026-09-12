@@ -49,7 +49,7 @@ class ContentClientTest(unittest.TestCase):
         self.assertEqual(item.source, ENGLISH_POD_SOURCE_NAME)
         self.assertEqual(item.id, stable_id("englishpod-1"))
         self.assertEqual(item.body, "Good evening.\nMay I take your order?")
-        self.assertEqual(item.audioUrl, "https://raw.githubusercontent.com/bitter999/EnglishPod/main/assets/englishpod_B0001pb.mp3")
+        self.assertEqual(item.audioUrl, "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/assets/englishpod_B0001pb.mp3")
         self.assertEqual(len(item.lines), 2)
         self.assertEqual(item.lines[0].speaker, "Narrator")
         self.assertEqual(item.lines[0].text, "Good evening.")
@@ -95,7 +95,7 @@ class ContentClientTest(unittest.TestCase):
     def test_englishpod_audio_url(self) -> None:
         self.assertEqual(
             englishpod_audio_url("./assets/englishpod_B0001pb.mp3"),
-            "https://raw.githubusercontent.com/bitter999/EnglishPod/main/assets/englishpod_B0001pb.mp3",
+            "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/assets/englishpod_B0001pb.mp3",
         )
         self.assertIsNone(englishpod_audio_url(""))
         self.assertIsNone(englishpod_audio_url("   "))
