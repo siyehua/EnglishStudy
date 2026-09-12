@@ -127,7 +127,7 @@ class WordFormApiClient(
         }
 
     companion object {
-        const val DEFAULT_BASE_URL = "https://river-software-visible-son.trycloudflare.com"
+        const val DEFAULT_BASE_URL = "https://cafe-font-happiness-salad.trycloudflare.com"
         private const val REQUEST_TIMEOUT_MS = 60_000L
         private const val CONTENT_REQUEST_TIMEOUT_MS = 120_000L
     }

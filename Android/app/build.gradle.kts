@@ -44,6 +44,8 @@ android {
 
     buildTypes {
         release {
+            // 用 debug 签名，方便直接安装测试
+            signingConfig = signingConfigs.getByName("debug")
             // Configuration for release builds
             optimization {
                 // Disable optimization for now (e.g., R8/ProGuard)
