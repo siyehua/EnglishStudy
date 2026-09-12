@@ -175,7 +175,8 @@ class FetchDataManager(context: Context? = null) {
                     DialogueLine(
                         speaker = line.speaker,
                         text = line.text,
-                        trans = line.trans
+                        trans = line.trans,
+                        section = line.section
                     )
                 }.ifEmpty {
                     listOf(DialogueLine(speaker = "Narrator", text = body))

@@ -133,6 +133,7 @@ class DialogueLineResponse(BaseModel):
     speaker: str
     text: str
     trans: str = ""
+    section: str = ""
 
 
 class ContentItemResponse(BaseModel):

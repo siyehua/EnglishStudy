@@ -190,5 +190,6 @@ data class RemoteContentItem(
 data class RemoteDialogueLine(
     val speaker: String,
     val text: String,
-    val trans: String = ""
+    val trans: String = "",
+    val section: String = ""
 )

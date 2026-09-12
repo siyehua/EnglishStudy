@@ -163,8 +163,9 @@ def lesson_to_content(
         return None
 
     content = lesson.get("content") or []
+    sections = annotate_sections(content)
     lines: list[DialogueLineResponse] = []
-    for item in content:
+    for index, item in enumerate(content):
         text = str(item.get("text") or "").strip()
         if not text:
             continue
@@ -173,6 +174,7 @@ def lesson_to_content(
                 speaker="Narrator",
                 text=text,
                 trans=str(item.get("trans") or "").strip(),
+                section=sections[index] if index < len(sections) else "",
             )
         )
     body = "\n".join(line.text for line in lines)
@@ -217,6 +219,48 @@ def format_lesson_title(number: int, raw_title: str) -> str:
     else:
         subtitle = without_number
     return f"{number}: {subtitle}"
+
+
+DIALOGUE_REPEAT_HINTS = ("again", "one more", "third", "second", "another time")
+
+
+def classify_section(text: str) -> str | None:
+    lowered = text.lower()
+    if "fluency builder" in lowered:
+        return "review"
+    if "language takeaway" in lowered or "vocabulary preview" in lowered:
+        return "explanation"
+    if "dialogue" in lowered:
+        if any(
+            marker in lowered
+            for marker in (
+                "in this dialogue",
+                "in the dialogue",
+                "about this dialogue",
+                "what happens in this dialogue",
+                "makes you",
+            )
+        ):
+            return None
+        if any(
+            action in lowered
+            for action in ("listen", "take a look", "hear", "ready to", "we are ready")
+        ):
+            if any(hint in lowered for hint in DIALOGUE_REPEAT_HINTS):
+                return "review"
+            return "dialogue"
+    return None
+
+
+def annotate_sections(content: list[dict]) -> list[str]:
+    sections: list[str] = []
+    current = "explanation"
+    for item in content:
+        classified = classify_section(str(item.get("text") or ""))
+        if classified:
+            current = classified
+        sections.append(current)
+    return sections
 
 
 def englishpod_audio_url(audio: str) -> str | None:

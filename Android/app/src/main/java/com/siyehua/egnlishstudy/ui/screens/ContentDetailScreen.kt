@@ -560,7 +560,18 @@ private fun DialogueDetail(
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f))
 
+            var previousSection: String? = null
             dialogue.lines.forEachIndexed { index, line ->
+                val section = line.section.ifBlank { "explanation" }
+                if (section != previousSection) {
+                    Text(
+                        text = sectionTitle(section),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = StudyGreen,
+                        modifier = Modifier.padding(top = if (previousSection == null) 0.dp else 8.dp)
+                    )
+                    previousSection = section
+                }
                 DialogueLineCard(
                     line = line,
                     sentenceIndex = index,
@@ -700,6 +711,14 @@ private fun HighlightableSentenceRow(
         )
     }
 }
+
+private fun sectionTitle(section: String): String =
+    when (section) {
+        "dialogue" -> "对话 Dialogue"
+        "explanation" -> "讲解 Explanation"
+        "review" -> "回顾 Review"
+        else -> section
+    }
 
 @Composable
 private fun DialogueLineCard(

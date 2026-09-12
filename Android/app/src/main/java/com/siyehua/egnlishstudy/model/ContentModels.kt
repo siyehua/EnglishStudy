@@ -61,5 +61,6 @@ data class Dialogue(
 data class DialogueLine(
     val speaker: String,
     val text: String,
-    val trans: String = ""
+    val trans: String = "",
+    val section: String = ""
 )
