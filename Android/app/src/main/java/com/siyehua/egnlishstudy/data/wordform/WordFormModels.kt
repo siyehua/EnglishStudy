@@ -183,15 +183,11 @@ data class RemoteContentItem(
     val date: String = "",
     val lines: List<RemoteDialogueLine> = emptyList(),
     @SerialName("audioUrl")
-    val audioUrl: String? = null,
-    @SerialName("dialogueAudioUrl")
-    val dialogueAudioUrl: String? = null
+    val audioUrl: String? = null
 )
 
 @Serializable
 data class RemoteDialogueLine(
     val speaker: String,
-    val text: String,
-    val trans: String = "",
-    val section: String = ""
+    val text: String
 )

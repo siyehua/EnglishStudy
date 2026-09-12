@@ -13,7 +13,6 @@ from app.schemas import (
     ContentFilterOptionResponse,
     ContentFiltersResponse,
     ContentItemResponse,
-    ContentSectionResponse,
     DialogueLineResponse,
 )
 
@@ -29,9 +28,30 @@ ENGLISH_POD_INDEX_URL = (
 ENGLISH_POD_LESSON_URL_TEMPLATE = (
     "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/data/lesson_{number}.json"
 )
-ENGLISH_POD_RAW_BASE = "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/"
 LINYUANZKY_BASE = "https://cdn.jsdelivr.net/gh/linyuanzky/englishpod365@main/"
 AUDIO_MAP_PATH = Path(__file__).resolve().parent / "englishpod_audio_map.json"
+
+USER_AGENT = "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
+REQUEST_TIMEOUT_SECONDS = 15
+FETCH_DEADLINE_SECONDS = 55
+MAX_WORKERS = 8
+DEFAULT_LIMIT = 20
+EXPANDED_LIMIT = 100
+
+LETTER_LEVEL_MAP = {
+    "B": "A2",  # Elementary
+    "C": "B1",  # Intermediate
+    "D": "B2",  # Upper Intermediate
+    "E": "C1",  # Advanced
+    "F": "C1",  # Advanced Media
+}
+
+# Each lesson is split into three independent courses.
+SECTION_ORDER = [
+    ("dialogue", "对话", "dialogue"),
+    ("explanation", "讲解", "full"),
+    ("review", "回顾", "review"),
+]
 
 
 def load_audio_map() -> dict[str, dict[str, str | None]]:
@@ -42,36 +62,6 @@ def load_audio_map() -> dict[str, dict[str, str | None]]:
 
 
 AUDIO_MAP = load_audio_map()
-
-
-def englishpod_audio_urls(number: int) -> tuple[str | None, str | None]:
-    """Return (full audio URL, dialogue audio URL) for a lesson number."""
-    entry = AUDIO_MAP.get(str(number))
-    if not entry:
-        return None, None
-    full = entry.get("full")
-    dialogue = entry.get("dialogue")
-    return (
-        LINYUANZKY_BASE + full if full else None,
-        LINYUANZKY_BASE + dialogue if dialogue else None,
-    )
-
-USER_AGENT = "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
-REQUEST_TIMEOUT_SECONDS = 15
-FETCH_DEADLINE_SECONDS = 55
-MAX_WORKERS = 8
-DEFAULT_LIMIT = 20
-EXPANDED_LIMIT = 100
-
-# EnglishPod audio filenames carry a level letter (B/C/D/E/F). For lessons
-# without a letter the title is used as a fallback.
-LETTER_LEVEL_MAP = {
-    "B": "A2",  # Elementary
-    "C": "B1",  # Intermediate
-    "D": "B2",  # Upper Intermediate
-    "E": "C1",  # Advanced
-    "F": "C1",  # Advanced Media
-}
 
 
 class ContentClient:
@@ -101,12 +91,12 @@ class ContentClient:
         selected = lesson_numbers[:limit]
 
         deadline = monotonic() + FETCH_DEADLINE_SECONDS
-        by_number: dict[int, ContentItemResponse] = {}
+        by_number: dict[int, list[ContentItemResponse]] = {}
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
         try:
             future_to_number = {
                 executor.submit(
-                    fetch_lesson_safely,
+                    fetch_lesson_items_safely,
                     number,
                     requested_levels,
                     deadline,
@@ -118,15 +108,19 @@ class ContentClient:
                 timeout=max(0.1, deadline - monotonic()),
             )
             for future in done:
-                item = future.result()
-                if item is not None:
-                    by_number[future_to_number[future]] = item
+                items = future.result()
+                if items:
+                    by_number[future_to_number[future]] = items
             for future in pending:
                 future.cancel()
         finally:
             executor.shutdown(wait=False, cancel_futures=True)
 
-        items = [by_number[number] for number in selected if number in by_number]
+        items = [
+            item
+            for number in selected
+            for item in by_number.get(number, [])
+        ]
         return items, build_content_filters(items)
 
 
@@ -150,81 +144,81 @@ def download_lesson_index() -> dict[int, dict[str, str]]:
     return index
 
 
-def fetch_lesson_safely(
+def fetch_lesson_items_safely(
     number: int,
     requested_levels: set[str],
     deadline: float,
-) -> ContentItemResponse | None:
+) -> list[ContentItemResponse]:
     try:
-        return fetch_lesson(number, requested_levels, deadline)
+        return fetch_lesson_items(number, requested_levels, deadline)
     except Exception:
-        return None
+        return []
 
 
-def fetch_lesson(
+def fetch_lesson_items(
     number: int,
     requested_levels: set[str],
     deadline: float,
-) -> ContentItemResponse | None:
+) -> list[ContentItemResponse]:
     if is_deadline_expired(deadline):
-        return None
+        return []
 
     text = download_text(
         ENGLISH_POD_LESSON_URL_TEMPLATE.format(number=number),
         timeout=request_timeout(deadline),
     )
     lesson = json.loads(text)
-    return lesson_to_content(number, lesson, requested_levels)
+    return lesson_to_content_items(number, lesson, requested_levels)
 
 
-def lesson_to_content(
+def lesson_to_content_items(
     number: int,
     lesson: dict,
     requested_levels: set[str] | None = None,
-) -> ContentItemResponse | None:
+) -> list[ContentItemResponse]:
     raw_title = str(lesson.get("title") or f"Lesson {number}").strip()
-    title = format_lesson_title(number, raw_title)
-    audio = str(lesson.get("audio") or "")
-    level = englishpod_level(title=raw_title, audio=audio)
+    base_title = format_lesson_title(number, raw_title)
+    level = englishpod_level(title=raw_title, audio=str(lesson.get("audio") or ""))
     if requested_levels and level not in requested_levels:
-        return None
+        return []
 
     content = lesson.get("content") or []
-    sections = annotate_sections(content)
-    lines: list[DialogueLineResponse] = []
-    for index, item in enumerate(content):
-        text = str(item.get("text") or "").strip()
-        if not text:
+    section_marks = annotate_sections(content)
+
+    dialogue_url, full_url, review_url = englishpod_audio_urls(number)
+    audio_by_key = {
+        "dialogue": dialogue_url,
+        "full": full_url,
+        "review": review_url,
+    }
+
+    items: list[ContentItemResponse] = []
+    for section_name, label, audio_key in SECTION_ORDER:
+        texts = [
+            str(item.get("text") or "").strip()
+            for item, mark in zip(content, section_marks)
+            if mark == section_name and str(item.get("text") or "").strip()
+        ]
+        body = "\n".join(texts)
+        if not body:
             continue
-        lines.append(
-            DialogueLineResponse(
-                speaker="Narrator",
-                text=text,
-                trans=str(item.get("trans") or "").strip(),
-                section=sections[index] if index < len(sections) else "",
-                start=float(item.get("start") or 0.0),
-                end=float(item.get("end") or 0.0),
+
+        lines = [DialogueLineResponse(speaker="Narrator", text=text) for text in texts]
+        items.append(
+            ContentItemResponse(
+                id=stable_id(f"englishpod-{number}-{section_name}"),
+                title=f"{base_title} · {label}",
+                type="DIALOGUE",
+                level=level,
+                body=body,
+                author=None,
+                source=ENGLISH_POD_SOURCE_NAME,
+                date="",
+                lines=lines,
+                audioUrl=audio_by_key.get(audio_key),
             )
         )
-    body = "\n".join(line.text for line in lines)
-    if not body:
-        return None
-
-    full_url, dialogue_url = englishpod_audio_urls(number)
-    return ContentItemResponse(
-        id=stable_id(f"englishpod-{number}"),
-        title=title,
-        type="DIALOGUE",
-        level=level,
-        body=body,
-        author=None,
-        source=ENGLISH_POD_SOURCE_NAME,
-        date="",
-        lines=lines,
-        audioUrl=full_url or englishpod_audio_url(str(lesson.get("audio") or "")),
-        dialogueAudioUrl=dialogue_url,
-        sections=build_sections(content, sections),
-    )
+    return items
 
 
 def englishpod_level(title: str, audio: str) -> str:
@@ -295,55 +289,19 @@ def annotate_sections(content: list[dict]) -> list[str]:
     return sections
 
 
-def build_sections(
-    content: list[dict],
-    section_marks: list[str],
-) -> list[ContentSectionResponse]:
-    result: list[ContentSectionResponse] = []
-    current_name: str | None = None
-    current_start = 0.0
-    current_end = 0.0
-
-    for item, section in zip(content, section_marks):
-        start = float(item.get("start") or 0.0)
-        end = float(item.get("end") or start)
-        if section != current_name:
-            if current_name is not None:
-                result.append(
-                    ContentSectionResponse(
-                        name=current_name,
-                        start=current_start,
-                        end=current_end,
-                    )
-                )
-            current_name = section
-            current_start = start
-            current_end = end
-        else:
-            current_end = max(current_end, end)
-
-    if current_name is not None:
-        result.append(
-            ContentSectionResponse(
-                name=current_name,
-                start=current_start,
-                end=current_end,
-            )
-        )
-    return result
-
-
-def englishpod_audio_url(audio: str) -> str | None:
-    path = audio.strip()
-    if not path:
-        return None
-    if path.startswith("./"):
-        path = path[2:]
-    elif path.startswith("/"):
-        path = path.lstrip("/")
-    if not path:
-        return None
-    return ENGLISH_POD_RAW_BASE + path
+def englishpod_audio_urls(number: int) -> tuple[str | None, str | None, str | None]:
+    """Return (dialogue, full, review) audio URLs for a lesson number."""
+    entry = AUDIO_MAP.get(str(number))
+    if not entry:
+        return None, None, None
+    dialogue = entry.get("dialogue")
+    full = entry.get("full")
+    review = entry.get("review")
+    return (
+        LINYUANZKY_BASE + dialogue if dialogue else None,
+        LINYUANZKY_BASE + full if full else None,
+        LINYUANZKY_BASE + review if review else None,
+    )
 
 
 def download_text(url: str, timeout: float | None = None) -> str:

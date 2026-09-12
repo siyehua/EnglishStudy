@@ -200,9 +200,6 @@ class TtsAudioManager(context: Context) {
     suspend fun ensureRealAudioForContent(content: Content): WordAudioResult =
         ensureContentAudio(content.audioUrl, "content")
 
-    suspend fun ensureDialogueAudioForContent(content: Content): WordAudioResult =
-        ensureContentAudio(content.dialogueAudioUrl, "dialogue")
-
     private suspend fun ensureContentAudio(audioUrl: String?, keyPrefix: String): WordAudioResult = withContext(Dispatchers.IO) {
         val url = audioUrl?.takeIf { it.isNotBlank() }
             ?: return@withContext WordAudioResult.Failure("No audio is available for this lesson.")

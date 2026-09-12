@@ -4,9 +4,6 @@ import android.app.Application
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.siyehua.egnlishstudy.data.TtsAudioManager
@@ -28,9 +25,6 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     private val _uiState = MutableStateFlow<AudioUiState>(AudioUiState.Idle)
     val uiState: StateFlow<AudioUiState> = _uiState.asStateFlow()
 
-    var playMode by mutableStateOf(AudioPlayMode.FULL)
-        private set
-
     private var mediaPlayer: MediaPlayer? = null
     private var playlist: List<Uri> = emptyList()
     private var playlistDurations: List<Int> = emptyList()
@@ -49,42 +43,13 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    fun changePlayMode(mode: AudioPlayMode) {
-        if (playMode == mode) return
-        playMode = mode
-    }
-
     private fun play(content: Content) {
         stop(resetState = false)
         highlightedSentenceIndex = null
-        when {
-            playMode == AudioPlayMode.DIALOGUE && !content.dialogueAudioUrl.isNullOrBlank() ->
-                playDialogueAudio(content)
-
-            !content.audioUrl.isNullOrBlank() ->
-                playRealAudio(content)
-
-            else ->
-                playTtsAudio(content)
-        }
-    }
-
-    private fun playDialogueAudio(content: Content) {
-        prepareJob = viewModelScope.launch {
-            _uiState.value = AudioUiState.Preparing
-            when (val result = ttsAudioManager.ensureDialogueAudioForContent(content)) {
-                is WordAudioResult.Success -> {
-                    playlist = listOf(result.uri)
-                    playlistDurations = listOf(readDurationMillis(result.uri))
-                    totalDurationMillis = playlistDurations.sumOf { it.toLong() }
-                    playlistIndex = 0
-                    playCurrent()
-                }
-
-                is WordAudioResult.Failure -> {
-                    playRealAudio(content)
-                }
-            }
+        if (!content.audioUrl.isNullOrBlank()) {
+            playRealAudio(content)
+        } else {
+            playTtsAudio(content)
         }
     }
 
@@ -316,10 +281,6 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     companion object {
         private const val PROGRESS_UPDATE_INTERVAL_MS = 250L
     }
-}
-
-enum class AudioPlayMode {
-    FULL, DIALOGUE
 }
 
 sealed class AudioUiState {

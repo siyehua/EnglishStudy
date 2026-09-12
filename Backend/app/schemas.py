@@ -132,16 +132,6 @@ class ContentFetchRequest(BaseModel):
 class DialogueLineResponse(BaseModel):
     speaker: str
     text: str
-    trans: str = ""
-    section: str = ""
-    start: float = 0.0
-    end: float = 0.0
-
-
-class ContentSectionResponse(BaseModel):
-    name: str
-    start: float
-    end: float
 
 
 class ContentItemResponse(BaseModel):
@@ -155,8 +145,6 @@ class ContentItemResponse(BaseModel):
     date: str = ""
     lines: list[DialogueLineResponse] = []
     audioUrl: str | None = None
-    dialogueAudioUrl: str | None = None
-    sections: list[ContentSectionResponse] = []
 
 
 class ContentFilterOptionResponse(BaseModel):

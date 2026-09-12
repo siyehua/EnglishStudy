@@ -174,9 +174,7 @@ class FetchDataManager(context: Context? = null) {
                 lines = lines.map { line ->
                     DialogueLine(
                         speaker = line.speaker,
-                        text = line.text,
-                        trans = line.trans,
-                        section = line.section
+                        text = line.text
                     )
                 }.ifEmpty {
                     listOf(DialogueLine(speaker = "Narrator", text = body))
@@ -185,8 +183,7 @@ class FetchDataManager(context: Context? = null) {
                 source = source.orEmpty(),
                 contentLevel = contentLevel,
                 contentId = id,
-                audioUrl = audioUrl,
-                dialogueAudioUrl = dialogueAudioUrl
+                audioUrl = audioUrl
             )
         }
     }

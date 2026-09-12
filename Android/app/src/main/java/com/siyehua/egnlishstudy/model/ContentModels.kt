@@ -8,8 +8,7 @@ sealed class Content(
     val type: ContentType,
     val level: ContentLevel,
     val sourceName: String = "",
-    open val audioUrl: String? = null,
-    open val dialogueAudioUrl: String? = null
+    open val audioUrl: String? = null
 )
 
 enum class ContentType {
@@ -56,13 +55,10 @@ data class Dialogue(
     val source: String = "",
     val contentLevel: ContentLevel = ContentLevel.A2,
     val contentId: String = UUID.randomUUID().toString(),
-    override val audioUrl: String? = null,
-    override val dialogueAudioUrl: String? = null
-) : Content(id = contentId, title = dialogueTitle, type = ContentType.DIALOGUE, level = contentLevel, sourceName = source, audioUrl = audioUrl, dialogueAudioUrl = dialogueAudioUrl)
+    override val audioUrl: String? = null
+) : Content(id = contentId, title = dialogueTitle, type = ContentType.DIALOGUE, level = contentLevel, sourceName = source, audioUrl = audioUrl)
 
 data class DialogueLine(
     val speaker: String,
-    val text: String,
-    val trans: String = "",
-    val section: String = ""
+    val text: String
 )
