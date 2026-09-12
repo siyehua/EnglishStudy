@@ -48,9 +48,9 @@ LETTER_LEVEL_MAP = {
 
 # Each lesson is split into three independent courses.
 SECTION_ORDER = [
-    ("dialogue", "对话", "dialogue"),
-    ("explanation", "讲解", "full"),
-    ("review", "回顾", "review"),
+    ("dialogue", "对话"),
+    ("explanation", "讲解"),
+    ("review", "回顾"),
 ]
 
 
@@ -185,23 +185,26 @@ def lesson_to_content_items(
     content = lesson.get("content") or []
     section_marks = annotate_sections(content)
 
-    dialogue_url, full_url, review_url = englishpod_audio_urls(number)
-    audio_by_key = {
-        "dialogue": dialogue_url,
-        "full": full_url,
-        "review": review_url,
-    }
+    _, full_url, _ = englishpod_audio_urls(number)
 
     items: list[ContentItemResponse] = []
-    for section_name, label, audio_key in SECTION_ORDER:
-        texts = [
-            str(item.get("text") or "").strip()
+    for section_name, label in SECTION_ORDER:
+        section_items = [
+            (item, mark)
             for item, mark in zip(content, section_marks)
             if mark == section_name and str(item.get("text") or "").strip()
         ]
-        body = "\n".join(texts)
-        if not body:
+        if not section_items:
             continue
+
+        texts = [str(item.get("text") or "").strip() for item, _ in section_items]
+        body = "\n".join(texts)
+
+        start = min(float(item.get("start") or 0.0) for item, _ in section_items)
+        end = max(
+            float(item.get("end") or item.get("start") or 0.0)
+            for item, _ in section_items
+        )
 
         lines = [DialogueLineResponse(speaker="Narrator", text=text) for text in texts]
         items.append(
@@ -215,7 +218,9 @@ def lesson_to_content_items(
                 source=ENGLISH_POD_SOURCE_NAME,
                 date="",
                 lines=lines,
-                audioUrl=audio_by_key.get(audio_key),
+                audioUrl=full_url,
+                audioStart=start,
+                audioEnd=end,
             )
         )
     return items
@@ -248,6 +253,13 @@ def format_lesson_title(number: int, raw_title: str) -> str:
 
 
 DIALOGUE_REPEAT_HINTS = ("again", "one more", "third", "second", "another time")
+EXPLANATION_HINTS = (
+    "the first one",
+    "i have another",
+    "interesting expression",
+    "let's listen to some examples",
+    "let's take a look at",
+)
 
 
 def classify_section(text: str) -> str | None:
@@ -275,6 +287,8 @@ def classify_section(text: str) -> str | None:
             if any(hint in lowered for hint in DIALOGUE_REPEAT_HINTS):
                 return "review"
             return "dialogue"
+    if any(hint in lowered for hint in EXPLANATION_HINTS):
+        return "explanation"
     return None
 
 

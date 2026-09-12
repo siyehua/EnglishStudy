@@ -42,6 +42,8 @@ class ContentCacheDatabase(context: Context) :
                 $COLUMN_SOURCE TEXT,
                 $COLUMN_DATE TEXT,
                 $COLUMN_AUDIO_URL TEXT,
+                $COLUMN_AUDIO_START REAL,
+                $COLUMN_AUDIO_END REAL,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
                 $COLUMN_CACHE_ORDER INTEGER NOT NULL
             )
@@ -156,6 +158,15 @@ class ContentCacheDatabase(context: Context) :
             db.execSQL("DELETE FROM $TABLE_CONTENT")
         }
         if (oldVersion < 25) {
+            db.execSQL("DELETE FROM $TABLE_CONTENT")
+        }
+        if (oldVersion < 26) {
+            db.execSQL(
+                "ALTER TABLE $TABLE_CONTENT ADD COLUMN $COLUMN_AUDIO_START REAL"
+            )
+            db.execSQL(
+                "ALTER TABLE $TABLE_CONTENT ADD COLUMN $COLUMN_AUDIO_END REAL"
+            )
             db.execSQL("DELETE FROM $TABLE_CONTENT")
         }
     }
@@ -851,6 +862,8 @@ class ContentCacheDatabase(context: Context) :
                     put(COLUMN_SOURCE, sourceName.ifBlank { source })
                     put(COLUMN_DATE, date)
                     put(COLUMN_AUDIO_URL, audioUrl)
+                    put(COLUMN_AUDIO_START, audioStart)
+                    put(COLUMN_AUDIO_END, audioEnd)
                 }
             }
         }
@@ -951,7 +964,9 @@ class ContentCacheDatabase(context: Context) :
                 source = source.orEmpty(),
                 contentLevel = level,
                 contentId = id,
-                audioUrl = getNullableString(COLUMN_AUDIO_URL)
+                audioUrl = getNullableString(COLUMN_AUDIO_URL),
+                audioStart = getNullableDouble(COLUMN_AUDIO_START) ?: 0.0,
+                audioEnd = getNullableDouble(COLUMN_AUDIO_END) ?: 0.0
             )
         }
     }
@@ -962,6 +977,11 @@ class ContentCacheDatabase(context: Context) :
     private fun android.database.Cursor.getNullableString(column: String): String? {
         val index = columnIndex(column)
         return if (isNull(index)) null else getString(index)
+    }
+
+    private fun android.database.Cursor.getNullableDouble(column: String): Double? {
+        val index = columnIndex(column)
+        return if (isNull(index)) null else getDouble(index)
     }
 
     private fun wordMeaningCacheKey(normalized: String, sentence: String): String =
@@ -987,7 +1007,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 25
+        private const val DATABASE_VERSION = 26
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"
@@ -999,6 +1019,8 @@ class ContentCacheDatabase(context: Context) :
         private const val COLUMN_SOURCE = "source"
         private const val COLUMN_DATE = "date"
         private const val COLUMN_AUDIO_URL = "audio_url"
+        private const val COLUMN_AUDIO_START = "audio_start"
+        private const val COLUMN_AUDIO_END = "audio_end"
         private const val COLUMN_UPDATED_AT = "updated_at"
         private const val COLUMN_CACHE_ORDER = "cache_order"
 

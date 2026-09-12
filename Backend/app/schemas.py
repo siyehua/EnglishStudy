@@ -145,6 +145,8 @@ class ContentItemResponse(BaseModel):
     date: str = ""
     lines: list[DialogueLineResponse] = []
     audioUrl: str | None = None
+    audioStart: float = 0.0
+    audioEnd: float = 0.0
 
 
 class ContentFilterOptionResponse(BaseModel):

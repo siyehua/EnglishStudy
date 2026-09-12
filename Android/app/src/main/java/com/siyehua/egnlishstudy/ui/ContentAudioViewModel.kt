@@ -33,6 +33,8 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     private var highlightedSentenceIndex: Int? = null
     private var prepareJob: Job? = null
     private var progressJob: Job? = null
+    private var segmentStartMs = 0L
+    private var segmentEndMs = 0L
 
     fun togglePlayback(content: Content) {
         when (_uiState.value) {
@@ -62,6 +64,8 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
                     playlistDurations = listOf(readDurationMillis(result.uri))
                     totalDurationMillis = playlistDurations.sumOf { it.toLong() }
                     playlistIndex = 0
+                    segmentStartMs = (content.audioStart * 1000).toLong().coerceAtLeast(0)
+                    segmentEndMs = (content.audioEnd * 1000).toLong().coerceAtLeast(0)
                     playCurrent()
                 }
 
@@ -141,6 +145,8 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         totalDurationMillis = 0L
         playlistIndex = 0
         highlightedSentenceIndex = null
+        segmentStartMs = 0L
+        segmentEndMs = 0L
         if (resetState) {
             _uiState.value = AudioUiState.Idle
         }
@@ -189,6 +195,9 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
                 totalDurationMillis = playlistDurations.sumOf { it.toLong() }
             }
             setOnCompletionListener { advancePlaylist() }
+            if (segmentStartMs > 0) {
+                seekTo(segmentStartMs.toInt().coerceAtMost(duration))
+            }
             start()
         }
         if (mediaPlayer == null) {
@@ -216,6 +225,10 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         stopProgressUpdates()
         progressJob = viewModelScope.launch {
             while (true) {
+                if (segmentEndMs > 0 && currentPlaybackMillis() >= segmentEndMs) {
+                    finishPlayback()
+                    break
+                }
                 emitPlayingState()
                 delay(PROGRESS_UPDATE_INTERVAL_MS)
             }
