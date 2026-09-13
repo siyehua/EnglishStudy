@@ -30,6 +30,7 @@ ENGLISH_POD_LESSON_URL_TEMPLATE = (
 )
 LINYUANZKY_BASE = "https://cdn.jsdelivr.net/gh/linyuanzky/englishpod365@main/"
 AUDIO_MAP_PATH = Path(__file__).resolve().parent / "englishpod_audio_map.json"
+TIMESTAMPS_DIR = Path(__file__).resolve().parent / "englishpod_timestamps"
 
 USER_AGENT = "Mozilla/5.0 (Linux; Android) EnglishStudy/1.0"
 REQUEST_TIMEOUT_SECONDS = 15
@@ -62,6 +63,16 @@ def load_audio_map() -> dict[str, dict[str, str | None]]:
 
 
 AUDIO_MAP = load_audio_map()
+
+
+def load_whisper_segments(number: int) -> list[dict] | None:
+    """Sentence-level timestamps produced by Whisper alignment, if available."""
+    path = TIMESTAMPS_DIR / f"{number}.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return data if isinstance(data, list) and data else None
 
 
 class ContentClient:
@@ -184,6 +195,7 @@ def lesson_to_content_items(
 
     content = lesson.get("content") or []
     section_marks = annotate_sections(content)
+    whisper_segments = load_whisper_segments(number)
 
     _, full_url, _ = englishpod_audio_urls(number)
 
@@ -212,22 +224,48 @@ def lesson_to_content_items(
         if not run_items:
             continue
 
+        run_start = min(float(item.get("start") or 0.0) for item in run_items)
+        run_end = max(
+            float(item.get("end") or item.get("start") or 0.0)
+            for item in run_items
+        )
+
         lines: list[DialogueLineResponse] = []
-        for item in run_items:
-            text = str(item.get("text") or "").strip()
-            item_start = float(item.get("start") or 0.0)
-            item_end = float(item.get("end") or item_start)
-            for sentence, sentence_start, sentence_end in split_sentences_with_times(
-                text, item_start, item_end
-            ):
+        if whisper_segments is not None:
+            # Use Whisper's precise per-sentence timestamps inside this run.
+            for seg in whisper_segments:
+                seg_start = float(seg.get("start") or 0.0)
+                seg_end = float(seg.get("end") or seg_start)
+                seg_text = str(seg.get("text") or "").strip()
+                if not seg_text:
+                    continue
+                if seg_end <= run_start + 0.5 or seg_start >= run_end - 0.5:
+                    continue
                 lines.append(
                     DialogueLineResponse(
                         speaker="Narrator",
-                        text=sentence,
-                        start=sentence_start,
-                        end=sentence_end,
+                        text=seg_text,
+                        start=seg_start,
+                        end=seg_end,
                     )
                 )
+        else:
+            # Fallback: split the transcript proportionally within its time range.
+            for item in run_items:
+                text = str(item.get("text") or "").strip()
+                item_start = float(item.get("start") or 0.0)
+                item_end = float(item.get("end") or item_start)
+                for sentence, sentence_start, sentence_end in split_sentences_with_times(
+                    text, item_start, item_end
+                ):
+                    lines.append(
+                        DialogueLineResponse(
+                            speaker="Narrator",
+                            text=sentence,
+                            start=sentence_start,
+                            end=sentence_end,
+                        )
+                    )
         if not lines:
             continue
 

@@ -50,13 +50,13 @@ class ContentClientTest(unittest.TestCase):
             ],
         }
 
-        items = lesson_to_content_items(1, lesson)
+        items = lesson_to_content_items(999, lesson)
 
         self.assertEqual(len(items), 3)
         titles = [item.title for item in items]
-        self.assertEqual(titles[0], "1: Difficult Customer · 对话")
-        self.assertEqual(titles[1], "1: Difficult Customer · 讲解")
-        self.assertEqual(titles[2], "1: Difficult Customer · 回顾")
+        self.assertEqual(titles[0], "999: Difficult Customer · 对话")
+        self.assertEqual(titles[1], "999: Difficult Customer · 讲解")
+        self.assertEqual(titles[2], "999: Difficult Customer · 回顾")
 
         # 对话课程：只有对话文本，且按句切割
         self.assertIn("Good evening.", items[0].body)
@@ -84,8 +84,8 @@ class ContentClientTest(unittest.TestCase):
             "content": [{"text": "Hello.", "start": 0.0, "end": 1.0}],
         }
 
-        self.assertEqual(lesson_to_content_items(1, lesson, requested_levels={"B1"}), [])
-        self.assertTrue(lesson_to_content_items(1, lesson, requested_levels={"A2"}))
+        self.assertEqual(lesson_to_content_items(999, lesson, requested_levels={"B1"}), [])
+        self.assertTrue(lesson_to_content_items(999, lesson, requested_levels={"A2"}))
 
     def test_normalize_filter_values(self) -> None:
         self.assertEqual(normalize_filter_values(["dialogue", " NEWS ", "", "news"]), {"DIALOGUE", "NEWS"})
