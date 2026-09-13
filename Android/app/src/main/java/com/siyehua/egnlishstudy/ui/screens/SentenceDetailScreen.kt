@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,10 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
+import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.data.wordform.WordFormApiClient
 import com.siyehua.egnlishstudy.ui.AudioUiState
 import com.siyehua.egnlishstudy.ui.ContentAudioViewModel
@@ -67,6 +71,27 @@ fun SentenceDetailScreen(
     val wordPronunciationState by wordInsightViewModel.audioState.collectAsState()
     var selectedWord by remember { mutableStateOf<ClickedWord?>(null) }
     var showTranslation by remember { mutableStateOf(true) }
+
+    val context = LocalContext.current
+    val database = remember { ContentCacheDatabase(context) }
+    var translation by remember(favorite.id) { mutableStateOf(favorite.translation) }
+
+    // Older favourites were saved before the transcript translation was stored; fill it in
+    // from the locally cached lesson so the meaning block still shows up.
+    LaunchedEffect(favorite.id) {
+        if (translation.isBlank() && favorite.contentId.isNotBlank()) {
+            val cached = runCatching {
+                (database.loadContentById(favorite.contentId) as? Dialogue)
+                    ?.lines
+                    ?.firstOrNull { it.text == favorite.text }
+                    ?.trans
+            }.getOrNull()
+            if (!cached.isNullOrBlank()) {
+                translation = cached
+                runCatching { database.updateFavoriteTranslation(favorite.id, cached) }
+            }
+        }
+    }
 
     val isPlaying = audioState is AudioUiState.Playing ||
         audioState is AudioUiState.Preparing
@@ -175,7 +200,7 @@ fun SentenceDetailScreen(
                     )
                 }
 
-                if (favorite.translation.isNotBlank()) {
+                if (translation.isNotBlank()) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.medium,
@@ -203,7 +228,7 @@ fun SentenceDetailScreen(
                             }
                             if (showTranslation) {
                                 Text(
-                                    text = favorite.translation,
+                                    text = translation,
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)

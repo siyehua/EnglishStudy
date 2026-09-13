@@ -327,6 +327,17 @@ class ContentCacheDatabase(context: Context) :
             }
         }
 
+    fun updateFavoriteTranslation(id: Long, translation: String) {
+        writableDatabase.use { db ->
+            db.update(
+                TABLE_FAVORITES,
+                ContentValues().apply { put(COLUMN_FAVORITE_TRANSLATION, translation) },
+                "$COLUMN_FAVORITE_ID = ?",
+                arrayOf(id.toString())
+            )
+        }
+    }
+
     fun deleteFavorite(id: Long) {
         writableDatabase.use { db ->
             db.delete(TABLE_FAVORITES, "$COLUMN_FAVORITE_ID = ?", arrayOf(id.toString()))
@@ -522,6 +533,22 @@ class ContentCacheDatabase(context: Context) :
             levels = levels,
             sources = emptySet()
         )
+
+    fun loadContentById(id: String): Content? =
+        readableDatabase.use { db ->
+            db.query(
+                TABLE_CONTENT,
+                null,
+                "$COLUMN_ID = ?",
+                arrayOf(id),
+                null,
+                null,
+                null,
+                "1"
+            ).use { cursor ->
+                if (cursor.moveToFirst()) cursor.toContent() else null
+            }
+        }
 
     fun loadAll(): List<Content> =
         readableDatabase.use { db ->
