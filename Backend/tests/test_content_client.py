@@ -45,7 +45,8 @@ class ContentClientTest(unittest.TestCase):
                 {"text": "May I take your order?", "start": 6.0, "end": 8.0},
                 {"text": "Language takeaway.", "start": 8.0, "end": 10.0},
                 {"text": "The first expression is still working on it.", "start": 10.0, "end": 12.0},
-                {"text": "Fluency builder.", "start": 12.0, "end": 14.0},
+                {"text": "Another useful phrase here.", "start": 12.0, "end": 13.0},
+                {"text": "Fluency builder.", "start": 13.0, "end": 14.0},
                 {"text": "Let's practice these phrases.", "start": 14.0, "end": 16.0},
             ],
         }
@@ -58,9 +59,10 @@ class ContentClientTest(unittest.TestCase):
         self.assertEqual(titles[1], "999: Difficult Customer · 讲解")
         self.assertEqual(titles[2], "999: Difficult Customer · 回顾")
 
-        # 对话课程：只有对话文本，且按句切割
+        # 对话课程：只有角色对话，不含主持人引导语
         self.assertIn("Good evening.", items[0].body)
         self.assertIn("My name is Fabio.", items[0].body)
+        self.assertNotIn("listen to this dialogue", items[0].body.lower())
         self.assertNotIn("language takeaway", items[0].body.lower())
         # 每句都有独立时间戳
         for line in items[0].lines:

@@ -336,31 +336,45 @@ EXPLANATION_HINTS = (
 )
 
 
+def is_dialogue_cue(text: str) -> str | None:
+    """Detect a host cue that starts/restarts the dialogue.
+
+    Returns the section the *following* lines belong to ("dialogue" for the
+    first run, "review" for a repeat), or None if this is not a cue.
+    """
+    lowered = text.lower()
+    if "dialogue" not in lowered:
+        return None
+    if any(
+        marker in lowered
+        for marker in (
+            "in this dialogue",
+            "in the dialogue",
+            "about this dialogue",
+            "what happens in this dialogue",
+            "makes you",
+        )
+    ):
+        return None
+    if any(
+        action in lowered
+        for action in ("listen", "take a look", "hear", "ready to", "we are ready")
+    ):
+        if any(hint in lowered for hint in DIALOGUE_REPEAT_HINTS):
+            return "review"
+        return "dialogue"
+    return None
+
+
 def classify_section(text: str) -> str | None:
     lowered = text.lower()
     if "fluency builder" in lowered:
         return "review"
     if "language takeaway" in lowered or "vocabulary preview" in lowered:
         return "explanation"
-    if "dialogue" in lowered:
-        if any(
-            marker in lowered
-            for marker in (
-                "in this dialogue",
-                "in the dialogue",
-                "about this dialogue",
-                "what happens in this dialogue",
-                "makes you",
-            )
-        ):
-            return None
-        if any(
-            action in lowered
-            for action in ("listen", "take a look", "hear", "ready to", "we are ready")
-        ):
-            if any(hint in lowered for hint in DIALOGUE_REPEAT_HINTS):
-                return "review"
-            return "dialogue"
+    if is_dialogue_cue(lowered) is not None:
+        # The cue line itself is spoken by the host, so it stays in explanation.
+        return "explanation"
     if any(hint in lowered for hint in EXPLANATION_HINTS):
         return "explanation"
     return None
@@ -370,7 +384,18 @@ def annotate_sections(content: list[dict]) -> list[str]:
     sections: list[str] = []
     current = "explanation"
     for item in content:
-        classified = classify_section(str(item.get("text") or ""))
+        text = str(item.get("text") or "")
+        lowered = text.lower()
+
+        cue = is_dialogue_cue(lowered)
+        if cue is not None:
+            # Host cue line: keep it in the explanation, then switch state
+            # so the actual character dialogue that follows is tagged correctly.
+            sections.append("explanation")
+            current = cue
+            continue
+
+        classified = classify_section(text)
         if classified:
             current = classified
         sections.append(current)
