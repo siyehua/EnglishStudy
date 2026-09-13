@@ -187,23 +187,38 @@ def lesson_to_content_items(
 
     _, full_url, _ = englishpod_audio_urls(number)
 
+    # Split the transcript into contiguous runs so a section's time range never
+    # spans across other sections (e.g. the second dialogue repeat).
+    runs: list[list] = []
+    for item, mark in zip(content, section_marks):
+        if runs and runs[-1][0] == mark:
+            runs[-1][1].append(item)
+        else:
+            runs.append([mark, [item]])
+
     items: list[ContentItemResponse] = []
     for section_name, label in SECTION_ORDER:
-        section_items = [
-            (item, mark)
-            for item, mark in zip(content, section_marks)
-            if mark == section_name and str(item.get("text") or "").strip()
+        candidates = [r for r in runs if r[0] == section_name]
+        if not candidates:
+            continue
+        # Prefer the longest contiguous run (skips short intro lines that also
+        # carry the explanation mark).
+        run = max(candidates, key=lambda r: len(r[1]))
+
+        run_items = [
+            item for item in run[1]
+            if str(item.get("text") or "").strip()
         ]
-        if not section_items:
+        if not run_items:
             continue
 
-        texts = [str(item.get("text") or "").strip() for item, _ in section_items]
+        texts = [str(item.get("text") or "").strip() for item in run_items]
         body = "\n".join(texts)
 
-        start = min(float(item.get("start") or 0.0) for item, _ in section_items)
+        start = min(float(item.get("start") or 0.0) for item in run_items)
         end = max(
             float(item.get("end") or item.get("start") or 0.0)
-            for item, _ in section_items
+            for item in run_items
         )
 
         lines = [DialogueLineResponse(speaker="Narrator", text=text) for text in texts]
