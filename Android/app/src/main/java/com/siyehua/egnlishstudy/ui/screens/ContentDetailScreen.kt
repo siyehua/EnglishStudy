@@ -198,19 +198,8 @@ fun ContentDetailScreen(
                             dialogue = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onPlayLine = { line, index ->
-                                val segUrl = line.audioUrl
-                                if (!segUrl.isNullOrBlank()) {
-                                    audioViewModel.playSegmentUrl(
-                                        WordFormApiClient.DEFAULT_BASE_URL + segUrl,
-                                        line.text,
-                                        index
-                                    )
-                                } else {
-                                    audioViewModel.playSegment(
-                                        content, line.start, line.end, line.text, index
-                                    )
-                                }
+                            onPlayLine = { _, index ->
+                                audioViewModel.playFromLine(content, index)
                             }
                         )
                     }

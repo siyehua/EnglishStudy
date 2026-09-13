@@ -177,6 +177,43 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         play(content)
     }
 
+    /**
+     * Play the whole lesson audio starting at [lineIndex]: seek there and keep
+     * playing (no per-sentence clipping, no auto-stop), highlighting lines as
+     * playback advances.
+     */
+    fun playFromLine(content: Content, lineIndex: Int) {
+        val lines = (content as? Dialogue)?.lines.orEmpty()
+        lineRanges = lines.map { it.start to it.end }
+        matchByTime = lineRanges.isNotEmpty()
+        val startSec = lines.getOrNull(lineIndex)?.start ?: 0.0
+        val audioUrl = content.audioUrl
+        if (audioUrl.isNullOrBlank()) {
+            playSentence(lines.getOrNull(lineIndex)?.text.orEmpty(), lineIndex)
+            return
+        }
+
+        stop(resetState = false)
+        highlightedSentenceIndex = lineIndex
+        prepareJob = viewModelScope.launch {
+            _uiState.value = AudioUiState.Preparing
+            when (val result = ttsAudioManager.ensureRealAudioForContent(content)) {
+                is WordAudioResult.Success -> {
+                    playlist = listOf(result.uri)
+                    playlistDurations = listOf(readDurationMillis(result.uri))
+                    totalDurationMillis = playlistDurations.sumOf { it.toLong() }
+                    playlistIndex = 0
+                    segmentStartMs = (startSec * 1000).toLong().coerceAtLeast(0)
+                    segmentEndMs = 0L
+                    playCurrent()
+                }
+
+                is WordAudioResult.Failure ->
+                    playSentence(lines.getOrNull(lineIndex)?.text.orEmpty(), lineIndex)
+            }
+        }
+    }
+
     /** Play a backend-cut sentence clip (no seeking involved). */
     fun playSegmentUrl(url: String, fallbackText: String, sentenceIndex: Int) {
         matchByTime = false
