@@ -335,6 +335,22 @@ EXPLANATION_HINTS = (
     "let's take a look at",
 )
 
+# Host commentary that follows the dialogue: these lines reference the characters
+# in the third person, so they belong to the explanation, not the dialogue.
+HOST_COMMENTARY_HINTS = (
+    "what a waiter",
+    "what a customer",
+    "this customer",
+    "this waiter",
+    "i can't blame him",
+    "i cant blame him",
+)
+
+
+def is_host_commentary(text: str) -> bool:
+    lowered = text.lower()
+    return any(hint in lowered for hint in HOST_COMMENTARY_HINTS)
+
 
 def is_dialogue_cue(text: str) -> str | None:
     """Detect a host cue that starts/restarts the dialogue.
@@ -393,6 +409,12 @@ def annotate_sections(content: list[dict]) -> list[str]:
             # so the actual character dialogue that follows is tagged correctly.
             sections.append("explanation")
             current = cue
+            continue
+
+        if is_host_commentary(lowered):
+            # Commentary after the dialogue: it is the host talking again.
+            current = "explanation"
+            sections.append(current)
             continue
 
         classified = classify_section(text)
