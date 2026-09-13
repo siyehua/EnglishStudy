@@ -105,10 +105,11 @@ repository):
 - Index: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data_index.js`
 - Lessons: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data/lesson_{N}.json` (`N` = 1..365)
 
-Each lesson is mapped to a `DIALOGUE` content item. Each dialogue line carries
-the English text plus its Chinese translation (`trans`), and the lesson carries
-the original MP3 URL (`audioUrl`) when available. The level is inferred from
-the audio filename first and the title as a fallback:
+Each lesson becomes a single `DIALOGUE` content item holding the original
+transcript segments verbatim (one segment per line, English text only). Each
+line keeps its timestamp and an `audioUrl` pointing at `GET /ting/segment`,
+which cuts that segment out of the lesson audio on demand. The level is
+inferred from the audio filename first and the title as a fallback:
 
 | Source level | Mapped level |
 | --- | --- |
@@ -120,6 +121,14 @@ the audio filename first and the title as a fallback:
 
 By default the first 20 lessons are returned; `fetchMore=true` returns the
 first 100. The implementation lives in `app/content/client.py`.
+
+### Sentence audio
+
+`GET /ting/segment?lesson={N}&start={seconds}&end={seconds}` downloads the
+lesson audio (cached under `TING_AUDIO_CACHE`), cuts the requested span with
+`ffmpeg` (padded by 200 ms on both sides so quiet leading words are not lost),
+and returns an MP3. Serving a pre-cut clip avoids depending on the player's
+imprecise seek over the untagged VBR source MP3.
 
 ## Test
 
