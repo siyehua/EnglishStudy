@@ -230,7 +230,13 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
             }
             setOnCompletionListener { advancePlaylist() }
             if (segmentStartMs > 0) {
-                seekTo(segmentStartMs.toInt().coerceAtMost(duration))
+                val target = segmentStartMs.coerceAtMost(duration.toLong())
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    // Precise seek to the exact sentence start (not the nearest keyframe).
+                    seekTo(target, android.media.MediaPlayer.SEEK_CLOSEST)
+                } else {
+                    seekTo(target.toInt())
+                }
             }
             start()
         }
@@ -259,7 +265,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         stopProgressUpdates()
         progressJob = viewModelScope.launch {
             while (true) {
-                if (segmentEndMs > 0 && currentPlaybackMillis() >= segmentEndMs) {
+                if (segmentEndMs > 0 && currentPlaybackMillis() >= segmentEndMs - 15) {
                     finishPlayback()
                     break
                 }
@@ -326,7 +332,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     }
 
     companion object {
-        private const val PROGRESS_UPDATE_INTERVAL_MS = 250L
+        private const val PROGRESS_UPDATE_INTERVAL_MS = 40L
     }
 }
 
