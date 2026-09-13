@@ -34,7 +34,7 @@ class ContentClientTest(unittest.TestCase):
         self.assertEqual(format_lesson_title(10, "10 The Office - Driving Sales"), "10: Driving Sales")
         self.assertEqual(format_lesson_title(18, "18 Upper-Intermediate - Protest!"), "18: Protest!")
 
-    def test_lesson_to_content_items_splits_three_sections(self) -> None:
+    def test_lesson_to_content_items_returns_single_article(self) -> None:
         lesson = {
             "title": "1 Elementary - Difficult Customer",
             "audio": "./assets/englishpod_B0001pb.mp3",
@@ -45,39 +45,30 @@ class ContentClientTest(unittest.TestCase):
                 {"text": "May I take your order?", "start": 6.0, "end": 8.0},
                 {"text": "Language takeaway.", "start": 8.0, "end": 10.0},
                 {"text": "The first expression is still working on it.", "start": 10.0, "end": 12.0},
-                {"text": "Another useful phrase here.", "start": 12.0, "end": 13.0},
-                {"text": "Fluency builder.", "start": 13.0, "end": 14.0},
+                {"text": "Fluency builder.", "start": 12.0, "end": 14.0},
                 {"text": "Let's practice these phrases.", "start": 14.0, "end": 16.0},
             ],
         }
 
         items = lesson_to_content_items(999, lesson)
 
-        self.assertEqual(len(items), 3)
-        titles = [item.title for item in items]
-        self.assertEqual(titles[0], "999: Difficult Customer · 对话")
-        self.assertEqual(titles[1], "999: Difficult Customer · 讲解")
-        self.assertEqual(titles[2], "999: Difficult Customer · 回顾")
+        # A lesson is a single article now (no dialogue/explanation/review split).
+        self.assertEqual(len(items), 1)
+        item = items[0]
+        self.assertEqual(item.title, "999: Difficult Customer")
+        self.assertEqual(item.type, "DIALOGUE")
+        self.assertEqual(item.source, ENGLISH_POD_SOURCE_NAME)
 
-        # 对话课程：只有角色对话，不含主持人引导语
-        self.assertIn("Good evening.", items[0].body)
-        self.assertIn("My name is Fabio.", items[0].body)
-        self.assertNotIn("listen to this dialogue", items[0].body.lower())
-        self.assertNotIn("language takeaway", items[0].body.lower())
-        # 每句都有独立时间戳
-        for line in items[0].lines:
+        # The whole transcript is kept in one article.
+        self.assertIn("Good evening.", item.body)
+        self.assertIn("The first expression is still working on it.", item.body)
+        self.assertIn("Let's practice these phrases.", item.body)
+
+        # Every line has its own timestamp and a segment URL.
+        for line in item.lines:
             self.assertGreater(line.end, line.start)
             self.assertTrue(line.text)
-        # 讲解课程：只有讲解文本
-        self.assertIn("The first expression is still working on it.", items[1].body)
-        self.assertNotIn("Good evening", items[1].body)
-        # 回顾课程：只有回顾文本
-        self.assertIn("Let's practice these phrases.", items[2].body)
-
-        for item in items:
-            self.assertEqual(item.type, "DIALOGUE")
-            self.assertEqual(item.source, ENGLISH_POD_SOURCE_NAME)
-            self.assertTrue(all(":" not in line.text or True for line in item.lines))
+            self.assertIn("/ting/segment", line.audioUrl or "")
 
     def test_lesson_to_content_items_filters_by_level(self) -> None:
         lesson = {

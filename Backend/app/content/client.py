@@ -195,109 +195,75 @@ def lesson_to_content_items(
         return []
 
     content = lesson.get("content") or []
-    section_marks = annotate_sections(content)
     whisper_segments = load_whisper_segments(number)
 
     _, full_url, _ = englishpod_audio_urls(number)
 
     # Split the transcript into contiguous runs so a section's time range never
     # spans across other sections (e.g. the second dialogue repeat).
-    runs: list[list] = []
-    for item, mark in zip(content, section_marks):
-        if runs and runs[-1][0] == mark:
-            runs[-1][1].append(item)
-        else:
-            runs.append([mark, [item]])
-
-    items: list[ContentItemResponse] = []
-    for section_name, label in SECTION_ORDER:
-        candidates = [r for r in runs if r[0] == section_name]
-        if not candidates:
-            continue
-        # Prefer the longest contiguous run (skips short intro lines that also
-        # carry the explanation mark).
-        run = max(candidates, key=lambda r: len(r[1]))
-
-        run_items = [
-            item for item in run[1]
-            if str(item.get("text") or "").strip()
-        ]
-        if not run_items:
-            continue
-
-        run_start = min(float(item.get("start") or 0.0) for item in run_items)
-        run_end = max(
-            float(item.get("end") or item.get("start") or 0.0)
-            for item in run_items
-        )
-
-        lines: list[DialogueLineResponse] = []
-        if whisper_segments is not None:
-            # Use Whisper's precise per-sentence timestamps inside this run.
-            for seg in whisper_segments:
-                seg_start = float(seg.get("start") or 0.0)
-                seg_end = float(seg.get("end") or seg_start)
-                seg_text = str(seg.get("text") or "").strip()
-                if not seg_text:
-                    continue
-                if seg_end <= run_start + 0.5 or seg_start >= run_end - 0.5:
-                    continue
+    lines: list[DialogueLineResponse] = []
+    if whisper_segments is not None:
+        for seg in whisper_segments:
+            seg_start = float(seg.get("start") or 0.0)
+            seg_end = float(seg.get("end") or seg_start)
+            seg_text = str(seg.get("text") or "").strip()
+            if not seg_text:
+                continue
+            lines.append(
+                DialogueLineResponse(
+                    speaker="Narrator",
+                    text=seg_text,
+                    start=seg_start,
+                    end=seg_end,
+                    audioUrl=(
+                        f"/ting/segment?lesson={number}"
+                        f"&start={seg_start:.3f}&end={seg_end:.3f}"
+                    ),
+                )
+            )
+    else:
+        # Fallback: split the transcript proportionally within its time range.
+        for item in content:
+            text = str(item.get("text") or "").strip()
+            item_start = float(item.get("start") or 0.0)
+            item_end = float(item.get("end") or item_start)
+            for sentence, sentence_start, sentence_end in split_sentences_with_times(
+                text, item_start, item_end
+            ):
                 lines.append(
                     DialogueLineResponse(
                         speaker="Narrator",
-                        text=seg_text,
-                        start=seg_start,
-                        end=seg_end,
+                        text=sentence,
+                        start=sentence_start,
+                        end=sentence_end,
                         audioUrl=(
                             f"/ting/segment?lesson={number}"
-                            f"&start={seg_start:.3f}&end={seg_end:.3f}"
+                            f"&start={sentence_start:.3f}&end={sentence_end:.3f}"
                         ),
                     )
                 )
-        else:
-            # Fallback: split the transcript proportionally within its time range.
-            for item in run_items:
-                text = str(item.get("text") or "").strip()
-                item_start = float(item.get("start") or 0.0)
-                item_end = float(item.get("end") or item_start)
-                for sentence, sentence_start, sentence_end in split_sentences_with_times(
-                    text, item_start, item_end
-                ):
-                    lines.append(
-                        DialogueLineResponse(
-                            speaker="Narrator",
-                            text=sentence,
-                            start=sentence_start,
-                            end=sentence_end,
-                            audioUrl=(
-                                f"/ting/segment?lesson={number}"
-                                f"&start={sentence_start:.3f}&end={sentence_end:.3f}"
-                            ),
-                        )
-                    )
-        if not lines:
-            continue
+    if not lines:
+        return []
 
-        body = "\n".join(line.text for line in lines)
-        start = min(line.start for line in lines)
-        end = max(line.end for line in lines)
-        items.append(
-            ContentItemResponse(
-                id=stable_id(f"englishpod-{number}-{section_name}"),
-                title=f"{base_title} · {label}",
-                type="DIALOGUE",
-                level=level,
-                body=body,
-                author=None,
-                source=ENGLISH_POD_SOURCE_NAME,
-                date="",
-                lines=lines,
-                audioUrl=full_url,
-                audioStart=start,
-                audioEnd=end,
-            )
+    body = "\n".join(line.text for line in lines)
+    start = min(line.start for line in lines)
+    end = max(line.end for line in lines)
+    return [
+        ContentItemResponse(
+            id=stable_id(f"englishpod-{number}"),
+            title=base_title,
+            type="DIALOGUE",
+            level=level,
+            body=body,
+            author=None,
+            source=ENGLISH_POD_SOURCE_NAME,
+            date="",
+            lines=lines,
+            audioUrl=full_url,
+            audioStart=start,
+            audioEnd=end,
         )
-    return items
+    ]
 
 
 def englishpod_level(title: str, audio: str) -> str:
