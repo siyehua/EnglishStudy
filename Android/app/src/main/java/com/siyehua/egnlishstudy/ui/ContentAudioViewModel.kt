@@ -133,16 +133,17 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         content: Content,
         startSec: Double,
         endSec: Double,
-        fallbackText: String
+        fallbackText: String,
+        sentenceIndex: Int
     ) {
         val audioUrl = content.audioUrl
         if (audioUrl.isNullOrBlank() || endSec <= startSec) {
-            playSentence(fallbackText, 0)
+            playSentence(fallbackText, sentenceIndex)
             return
         }
 
         stop(resetState = false)
-        highlightedSentenceIndex = null
+        highlightedSentenceIndex = sentenceIndex
         prepareJob = viewModelScope.launch {
             _uiState.value = AudioUiState.Preparing
             when (val result = ttsAudioManager.ensureRealAudioForContent(content)) {

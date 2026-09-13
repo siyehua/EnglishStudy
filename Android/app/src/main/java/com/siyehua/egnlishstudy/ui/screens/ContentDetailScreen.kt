@@ -191,8 +191,8 @@ fun ContentDetailScreen(
                             dialogue = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onPlaySegment = { start, end, text ->
-                                audioViewModel.playSegment(content, start, end, text)
+                            onPlaySegment = { start, end, text, index ->
+                                audioViewModel.playSegment(content, start, end, text, index)
                             }
                         )
                     }
@@ -538,7 +538,7 @@ private fun DialogueDetail(
     dialogue: Dialogue,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit = {},
-    onPlaySegment: (Double, Double, String) -> Unit = { _, _, _ -> }
+    onPlaySegment: (Double, Double, String, Int) -> Unit = { _, _, _, _ -> }
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -710,7 +710,7 @@ private fun DialogueLineCard(
     isPrimary: Boolean,
     isPlaying: Boolean,
     onWordClick: (ClickedWord) -> Unit,
-    onPlaySegment: (Double, Double, String) -> Unit
+    onPlaySegment: (Double, Double, String, Int) -> Unit
 ) {
     val containerColor = when {
         isPlaying -> StudyMint
@@ -755,7 +755,7 @@ private fun DialogueLineCard(
                     color = StudyInk,
                     onWordClick = onWordClick,
                     onSentenceTap = {
-                        onPlaySegment(line.start, line.end, line.text)
+                        onPlaySegment(line.start, line.end, line.text, sentenceIndex)
                     }
                 )
             }
