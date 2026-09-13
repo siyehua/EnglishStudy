@@ -729,7 +729,6 @@ private fun DialogueLineCard(
         isPrimary -> StudyBlueSoft
         else -> StudyYellowSoft
     }
-    val speakerColor = if (isPrimary) StudyBlue else StudyOrange
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -737,41 +736,16 @@ private fun DialogueLineCard(
         color = containerColor,
         border = if (isPlaying) BorderStroke(1.dp, StudyGreen.copy(alpha = 0.45f)) else null
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(36.dp),
-                shape = MaterialTheme.shapes.small,
-                color = Color.White.copy(alpha = 0.82f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = line.speaker.take(1).uppercase(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = speakerColor
-                    )
-                }
+        ClickableReadingText(
+            text = line.text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = StudyInk,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            onWordClick = onWordClick,
+            onSentenceTap = {
+                onPlayLine(line, sentenceIndex)
             }
-
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = line.speaker,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = speakerColor
-                )
-                ClickableReadingText(
-                    text = line.text,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = StudyInk,
-                    onWordClick = onWordClick,
-                    onSentenceTap = {
-                        onPlayLine(line, sentenceIndex)
-                    }
-                )
-            }
-        }
+        )
     }
 }
 
