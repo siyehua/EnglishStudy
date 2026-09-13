@@ -106,10 +106,12 @@ repository):
 - Lessons: `https://raw.githubusercontent.com/bitter999/EnglishPod/main/data/lesson_{N}.json` (`N` = 1..365)
 
 Each lesson becomes a single `DIALOGUE` content item holding the original
-transcript segments verbatim (one segment per line, English text only). Each
-line keeps its timestamp and an `audioUrl` pointing at `GET /ting/segment`,
-which cuts that segment out of the lesson audio on demand. The level is
-inferred from the audio filename first and the title as a fallback:
+transcript segments verbatim (one segment per line). Every line carries the
+English text, the transcript's own Chinese translation (`trans`, so no extra
+machine translation is needed) and its timestamp, plus an `audioUrl` pointing
+at `GET /ting/segment`, which cuts that segment out of the lesson audio on
+demand. The level is inferred from the audio filename first and the title as a
+fallback:
 
 | Source level | Mapped level |
 | --- | --- |
@@ -174,6 +176,11 @@ Invoke-RestMethod `
   -ContentType 'application/json' `
   -Body '{"word":"run","sentence":"She runs a small shop."}'
 ```
+
+The response contains `meanings` for the tapped word and `sentenceChinese`, a
+Chinese translation of the whole `sentence`. Sentence translations normally come
+from the EnglishPod transcript itself; `sentenceChinese` is the fallback used
+when a transcript translation is not available.
 
 ## Next Providers
 
