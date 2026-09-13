@@ -246,6 +246,7 @@ def lesson_to_content_items(
             DialogueLineResponse(
                 speaker="Narrator",
                 text=text,
+                trans=str(item.get("trans") or "").strip(),
                 start=item_start,
                 end=item_end,
                 audioUrl=(

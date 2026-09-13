@@ -194,6 +194,7 @@ data class RemoteContentItem(
 data class RemoteDialogueLine(
     val speaker: String,
     val text: String,
+    val trans: String = "",
     val start: Double = 0.0,
     val end: Double = 0.0,
     @SerialName("audioUrl")

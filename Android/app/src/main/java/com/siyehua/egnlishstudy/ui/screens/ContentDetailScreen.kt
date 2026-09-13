@@ -96,6 +96,7 @@ import com.siyehua.egnlishstudy.ui.theme.StudyOrange
 import com.siyehua.egnlishstudy.ui.theme.StudyOrangeSoft
 import com.siyehua.egnlishstudy.ui.theme.StudyYellow
 import com.siyehua.egnlishstudy.ui.theme.StudyYellowSoft
+import com.siyehua.egnlishstudy.ui.theme.softTint
 import com.siyehua.egnlishstudy.ui.wordinsight.ClickableReadingText
 import com.siyehua.egnlishstudy.ui.wordinsight.ClickedWord
 import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightSheet
@@ -241,6 +242,7 @@ fun ContentDetailScreen(
                                                 text = line.text,
                                                 audioUrl = line.audioUrl,
                                                 contentId = content.id,
+                                                translation = line.trans,
                                                 lessonTitle = content.title,
                                                 startTime = line.start,
                                                 endTime = line.end
@@ -730,7 +732,7 @@ private fun HighlightableSentenceRow(
     onWordClick: (ClickedWord) -> Unit,
     onSentenceTap: (SentencePlaybackRequest) -> Unit
 ) {
-    val background = if (isPlaying) StudyMint.copy(alpha = 0.72f) else Color.Transparent
+    val background = if (isPlaying) softTint(StudyMint) else Color.Transparent
     val leftColor = if (isPlaying) StudyGreen else Color.Transparent
 
     Row(
@@ -753,7 +755,7 @@ private fun HighlightableSentenceRow(
             text = text,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge,
-            color = if (isPlaying) StudyInk else MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface,
             onWordClick = onWordClick,
             onSentenceTap = { sentence ->
                 onSentenceTap(SentencePlaybackRequest(sentence, sentenceIndex))
@@ -776,9 +778,9 @@ private fun DialogueLineCard(
     onLoopLine: () -> Unit
 ) {
     val containerColor = when {
-        isPlaying -> StudyMint
-        isPrimary -> StudyBlueSoft
-        else -> StudyYellowSoft
+        isPlaying -> softTint(StudyMint)
+        isPrimary -> softTint(StudyBlueSoft)
+        else -> softTint(StudyYellowSoft)
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -791,7 +793,7 @@ private fun DialogueLineCard(
             ClickableReadingText(
                 text = line.text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = StudyInk,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 onWordClick = onWordClick,
                 onSentenceTap = {

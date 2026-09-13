@@ -175,6 +175,7 @@ class FetchDataManager(context: Context? = null) {
                     DialogueLine(
                         speaker = line.speaker,
                         text = line.text,
+                        trans = line.trans,
                         start = line.start,
                         end = line.end,
                         audioUrl = line.audioUrl

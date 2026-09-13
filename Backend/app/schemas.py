@@ -132,6 +132,7 @@ class ContentFetchRequest(BaseModel):
 class DialogueLineResponse(BaseModel):
     speaker: str
     text: str
+    trans: str = ""
     start: float = 0.0
     end: float = 0.0
     audioUrl: str | None = None

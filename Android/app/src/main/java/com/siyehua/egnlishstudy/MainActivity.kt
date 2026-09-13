@@ -5,9 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.model.*
 import com.siyehua.egnlishstudy.ui.screens.ContentDetailScreen
@@ -32,6 +34,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val database = remember { ContentCacheDatabase(context) }
     var selectedContent by remember { mutableStateOf<Content?>(null) }
     var selectedWord by remember { mutableStateOf<Pair<String, String>?>(null) }
     var selectedFavorite by remember { mutableStateOf<FavoriteRecord?>(null) }
@@ -63,7 +67,16 @@ fun MainNavigation() {
             selectedFavorite?.let { favorite ->
                 SentenceDetailScreen(
                     favorite = favorite,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onOpenOriginal = { contentId ->
+                        val content = runCatching {
+                            database.loadAll().firstOrNull { it.id == contentId }
+                        }.getOrNull()
+                        if (content != null) {
+                            selectedContent = content
+                            navController.navigate("detail")
+                        }
+                    }
                 )
             }
         }

@@ -184,6 +184,11 @@ class ContentCacheDatabase(context: Context) :
                 "ALTER TABLE $TABLE_FAVORITES ADD COLUMN $COLUMN_FAVORITE_CONTENT_ID TEXT NOT NULL DEFAULT ''"
             )
         }
+        if (oldVersion < 31) {
+            db.execSQL(
+                "ALTER TABLE $TABLE_FAVORITES ADD COLUMN $COLUMN_FAVORITE_TRANSLATION TEXT NOT NULL DEFAULT ''"
+            )
+        }
     }
 
     private fun createTtsTable(db: SQLiteDatabase) {
@@ -252,6 +257,7 @@ class ContentCacheDatabase(context: Context) :
                 $COLUMN_FAVORITE_TEXT TEXT NOT NULL,
                 $COLUMN_FAVORITE_AUDIO_URL TEXT,
                 $COLUMN_FAVORITE_CONTENT_ID TEXT NOT NULL DEFAULT '',
+                $COLUMN_FAVORITE_TRANSLATION TEXT NOT NULL DEFAULT '',
                 $COLUMN_FAVORITE_LESSON_TITLE TEXT NOT NULL DEFAULT '',
                 $COLUMN_FAVORITE_START REAL NOT NULL DEFAULT 0,
                 $COLUMN_FAVORITE_END REAL NOT NULL DEFAULT 0,
@@ -274,6 +280,7 @@ class ContentCacheDatabase(context: Context) :
                     put(COLUMN_FAVORITE_TEXT, record.text)
                     put(COLUMN_FAVORITE_AUDIO_URL, record.audioUrl)
                     put(COLUMN_FAVORITE_CONTENT_ID, record.contentId)
+                    put(COLUMN_FAVORITE_TRANSLATION, record.translation)
                     put(COLUMN_FAVORITE_LESSON_TITLE, record.lessonTitle)
                     put(COLUMN_FAVORITE_START, record.startTime)
                     put(COLUMN_FAVORITE_END, record.endTime)
@@ -306,6 +313,7 @@ class ContentCacheDatabase(context: Context) :
                                 text = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_TEXT)),
                                 audioUrl = cursor.getNullableString(COLUMN_FAVORITE_AUDIO_URL),
                                 contentId = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_CONTENT_ID)),
+                                translation = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_TRANSLATION)),
                                 lessonTitle = cursor.getString(
                                     cursor.columnIndex(COLUMN_FAVORITE_LESSON_TITLE)
                                 ),
@@ -980,7 +988,7 @@ class ContentCacheDatabase(context: Context) :
 
                 is Dialogue -> {
                     put(COLUMN_BODY, lines.joinToString(LINE_SEPARATOR) { line ->
-                        "${line.speaker}$SPEAKER_SEPARATOR${line.text}$SPEAKER_SEPARATOR${line.start}$SPEAKER_SEPARATOR${line.end}$SPEAKER_SEPARATOR${line.audioUrl.orEmpty()}"
+                        "${line.speaker}$SPEAKER_SEPARATOR${line.text}$SPEAKER_SEPARATOR${line.start}$SPEAKER_SEPARATOR${line.end}$SPEAKER_SEPARATOR${line.audioUrl.orEmpty()}$SPEAKER_SEPARATOR${line.trans}"
                     })
                     put(COLUMN_SOURCE, sourceName.ifBlank { source })
                     put(COLUMN_DATE, date)
@@ -1077,10 +1085,11 @@ class ContentCacheDatabase(context: Context) :
                 lines = body.split(LINE_SEPARATOR)
                     .filter { it.isNotBlank() }
                     .map { line ->
-                        val parts = line.split(SPEAKER_SEPARATOR, limit = 5)
+                        val parts = line.split(SPEAKER_SEPARATOR, limit = 6)
                         DialogueLine(
                             speaker = parts.getOrElse(0) { "" },
                             text = parts.getOrElse(1) { "" },
+                            trans = parts.getOrElse(5) { "" },
                             start = parts.getOrElse(2) { "" }.toDoubleOrNull() ?: 0.0,
                             end = parts.getOrElse(3) { "" }.toDoubleOrNull() ?: 0.0,
                             audioUrl = parts.getOrElse(4) { "" }.takeIf { it.isNotBlank() }
@@ -1133,7 +1142,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 30
+        private const val DATABASE_VERSION = 31
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"
@@ -1225,6 +1234,7 @@ class ContentCacheDatabase(context: Context) :
         private const val COLUMN_FAVORITE_TEXT = "text"
         private const val COLUMN_FAVORITE_AUDIO_URL = "audio_url"
         private const val COLUMN_FAVORITE_CONTENT_ID = "content_id"
+        private const val COLUMN_FAVORITE_TRANSLATION = "translation"
         private const val COLUMN_FAVORITE_LESSON_TITLE = "lesson_title"
         private const val COLUMN_FAVORITE_START = "start_time"
         private const val COLUMN_FAVORITE_END = "end_time"
@@ -1261,6 +1271,7 @@ data class FavoriteRecord(
     val text: String,
     val audioUrl: String?,
     val contentId: String = "",
+    val translation: String = "",
     val lessonTitle: String,
     val startTime: Double = 0.0,
     val endTime: Double = 0.0,

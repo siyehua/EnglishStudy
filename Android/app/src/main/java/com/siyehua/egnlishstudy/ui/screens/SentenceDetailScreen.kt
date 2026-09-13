@@ -1,6 +1,7 @@
 package com.siyehua.egnlishstudy.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
@@ -54,6 +58,7 @@ import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightViewModel
 fun SentenceDetailScreen(
     favorite: FavoriteRecord,
     onBack: () -> Unit,
+    onOpenOriginal: (String) -> Unit,
     audioViewModel: ContentAudioViewModel = viewModel(),
     wordInsightViewModel: WordInsightViewModel = viewModel()
 ) {
@@ -61,6 +66,7 @@ fun SentenceDetailScreen(
     val wordInsightState by wordInsightViewModel.uiState.collectAsState()
     val wordPronunciationState by wordInsightViewModel.audioState.collectAsState()
     var selectedWord by remember { mutableStateOf<ClickedWord?>(null) }
+    var showTranslation by remember { mutableStateOf(true) }
 
     val isPlaying = audioState is AudioUiState.Playing ||
         audioState is AudioUiState.Preparing
@@ -127,6 +133,15 @@ fun SentenceDetailScreen(
                             .padding(start = 12.dp)
                     )
                     IconButton(
+                        onClick = { if (favorite.contentId.isNotBlank()) onOpenOriginal(favorite.contentId) },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.18f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Article, contentDescription = "查看原文")
+                    }
+                    IconButton(
                         onClick = { loopSentence() },
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color.White.copy(alpha = 0.18f),
@@ -153,11 +168,49 @@ fun SentenceDetailScreen(
                     ClickableReadingText(
                         text = favorite.text,
                         style = MaterialTheme.typography.titleMedium,
-                        color = StudyInk,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(16.dp),
                         onWordClick = { clickedWord -> selectedWord = clickedWord },
                         onSentenceTap = { playSentence() }
                     )
+                }
+
+                if (favorite.translation.isNotBlank()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showTranslation = !showTranslation }
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "释义",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = if (showTranslation) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                                    contentDescription = if (showTranslation) "收起释义" else "展开释义",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (showTranslation) {
+                                Text(
+                                    text = favorite.translation,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 14.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Text(
