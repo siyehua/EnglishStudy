@@ -28,10 +28,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -55,7 +59,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -64,6 +70,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.siyehua.egnlishstudy.data.ContentCacheDatabase
+import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.data.SentenceSplitter
 import com.siyehua.egnlishstudy.data.wordform.WordFormApiClient
 import com.siyehua.egnlishstudy.model.Article
@@ -111,6 +119,22 @@ fun ContentDetailScreen(
     val density = LocalDensity.current
     val collapseRangePx = with(density) { 160.dp.toPx() }
     var selectedWord by remember { mutableStateOf<ClickedWord?>(null) }
+
+    val context = LocalContext.current
+    val favoriteDatabase = remember { ContentCacheDatabase(context) }
+    var activeLineIndex by remember(content.id) { mutableStateOf<Int?>(null) }
+    var favoritedLineIndices by remember(content.id) {
+        mutableStateOf(runCatching {
+            favoriteDatabase.loadFavorites()
+                .filter { it.kind == "sentence" && it.lessonTitle == content.title }
+                .mapNotNull { favorite ->
+                    (content as? Dialogue)?.lines?.indexOfFirst {
+                        it.text == favorite.text && it.start == favorite.startTime
+                    }?.takeIf { it >= 0 }
+                }
+                .toSet()
+        }.getOrDefault(emptySet()))
+    }
 
     DisposableEffect(content.id) {
         onDispose {
@@ -193,9 +217,39 @@ fun ContentDetailScreen(
                                 sentenceIndex = index,
                                 isPrimary = index % 2 == 0,
                                 isPlaying = currentSentenceIndex == index,
+                                isActive = activeLineIndex == index,
+                                isFavorited = favoritedLineIndices.contains(index),
                                 onWordClick = onWordClick,
                                 onPlayLine = { _, i ->
+                                    activeLineIndex = i
                                     audioViewModel.playFromLine(content, i)
+                                },
+                                onToggleFavorite = {
+                                    val key = "sentence-${content.id}-$index"
+                                    if (favoritedLineIndices.contains(index)) {
+                                        favoritedLineIndices = favoritedLineIndices - index
+                                    } else {
+                                        favoritedLineIndices = favoritedLineIndices + index
+                                        favoriteDatabase.addFavorite(
+                                            FavoriteRecord(
+                                                kind = "sentence",
+                                                text = line.text,
+                                                audioUrl = line.audioUrl,
+                                                lessonTitle = content.title,
+                                                startTime = line.start,
+                                                endTime = line.end
+                                            )
+                                        )
+                                    }
+                                },
+                                onLoopLine = {
+                                    val segUrl = line.audioUrl
+                                    if (!segUrl.isNullOrBlank()) {
+                                        audioViewModel.loopSegmentUrl(
+                                            WordFormApiClient.DEFAULT_BASE_URL + segUrl,
+                                            index
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -576,49 +630,6 @@ private fun NewsDetail(
 }
 
 @Composable
-private fun DialogueDetail(
-    dialogue: Dialogue,
-    currentSentenceIndex: Int?,
-    onWordClick: (ClickedWord) -> Unit = {},
-    onPlayLine: (DialogueLine, Int) -> Unit = { _, _ -> }
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Dialogue practice",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "${dialogue.lines.size} lines",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.55f))
-
-            dialogue.lines.forEachIndexed { index, line ->
-                DialogueLineCard(
-                    line = line,
-                    sentenceIndex = index,
-                    isPrimary = index % 2 == 0,
-                    isPlaying = currentSentenceIndex == index,
-                    onWordClick = onWordClick,
-                    onPlayLine = onPlayLine
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun ReadingPanel(
     title: String,
     meta: String,
@@ -751,8 +762,12 @@ private fun DialogueLineCard(
     sentenceIndex: Int,
     isPrimary: Boolean,
     isPlaying: Boolean,
+    isActive: Boolean,
+    isFavorited: Boolean,
     onWordClick: (ClickedWord) -> Unit,
-    onPlayLine: (DialogueLine, Int) -> Unit
+    onPlayLine: (DialogueLine, Int) -> Unit,
+    onToggleFavorite: () -> Unit,
+    onLoopLine: () -> Unit
 ) {
     val containerColor = when {
         isPlaying -> StudyMint
@@ -760,22 +775,59 @@ private fun DialogueLineCard(
         else -> StudyYellowSoft
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = containerColor,
-        border = if (isPlaying) BorderStroke(1.dp, StudyGreen.copy(alpha = 0.45f)) else null
-    ) {
-        ClickableReadingText(
-            text = line.text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = StudyInk,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            onWordClick = onWordClick,
-            onSentenceTap = {
-                onPlayLine(line, sentenceIndex)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            color = containerColor,
+            border = if (isPlaying) BorderStroke(1.dp, StudyGreen.copy(alpha = 0.45f)) else null
+        ) {
+            ClickableReadingText(
+                text = line.text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = StudyInk,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                onWordClick = onWordClick,
+                onSentenceTap = {
+                    onPlayLine(line, sentenceIndex)
+                }
+            )
+        }
+
+        if (isActive) {
+            Row(
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LineActionButton(
+                    icon = if (isFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    label = if (isFavorited) "已收藏" else "收藏",
+                    tint = Color(red = 0.9f, green = 0.32f, blue = 0.32f),
+                    onClick = onToggleFavorite
+                )
+                LineActionButton(
+                    icon = Icons.Filled.Repeat,
+                    label = "循环",
+                    tint = StudyBlue,
+                    onClick = onLoopLine
+                )
             }
-        )
+        }
+    }
+}
+
+@Composable
+private fun LineActionButton(
+    icon: ImageVector,
+    label: String,
+    tint: Color,
+    onClick: () -> Unit
+) {
+    TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+        Icon(imageVector = icon, contentDescription = label, tint = tint, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = tint)
     }
 }
 

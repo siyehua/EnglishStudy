@@ -40,6 +40,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     // contains the current playback position.
     private var matchByTime = false
     private var lineRanges: List<Pair<Double, Double>> = emptyList()
+    private var loopSingle = false
 
     fun togglePlayback(content: Content) {
         when (_uiState.value) {
@@ -167,8 +168,40 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /** Play a favourite's stored audio clip. */
+    fun playFavoriteUrl(url: String) {
+        playSegmentUrl(url, "", 0)
+    }
+
+    /** Loop a single backend-cut sentence clip until stopped. */
+    fun loopSegmentUrl(url: String, sentenceIndex: Int) {
+        matchByTime = false
+        lineRanges = emptyList()
+        stop(resetState = false)
+        highlightedSentenceIndex = sentenceIndex
+        prepareJob = viewModelScope.launch {
+            _uiState.value = AudioUiState.Preparing
+            when (val result = ttsAudioManager.ensureRemoteAudio(url)) {
+                is WordAudioResult.Success -> {
+                    playlist = listOf(result.uri)
+                    playlistDurations = listOf(readDurationMillis(result.uri))
+                    totalDurationMillis = playlistDurations.sumOf { it.toLong() }
+                    playlistIndex = 0
+                    segmentStartMs = 0L
+                    segmentEndMs = 0L
+                    loopSingle = true
+                    playCurrent()
+                }
+
+                is WordAudioResult.Failure ->
+                    _uiState.value = AudioUiState.Error(result.message)
+            }
+        }
+    }
+
     /** Play the whole lesson audio and highlight lines as playback advances. */
     fun playAll(content: Content) {
+        loopSingle = false
         lineRanges = (content as? Dialogue)
             ?.lines
             ?.map { it.start to it.end }
@@ -183,6 +216,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
      * playback advances.
      */
     fun playFromLine(content: Content, lineIndex: Int) {
+        loopSingle = false
         val lines = (content as? Dialogue)?.lines.orEmpty()
         lineRanges = lines.map { it.start to it.end }
         matchByTime = lineRanges.isNotEmpty()
@@ -218,6 +252,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     fun playSegmentUrl(url: String, fallbackText: String, sentenceIndex: Int) {
         matchByTime = false
         lineRanges = emptyList()
+        loopSingle = false
         stop(resetState = false)
         highlightedSentenceIndex = sentenceIndex
         prepareJob = viewModelScope.launch {
@@ -257,6 +292,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         highlightedSentenceIndex = null
         segmentStartMs = 0L
         segmentEndMs = 0L
+        loopSingle = false
         if (resetState) {
             _uiState.value = AudioUiState.Idle
         }
@@ -305,6 +341,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
                 totalDurationMillis = playlistDurations.sumOf { it.toLong() }
             }
             setOnCompletionListener { advancePlaylist() }
+            isLooping = loopSingle
             if (segmentStartMs > 0) {
                 val target = segmentStartMs.coerceAtMost(duration.toLong())
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

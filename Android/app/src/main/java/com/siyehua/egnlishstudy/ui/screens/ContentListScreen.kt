@@ -33,6 +33,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FilterList
@@ -105,6 +106,7 @@ import kotlin.math.max
 @Composable
 fun ContentListScreen(
     onContentClick: (Content) -> Unit,
+    onOpenFavorites: () -> Unit = {},
     viewModel: ContentViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -112,6 +114,7 @@ fun ContentListScreen(
     ContentListContent(
         uiState = uiState,
         onContentClick = onContentClick,
+        onOpenFavorites = onOpenFavorites,
         onTypeToggle = viewModel::toggleType,
         onLevelToggle = viewModel::toggleLevel,
         onSourceToggle = viewModel::toggleSource,
@@ -126,6 +129,7 @@ fun ContentListScreen(
 fun ContentListContent(
     uiState: ContentUiState,
     onContentClick: (Content) -> Unit,
+    onOpenFavorites: () -> Unit,
     onTypeToggle: (ContentType) -> Unit,
     onLevelToggle: (ContentLevel) -> Unit,
     onSourceToggle: (String) -> Unit,
@@ -236,7 +240,8 @@ fun ContentListContent(
                         onTypeToggle = onTypeToggle,
                         onSourceToggle = onSourceToggle,
                         onClearFilters = onClearFilters,
-                        collapseFraction = collapseFraction
+                        collapseFraction = collapseFraction,
+                        onOpenFavorites = onOpenFavorites
                     )
 
                     LazyColumn(
@@ -312,7 +317,8 @@ private fun LearningHomeHeader(
     onTypeToggle: (ContentType) -> Unit,
     onSourceToggle: (String) -> Unit,
     onClearFilters: () -> Unit,
-    collapseFraction: Float
+    collapseFraction: Float,
+    onOpenFavorites: () -> Unit
 ) {
     val fraction = collapseFraction.coerceIn(0f, 1f)
     val topPadding = lerpDp(12.dp, 6.dp, fraction)
@@ -385,6 +391,18 @@ private fun LearningHomeHeader(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(
+                    onClick = onOpenFavorites,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.18f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "收藏夹"
+                    )
+                }
                 Box {
                     IconButton(
                         onClick = { isFilterOpen = true },
@@ -1296,6 +1314,7 @@ fun ContentListScreenPreview() {
                 sourceCounts = mapOf("EnglishPod" to 20)
             ),
             onContentClick = {},
+            onOpenFavorites = {},
             onTypeToggle = {},
             onLevelToggle = { selectedLevel = selectedLevel.toggle(it) },
             onSourceToggle = {},

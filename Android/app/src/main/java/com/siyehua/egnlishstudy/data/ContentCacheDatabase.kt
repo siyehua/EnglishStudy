@@ -61,6 +61,7 @@ class ContentCacheDatabase(context: Context) :
         createWordMeaningTable(db)
         createWordPhonicsTable(db)
         createWordAudioTable(db)
+        createFavoritesTable(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -175,6 +176,9 @@ class ContentCacheDatabase(context: Context) :
         if (oldVersion < 28) {
             db.execSQL("DELETE FROM $TABLE_CONTENT")
         }
+        if (oldVersion < 29) {
+            createFavoritesTable(db)
+        }
     }
 
     private fun createTtsTable(db: SQLiteDatabase) {
@@ -233,6 +237,111 @@ class ContentCacheDatabase(context: Context) :
             """.trimIndent()
         )
     }
+
+    private fun createFavoritesTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS $TABLE_FAVORITES (
+                $COLUMN_FAVORITE_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COLUMN_FAVORITE_KIND TEXT NOT NULL,
+                $COLUMN_FAVORITE_TEXT TEXT NOT NULL,
+                $COLUMN_FAVORITE_AUDIO_URL TEXT,
+                $COLUMN_FAVORITE_LESSON_TITLE TEXT NOT NULL DEFAULT '',
+                $COLUMN_FAVORITE_START REAL NOT NULL DEFAULT 0,
+                $COLUMN_FAVORITE_END REAL NOT NULL DEFAULT 0,
+                $COLUMN_FAVORITE_CREATED_AT INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_favorite_kind ON $TABLE_FAVORITES($COLUMN_FAVORITE_KIND)"
+        )
+    }
+
+    fun addFavorite(record: FavoriteRecord): Long =
+        writableDatabase.use { db ->
+            db.insertWithOnConflict(
+                TABLE_FAVORITES,
+                null,
+                ContentValues().apply {
+                    put(COLUMN_FAVORITE_KIND, record.kind)
+                    put(COLUMN_FAVORITE_TEXT, record.text)
+                    put(COLUMN_FAVORITE_AUDIO_URL, record.audioUrl)
+                    put(COLUMN_FAVORITE_LESSON_TITLE, record.lessonTitle)
+                    put(COLUMN_FAVORITE_START, record.startTime)
+                    put(COLUMN_FAVORITE_END, record.endTime)
+                    put(
+                        COLUMN_FAVORITE_CREATED_AT,
+                        if (record.createdAt > 0) record.createdAt else System.currentTimeMillis()
+                    )
+                },
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
+        }
+
+    fun loadFavorites(): List<FavoriteRecord> =
+        readableDatabase.use { db ->
+            db.query(
+                TABLE_FAVORITES,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "$COLUMN_FAVORITE_CREATED_AT DESC"
+            ).use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        add(
+                            FavoriteRecord(
+                                id = cursor.getLong(cursor.columnIndex(COLUMN_FAVORITE_ID)),
+                                kind = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_KIND)),
+                                text = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_TEXT)),
+                                audioUrl = cursor.getNullableString(COLUMN_FAVORITE_AUDIO_URL),
+                                lessonTitle = cursor.getString(
+                                    cursor.columnIndex(COLUMN_FAVORITE_LESSON_TITLE)
+                                ),
+                                startTime = cursor.getDouble(cursor.columnIndex(COLUMN_FAVORITE_START)),
+                                endTime = cursor.getDouble(cursor.columnIndex(COLUMN_FAVORITE_END)),
+                                createdAt = cursor.getLong(cursor.columnIndex(COLUMN_FAVORITE_CREATED_AT))
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+    fun deleteFavorite(id: Long) {
+        writableDatabase.use { db ->
+            db.delete(TABLE_FAVORITES, "$COLUMN_FAVORITE_ID = ?", arrayOf(id.toString()))
+        }
+    }
+
+    fun deleteFavoriteByKey(kind: String, text: String, lessonTitle: String, startTime: Double) {
+        writableDatabase.use { db ->
+            db.delete(
+                TABLE_FAVORITES,
+                "$COLUMN_FAVORITE_KIND = ? AND $COLUMN_FAVORITE_TEXT = ? " +
+                    "AND $COLUMN_FAVORITE_LESSON_TITLE = ? AND $COLUMN_FAVORITE_START = ?",
+                arrayOf(kind, text, lessonTitle, startTime.toString())
+            )
+        }
+    }
+
+    fun isFavorited(kind: String, text: String, lessonTitle: String, startTime: Double): Boolean =
+        readableDatabase.use { db ->
+            db.query(
+                TABLE_FAVORITES,
+                arrayOf(COLUMN_FAVORITE_ID),
+                "$COLUMN_FAVORITE_KIND = ? AND $COLUMN_FAVORITE_TEXT = ? " +
+                    "AND $COLUMN_FAVORITE_LESSON_TITLE = ? AND $COLUMN_FAVORITE_START = ?",
+                arrayOf(kind, text, lessonTitle, startTime.toString()),
+                null,
+                null,
+                null,
+                "1"
+            ).use { cursor -> cursor.moveToFirst() }
+        }
 
     private fun createWordPronunciationTable(db: SQLiteDatabase) {
         db.execSQL(
@@ -1016,7 +1125,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 28
+        private const val DATABASE_VERSION = 29
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"
@@ -1102,6 +1211,16 @@ class ContentCacheDatabase(context: Context) :
         private const val COLUMN_WORD_AUDIO_FILE_PATH = "file_path"
         private const val COLUMN_WORD_AUDIO_CREATED_AT = "created_at"
 
+        private const val TABLE_FAVORITES = "favorites"
+        private const val COLUMN_FAVORITE_ID = "id"
+        private const val COLUMN_FAVORITE_KIND = "kind"
+        private const val COLUMN_FAVORITE_TEXT = "text"
+        private const val COLUMN_FAVORITE_AUDIO_URL = "audio_url"
+        private const val COLUMN_FAVORITE_LESSON_TITLE = "lesson_title"
+        private const val COLUMN_FAVORITE_START = "start_time"
+        private const val COLUMN_FAVORITE_END = "end_time"
+        private const val COLUMN_FAVORITE_CREATED_AT = "created_at"
+
         private const val LINE_SEPARATOR = "\n---LINE---\n"
         private const val SPEAKER_SEPARATOR = "::"
 
@@ -1125,4 +1244,15 @@ data class WordAudioRecord(
     val wordText: String,
     val wordHash: String,
     val filePath: String
+)
+
+data class FavoriteRecord(
+    val id: Long = 0,
+    val kind: String,
+    val text: String,
+    val audioUrl: String?,
+    val lessonTitle: String,
+    val startTime: Double = 0.0,
+    val endTime: Double = 0.0,
+    val createdAt: Long = 0
 )

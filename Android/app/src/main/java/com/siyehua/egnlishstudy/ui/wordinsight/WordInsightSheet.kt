@@ -15,8 +15,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -44,6 +47,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.siyehua.egnlishstudy.data.ContentCacheDatabase
+import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.data.wordform.WordFormRelation
 import com.siyehua.egnlishstudy.data.wordform.WordFormResponse
 import com.siyehua.egnlishstudy.data.wordform.WordFormVariant
@@ -89,6 +94,15 @@ fun WordInsightSheet(
         wordForm = wordForm,
         meaningState = meaningState
     )
+
+    val context = LocalContext.current
+    val favoriteDatabase = remember { ContentCacheDatabase(context) }
+    var isWordFavorited by remember(activeWord) {
+        mutableStateOf(
+            runCatching { favoriteDatabase.isFavorited("word", activeWord, "", 0.0) }
+                .getOrDefault(false)
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -140,6 +154,34 @@ fun WordInsightSheet(
                         audioUrl = dictionaryAudioUrl,
                         isBusy = audioState.isBusyFor(pronunciationTarget),
                         onSpeakWord = onSpeakWord
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        if (isWordFavorited) {
+                            favoriteDatabase.deleteFavoriteByKey("word", activeWord, "", 0.0)
+                            isWordFavorited = false
+                        } else {
+                            favoriteDatabase.addFavorite(
+                                FavoriteRecord(
+                                    kind = "word",
+                                    text = activeWord,
+                                    audioUrl = dictionaryAudioUrl,
+                                    lessonTitle = "",
+                                    startTime = 0.0,
+                                    endTime = 0.0
+                                )
+                            )
+                            isWordFavorited = true
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isWordFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = if (isWordFavorited) "取消收藏" else "收藏单词",
+                        tint = if (isWordFavorited) Color(red = 0.9f, green = 0.32f, blue = 0.32f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 

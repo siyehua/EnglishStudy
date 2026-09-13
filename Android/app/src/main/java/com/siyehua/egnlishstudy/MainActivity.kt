@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.siyehua.egnlishstudy.model.*
 import com.siyehua.egnlishstudy.ui.screens.ContentDetailScreen
 import com.siyehua.egnlishstudy.ui.screens.ContentListScreen
+import com.siyehua.egnlishstudy.ui.screens.FavoritesScreen
 import com.siyehua.egnlishstudy.ui.theme.EgnlishStudyTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,8 +37,12 @@ fun MainNavigation() {
                 onContentClick = { content ->
                     selectedContent = content
                     navController.navigate("detail")
-                }
+                },
+                onOpenFavorites = { navController.navigate("favorites") }
             )
+        }
+        composable("favorites") {
+            FavoritesScreen(onBack = { navController.popBackStack() })
         }
         composable("detail") {
             selectedContent?.let { content ->
