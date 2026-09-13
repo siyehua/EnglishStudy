@@ -231,53 +231,29 @@ def lesson_to_content_items(
         return []
 
     content = lesson.get("content") or []
-    whisper_segments = load_whisper_segments(number)
-
     _, full_url, _ = englishpod_audio_urls(number)
 
-    # Split the transcript into contiguous runs so a section's time range never
-    # spans across other sections (e.g. the second dialogue repeat).
+    # Use the downloaded transcript as-is (each line already has accurate text,
+    # Chinese translation and timestamps). No re-recognition, no re-cutting.
     lines: list[DialogueLineResponse] = []
-    if whisper_segments is not None:
-        for seg in whisper_segments:
-            seg_start = float(seg.get("start") or 0.0)
-            seg_end = float(seg.get("end") or seg_start)
-            seg_text = str(seg.get("text") or "").strip()
-            if not seg_text:
-                continue
-            lines.append(
-                DialogueLineResponse(
-                    speaker="Narrator",
-                    text=seg_text,
-                    start=seg_start,
-                    end=seg_end,
-                    audioUrl=(
-                        f"/ting/segment?lesson={number}"
-                        f"&start={seg_start:.3f}&end={seg_end:.3f}"
-                    ),
-                )
+    for item in content:
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        item_start = float(item.get("start") or 0.0)
+        item_end = float(item.get("end") or item_start)
+        lines.append(
+            DialogueLineResponse(
+                speaker="Narrator",
+                text=text,
+                start=item_start,
+                end=item_end,
+                audioUrl=(
+                    f"/ting/segment?lesson={number}"
+                    f"&start={item_start:.3f}&end={item_end:.3f}"
+                ),
             )
-    else:
-        # Fallback: split the transcript proportionally within its time range.
-        for item in content:
-            text = str(item.get("text") or "").strip()
-            item_start = float(item.get("start") or 0.0)
-            item_end = float(item.get("end") or item_start)
-            for sentence, sentence_start, sentence_end in split_sentences_with_times(
-                text, item_start, item_end
-            ):
-                lines.append(
-                    DialogueLineResponse(
-                        speaker="Narrator",
-                        text=sentence,
-                        start=sentence_start,
-                        end=sentence_end,
-                        audioUrl=(
-                            f"/ting/segment?lesson={number}"
-                            f"&start={sentence_start:.3f}&end={sentence_end:.3f}"
-                        ),
-                    )
-                )
+        )
     if not lines:
         return []
 
