@@ -195,5 +195,7 @@ data class RemoteDialogueLine(
     val speaker: String,
     val text: String,
     val start: Double = 0.0,
-    val end: Double = 0.0
+    val end: Double = 0.0,
+    @SerialName("audioUrl")
+    val audioUrl: String? = null
 )

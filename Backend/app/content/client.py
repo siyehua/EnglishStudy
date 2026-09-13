@@ -247,6 +247,10 @@ def lesson_to_content_items(
                         text=seg_text,
                         start=seg_start,
                         end=seg_end,
+                        audioUrl=(
+                            f"/ting/segment?lesson={number}"
+                            f"&start={seg_start:.3f}&end={seg_end:.3f}"
+                        ),
                     )
                 )
         else:
@@ -264,6 +268,10 @@ def lesson_to_content_items(
                             text=sentence,
                             start=sentence_start,
                             end=sentence_end,
+                            audioUrl=(
+                                f"/ting/segment?lesson={number}"
+                                f"&start={sentence_start:.3f}&end={sentence_end:.3f}"
+                            ),
                         )
                     )
         if not lines:
@@ -398,6 +406,19 @@ def split_sentences_with_times(
         result.append((sentence, cursor, sentence_end))
         cursor = sentence_end
     return result
+
+
+def englishpod_original_audio_url(number: int) -> str | None:
+    """Original full-lesson audio used for the Whisper timestamps."""
+    try:
+        index = download_lesson_index()
+    except Exception:
+        return None
+    meta = index.get(number)
+    if not meta:
+        return None
+    rel = str(meta.get("audio") or "").lstrip("./")
+    return ENGLISH_POD_RAW_BASE + rel if rel else None
 
 
 def englishpod_audio_urls(number: int) -> tuple[str | None, str | None, str | None]:

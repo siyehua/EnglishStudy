@@ -66,5 +66,6 @@ data class DialogueLine(
     val speaker: String,
     val text: String,
     val start: Double = 0.0,
-    val end: Double = 0.0
+    val end: Double = 0.0,
+    val audioUrl: String? = null
 )

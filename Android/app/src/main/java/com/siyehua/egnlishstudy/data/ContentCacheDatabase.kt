@@ -172,6 +172,9 @@ class ContentCacheDatabase(context: Context) :
         if (oldVersion < 27) {
             db.execSQL("DELETE FROM $TABLE_CONTENT")
         }
+        if (oldVersion < 28) {
+            db.execSQL("DELETE FROM $TABLE_CONTENT")
+        }
     }
 
     private fun createTtsTable(db: SQLiteDatabase) {
@@ -860,7 +863,7 @@ class ContentCacheDatabase(context: Context) :
 
                 is Dialogue -> {
                     put(COLUMN_BODY, lines.joinToString(LINE_SEPARATOR) { line ->
-                        "${line.speaker}$SPEAKER_SEPARATOR${line.text}$SPEAKER_SEPARATOR${line.start}$SPEAKER_SEPARATOR${line.end}"
+                        "${line.speaker}$SPEAKER_SEPARATOR${line.text}$SPEAKER_SEPARATOR${line.start}$SPEAKER_SEPARATOR${line.end}$SPEAKER_SEPARATOR${line.audioUrl.orEmpty()}"
                     })
                     put(COLUMN_SOURCE, sourceName.ifBlank { source })
                     put(COLUMN_DATE, date)
@@ -957,12 +960,13 @@ class ContentCacheDatabase(context: Context) :
                 lines = body.split(LINE_SEPARATOR)
                     .filter { it.isNotBlank() }
                     .map { line ->
-                        val parts = line.split(SPEAKER_SEPARATOR, limit = 4)
+                        val parts = line.split(SPEAKER_SEPARATOR, limit = 5)
                         DialogueLine(
                             speaker = parts.getOrElse(0) { "" },
                             text = parts.getOrElse(1) { "" },
                             start = parts.getOrElse(2) { "" }.toDoubleOrNull() ?: 0.0,
-                            end = parts.getOrElse(3) { "" }.toDoubleOrNull() ?: 0.0
+                            end = parts.getOrElse(3) { "" }.toDoubleOrNull() ?: 0.0,
+                            audioUrl = parts.getOrElse(4) { "" }.takeIf { it.isNotBlank() }
                         )
                     },
                 date = date,
@@ -1012,7 +1016,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 27
+        private const val DATABASE_VERSION = 28
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"

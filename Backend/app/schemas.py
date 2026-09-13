@@ -134,6 +134,7 @@ class DialogueLineResponse(BaseModel):
     text: str
     start: float = 0.0
     end: float = 0.0
+    audioUrl: str | None = None
 
 
 class ContentItemResponse(BaseModel):

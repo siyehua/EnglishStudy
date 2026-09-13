@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siyehua.egnlishstudy.data.SentenceSplitter
+import com.siyehua.egnlishstudy.data.wordform.WordFormApiClient
 import com.siyehua.egnlishstudy.model.Article
 import com.siyehua.egnlishstudy.model.Blog
 import com.siyehua.egnlishstudy.model.Content
@@ -191,8 +192,19 @@ fun ContentDetailScreen(
                             dialogue = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onPlaySegment = { start, end, text, index ->
-                                audioViewModel.playSegment(content, start, end, text, index)
+                            onPlayLine = { line, index ->
+                                val segUrl = line.audioUrl
+                                if (!segUrl.isNullOrBlank()) {
+                                    audioViewModel.playSegmentUrl(
+                                        WordFormApiClient.DEFAULT_BASE_URL + segUrl,
+                                        line.text,
+                                        index
+                                    )
+                                } else {
+                                    audioViewModel.playSegment(
+                                        content, line.start, line.end, line.text, index
+                                    )
+                                }
                             }
                         )
                     }
@@ -538,7 +550,7 @@ private fun DialogueDetail(
     dialogue: Dialogue,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit = {},
-    onPlaySegment: (Double, Double, String, Int) -> Unit = { _, _, _, _ -> }
+    onPlayLine: (DialogueLine, Int) -> Unit = { _, _ -> }
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -569,7 +581,7 @@ private fun DialogueDetail(
                     isPrimary = index % 2 == 0,
                     isPlaying = currentSentenceIndex == index,
                     onWordClick = onWordClick,
-                    onPlaySegment = onPlaySegment
+                    onPlayLine = onPlayLine
                 )
             }
         }
@@ -710,7 +722,7 @@ private fun DialogueLineCard(
     isPrimary: Boolean,
     isPlaying: Boolean,
     onWordClick: (ClickedWord) -> Unit,
-    onPlaySegment: (Double, Double, String, Int) -> Unit
+    onPlayLine: (DialogueLine, Int) -> Unit
 ) {
     val containerColor = when {
         isPlaying -> StudyMint
@@ -755,7 +767,7 @@ private fun DialogueLineCard(
                     color = StudyInk,
                     onWordClick = onWordClick,
                     onSentenceTap = {
-                        onPlaySegment(line.start, line.end, line.text, sentenceIndex)
+                        onPlayLine(line, sentenceIndex)
                     }
                 )
             }

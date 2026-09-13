@@ -162,6 +162,28 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /** Play a backend-cut sentence clip (no seeking involved). */
+    fun playSegmentUrl(url: String, fallbackText: String, sentenceIndex: Int) {
+        stop(resetState = false)
+        highlightedSentenceIndex = sentenceIndex
+        prepareJob = viewModelScope.launch {
+            _uiState.value = AudioUiState.Preparing
+            when (val result = ttsAudioManager.ensureRemoteAudio(url)) {
+                is WordAudioResult.Success -> {
+                    playlist = listOf(result.uri)
+                    playlistDurations = listOf(readDurationMillis(result.uri))
+                    totalDurationMillis = playlistDurations.sumOf { it.toLong() }
+                    playlistIndex = 0
+                    segmentStartMs = 0L
+                    segmentEndMs = 0L
+                    playCurrent()
+                }
+
+                is WordAudioResult.Failure -> playSentence(fallbackText, sentenceIndex)
+            }
+        }
+    }
+
     fun stop() {
         stop(resetState = true)
     }
