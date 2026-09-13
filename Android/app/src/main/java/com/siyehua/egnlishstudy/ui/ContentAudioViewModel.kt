@@ -10,6 +10,7 @@ import com.siyehua.egnlishstudy.data.TtsAudioManager
 import com.siyehua.egnlishstudy.data.TtsAudioResult
 import com.siyehua.egnlishstudy.data.WordAudioResult
 import com.siyehua.egnlishstudy.model.Content
+import com.siyehua.egnlishstudy.model.Dialogue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -35,6 +36,10 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     private var progressJob: Job? = null
     private var segmentStartMs = 0L
     private var segmentEndMs = 0L
+    // When playing the whole lesson, highlight the line whose time range
+    // contains the current playback position.
+    private var matchByTime = false
+    private var lineRanges: List<Pair<Double, Double>> = emptyList()
 
     fun togglePlayback(content: Content) {
         when (_uiState.value) {
@@ -162,8 +167,20 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /** Play the whole lesson audio and highlight lines as playback advances. */
+    fun playAll(content: Content) {
+        lineRanges = (content as? Dialogue)
+            ?.lines
+            ?.map { it.start to it.end }
+            .orEmpty()
+        matchByTime = lineRanges.isNotEmpty()
+        play(content)
+    }
+
     /** Play a backend-cut sentence clip (no seeking involved). */
     fun playSegmentUrl(url: String, fallbackText: String, sentenceIndex: Int) {
+        matchByTime = false
+        lineRanges = emptyList()
         stop(resetState = false)
         highlightedSentenceIndex = sentenceIndex
         prepareJob = viewModelScope.launch {
@@ -215,7 +232,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = AudioUiState.Paused(
             currentMillis = currentPlaybackMillis(),
             totalMillis = totalDurationMillis,
-            currentSentenceIndex = highlightedSentenceIndex ?: playlistIndex
+            currentSentenceIndex = activeSentenceIndex()
         )
     }
 
@@ -306,8 +323,17 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = AudioUiState.Playing(
             currentMillis = currentPlaybackMillis(),
             totalMillis = totalDurationMillis,
-            currentSentenceIndex = highlightedSentenceIndex ?: playlistIndex
+            currentSentenceIndex = activeSentenceIndex()
         )
+    }
+
+    private fun activeSentenceIndex(): Int {
+        if (matchByTime && lineRanges.isNotEmpty()) {
+            val seconds = currentPlaybackMillis() / 1000.0
+            val matched = lineRanges.indexOfFirst { seconds >= it.first && seconds < it.second }
+            if (matched >= 0) return matched
+        }
+        return highlightedSentenceIndex ?: playlistIndex
     }
 
     private fun currentPlaybackMillis(): Long {

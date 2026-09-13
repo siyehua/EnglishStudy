@@ -151,7 +151,13 @@ fun ContentDetailScreen(
             AudioPracticeBar(
                 audioState = audioState,
                 collapseFraction = collapseFraction,
-                onTogglePlayback = { audioViewModel.togglePlayback(content) },
+                onTogglePlayback = {
+                    if (audioState is AudioUiState.Idle && content is Dialogue) {
+                        audioViewModel.playAll(content)
+                    } else {
+                        audioViewModel.togglePlayback(content)
+                    }
+                },
                 onStop = { audioViewModel.stop() }
             )
 
