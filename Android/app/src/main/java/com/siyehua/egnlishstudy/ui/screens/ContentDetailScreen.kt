@@ -165,7 +165,7 @@ fun ContentDetailScreen(
                         selectedWord = clickedWord
                         wordInsightViewModel.load(clickedWord)
                     }
-                    val onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit = { request ->
+                    val onSentenceTap: (SentencePlaybackRequest) -> Unit = { request ->
                         audioViewModel.playSentence(request.text, request.index)
                     }
                     when (content) {
@@ -173,25 +173,27 @@ fun ContentDetailScreen(
                             article = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onSentenceDoubleClick = onSentenceDoubleClick
+                            onSentenceTap = onSentenceTap
                         )
                         is Blog -> BlogDetail(
                             blog = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onSentenceDoubleClick = onSentenceDoubleClick
+                            onSentenceTap = onSentenceTap
                         )
                         is News -> NewsDetail(
                             news = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onSentenceDoubleClick = onSentenceDoubleClick
+                            onSentenceTap = onSentenceTap
                         )
                         is Dialogue -> DialogueDetail(
                             dialogue = content,
                             currentSentenceIndex = currentSentenceIndex,
                             onWordClick = onWordClick,
-                            onSentenceDoubleClick = onSentenceDoubleClick
+                            onPlaySegment = { start, end, text ->
+                                audioViewModel.playSegment(content, start, end, text)
+                            }
                         )
                     }
                 }
@@ -485,7 +487,7 @@ private fun ArticleDetail(
     article: Article,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit = {},
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit = {}
+    onSentenceTap: (SentencePlaybackRequest) -> Unit = {}
 ) {
     ReadingPanel(
         title = "Reading",
@@ -493,7 +495,7 @@ private fun ArticleDetail(
         body = article.content,
         currentSentenceIndex = currentSentenceIndex,
         onWordClick = onWordClick,
-        onSentenceDoubleClick = onSentenceDoubleClick
+        onSentenceTap = onSentenceTap
     )
 }
 
@@ -502,7 +504,7 @@ private fun BlogDetail(
     blog: Blog,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit = {},
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit = {}
+    onSentenceTap: (SentencePlaybackRequest) -> Unit = {}
 ) {
     ReadingPanel(
         title = "Blog reading",
@@ -510,7 +512,7 @@ private fun BlogDetail(
         body = blog.content,
         currentSentenceIndex = currentSentenceIndex,
         onWordClick = onWordClick,
-        onSentenceDoubleClick = onSentenceDoubleClick
+        onSentenceTap = onSentenceTap
     )
 }
 
@@ -519,7 +521,7 @@ private fun NewsDetail(
     news: News,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit = {},
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit = {}
+    onSentenceTap: (SentencePlaybackRequest) -> Unit = {}
 ) {
     ReadingPanel(
         title = "News reading",
@@ -527,7 +529,7 @@ private fun NewsDetail(
         body = news.content,
         currentSentenceIndex = currentSentenceIndex,
         onWordClick = onWordClick,
-        onSentenceDoubleClick = onSentenceDoubleClick
+        onSentenceTap = onSentenceTap
     )
 }
 
@@ -536,7 +538,7 @@ private fun DialogueDetail(
     dialogue: Dialogue,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit = {},
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit = {}
+    onPlaySegment: (Double, Double, String) -> Unit = { _, _, _ -> }
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -567,7 +569,7 @@ private fun DialogueDetail(
                     isPrimary = index % 2 == 0,
                     isPlaying = currentSentenceIndex == index,
                     onWordClick = onWordClick,
-                    onSentenceDoubleClick = onSentenceDoubleClick
+                    onPlaySegment = onPlaySegment
                 )
             }
         }
@@ -581,7 +583,7 @@ private fun ReadingPanel(
     body: String,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit,
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit
+    onSentenceTap: (SentencePlaybackRequest) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -621,7 +623,7 @@ private fun ReadingPanel(
                 body = body.ifBlank { "No text is available for this lesson." },
                 currentSentenceIndex = currentSentenceIndex,
                 onWordClick = onWordClick,
-                onSentenceDoubleClick = onSentenceDoubleClick
+                onSentenceTap = onSentenceTap
             )
         }
     }
@@ -632,7 +634,7 @@ private fun HighlightedReadingText(
     body: String,
     currentSentenceIndex: Int?,
     onWordClick: (ClickedWord) -> Unit,
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit
+    onSentenceTap: (SentencePlaybackRequest) -> Unit
 ) {
     val sentences = remember(body) { body.splitIntoDisplaySentences() }
     if (sentences.isEmpty()) {
@@ -641,8 +643,8 @@ private fun HighlightedReadingText(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             onWordClick = onWordClick,
-            onSentenceDoubleClick = { sentence ->
-                onSentenceDoubleClick(SentencePlaybackRequest(sentence, 0))
+            onSentenceTap = { sentence ->
+                onSentenceTap(SentencePlaybackRequest(sentence, 0))
             }
         )
         return
@@ -655,7 +657,7 @@ private fun HighlightedReadingText(
                 sentenceIndex = index,
                 isPlaying = currentSentenceIndex == index,
                 onWordClick = onWordClick,
-                onSentenceDoubleClick = onSentenceDoubleClick
+                onSentenceTap = onSentenceTap
             )
         }
     }
@@ -667,7 +669,7 @@ private fun HighlightableSentenceRow(
     sentenceIndex: Int,
     isPlaying: Boolean,
     onWordClick: (ClickedWord) -> Unit,
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit
+    onSentenceTap: (SentencePlaybackRequest) -> Unit
 ) {
     val background = if (isPlaying) StudyMint.copy(alpha = 0.72f) else Color.Transparent
     val leftColor = if (isPlaying) StudyGreen else Color.Transparent
@@ -694,8 +696,8 @@ private fun HighlightableSentenceRow(
             style = MaterialTheme.typography.bodyLarge,
             color = if (isPlaying) StudyInk else MaterialTheme.colorScheme.onSurface,
             onWordClick = onWordClick,
-            onSentenceDoubleClick = { sentence ->
-                onSentenceDoubleClick(SentencePlaybackRequest(sentence, sentenceIndex))
+            onSentenceTap = { sentence ->
+                onSentenceTap(SentencePlaybackRequest(sentence, sentenceIndex))
             }
         )
     }
@@ -708,7 +710,7 @@ private fun DialogueLineCard(
     isPrimary: Boolean,
     isPlaying: Boolean,
     onWordClick: (ClickedWord) -> Unit,
-    onSentenceDoubleClick: (SentencePlaybackRequest) -> Unit
+    onPlaySegment: (Double, Double, String) -> Unit
 ) {
     val containerColor = when {
         isPlaying -> StudyMint
@@ -752,8 +754,8 @@ private fun DialogueLineCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = StudyInk,
                     onWordClick = onWordClick,
-                    onSentenceDoubleClick = { sentence ->
-                        onSentenceDoubleClick(SentencePlaybackRequest(sentence, sentenceIndex))
+                    onSentenceTap = {
+                        onPlaySegment(line.start, line.end, line.text)
                     }
                 )
             }

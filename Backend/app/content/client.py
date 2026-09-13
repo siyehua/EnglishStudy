@@ -212,16 +212,28 @@ def lesson_to_content_items(
         if not run_items:
             continue
 
-        texts = [str(item.get("text") or "").strip() for item in run_items]
-        body = "\n".join(texts)
+        lines: list[DialogueLineResponse] = []
+        for item in run_items:
+            text = str(item.get("text") or "").strip()
+            item_start = float(item.get("start") or 0.0)
+            item_end = float(item.get("end") or item_start)
+            for sentence, sentence_start, sentence_end in split_sentences_with_times(
+                text, item_start, item_end
+            ):
+                lines.append(
+                    DialogueLineResponse(
+                        speaker="Narrator",
+                        text=sentence,
+                        start=sentence_start,
+                        end=sentence_end,
+                    )
+                )
+        if not lines:
+            continue
 
-        start = min(float(item.get("start") or 0.0) for item in run_items)
-        end = max(
-            float(item.get("end") or item.get("start") or 0.0)
-            for item in run_items
-        )
-
-        lines = [DialogueLineResponse(speaker="Narrator", text=text) for text in texts]
+        body = "\n".join(line.text for line in lines)
+        start = min(line.start for line in lines)
+        end = max(line.end for line in lines)
         items.append(
             ContentItemResponse(
                 id=stable_id(f"englishpod-{number}-{section_name}"),
@@ -316,6 +328,38 @@ def annotate_sections(content: list[dict]) -> list[str]:
             current = classified
         sections.append(current)
     return sections
+
+
+SENTENCE_SPLIT_PATTERN = re.compile(r"[^.!?]+[.!?]*")
+
+
+def split_sentences_with_times(
+    text: str,
+    start: float,
+    end: float,
+) -> list[tuple[str, float, float]]:
+    """Split a transcript block into sentences and distribute its time range."""
+    cleaned = text.strip()
+    if not cleaned:
+        return []
+    sentences = [
+        s.strip()
+        for s in SENTENCE_SPLIT_PATTERN.findall(cleaned)
+        if s.strip()
+    ]
+    if len(sentences) <= 1:
+        return [(cleaned, start, end)]
+
+    total_chars = sum(len(s) for s in sentences)
+    duration = max(0.0, end - start)
+    result: list[tuple[str, float, float]] = []
+    cursor = start
+    for sentence in sentences:
+        ratio = len(sentence) / total_chars if total_chars else 0.0
+        sentence_end = cursor + duration * ratio
+        result.append((sentence, cursor, sentence_end))
+        cursor = sentence_end
+    return result
 
 
 def englishpod_audio_urls(number: int) -> tuple[str | None, str | None, str | None]:

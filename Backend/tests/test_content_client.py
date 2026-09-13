@@ -58,9 +58,14 @@ class ContentClientTest(unittest.TestCase):
         self.assertEqual(titles[1], "1: Difficult Customer · 讲解")
         self.assertEqual(titles[2], "1: Difficult Customer · 回顾")
 
-        # 对话课程：只有对话文本
-        self.assertIn("Good evening. My name is Fabio.", items[0].body)
-        self.assertNotIn("Language takeaway", items[0].body)
+        # 对话课程：只有对话文本，且按句切割
+        self.assertIn("Good evening.", items[0].body)
+        self.assertIn("My name is Fabio.", items[0].body)
+        self.assertNotIn("language takeaway", items[0].body.lower())
+        # 每句都有独立时间戳
+        for line in items[0].lines:
+            self.assertGreater(line.end, line.start)
+            self.assertTrue(line.text)
         # 讲解课程：只有讲解文本
         self.assertIn("The first expression is still working on it.", items[1].body)
         self.assertNotIn("Good evening", items[1].body)

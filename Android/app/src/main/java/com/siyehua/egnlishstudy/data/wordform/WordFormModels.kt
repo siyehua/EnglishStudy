@@ -193,5 +193,7 @@ data class RemoteContentItem(
 @Serializable
 data class RemoteDialogueLine(
     val speaker: String,
-    val text: String
+    val text: String,
+    val start: Double = 0.0,
+    val end: Double = 0.0
 )

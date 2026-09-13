@@ -22,11 +22,11 @@ fun ClickableReadingText(
     color: Color,
     modifier: Modifier = Modifier,
     onWordClick: (ClickedWord) -> Unit,
-    onSentenceDoubleClick: (String) -> Unit = {}
+    onSentenceTap: (String) -> Unit = {}
 ) {
     var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     val currentOnWordClick by rememberUpdatedState(onWordClick)
-    val currentOnSentenceDoubleClick by rememberUpdatedState(onSentenceDoubleClick)
+    val currentOnSentenceTap by rememberUpdatedState(onSentenceTap)
 
     DisableSelection {
         Text(
@@ -35,13 +35,15 @@ fun ClickableReadingText(
             color = color,
             modifier = modifier.pointerInput(text) {
                 detectTapGestures(
-                    onDoubleTap = {
+                    // Single tap anywhere on the line: play this sentence's audio.
+                    onTap = {
                         val sentence = text.trim()
                         if (sentence.isNotBlank()) {
-                            currentOnSentenceDoubleClick(sentence)
+                            currentOnSentenceTap(sentence)
                         }
                     },
-                    onTap = { offset ->
+                    // Double tap on a word: show its dictionary meaning.
+                    onDoubleTap = { offset ->
                         val layout = layoutResult ?: return@detectTapGestures
                         val charOffset = layout.getOffsetForPosition(offset)
                         val clickedWord = text.clickedWordAt(charOffset)

@@ -128,6 +128,39 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /** Play a sentence by seeking into the lesson's full audio. */
+    fun playSegment(
+        content: Content,
+        startSec: Double,
+        endSec: Double,
+        fallbackText: String
+    ) {
+        val audioUrl = content.audioUrl
+        if (audioUrl.isNullOrBlank() || endSec <= startSec) {
+            playSentence(fallbackText, 0)
+            return
+        }
+
+        stop(resetState = false)
+        highlightedSentenceIndex = null
+        prepareJob = viewModelScope.launch {
+            _uiState.value = AudioUiState.Preparing
+            when (val result = ttsAudioManager.ensureRealAudioForContent(content)) {
+                is WordAudioResult.Success -> {
+                    playlist = listOf(result.uri)
+                    playlistDurations = listOf(readDurationMillis(result.uri))
+                    totalDurationMillis = playlistDurations.sumOf { it.toLong() }
+                    playlistIndex = 0
+                    segmentStartMs = (startSec * 1000).toLong().coerceAtLeast(0)
+                    segmentEndMs = (endSec * 1000).toLong().coerceAtLeast(0)
+                    playCurrent()
+                }
+
+                is WordAudioResult.Failure -> playSentence(fallbackText, 0)
+            }
+        }
+    }
+
     fun stop() {
         stop(resetState = true)
     }

@@ -132,6 +132,8 @@ class ContentFetchRequest(BaseModel):
 class DialogueLineResponse(BaseModel):
     speaker: str
     text: str
+    start: float = 0.0
+    end: float = 0.0
 
 
 class ContentItemResponse(BaseModel):
