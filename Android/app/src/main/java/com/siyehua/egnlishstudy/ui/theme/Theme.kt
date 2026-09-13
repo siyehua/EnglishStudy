@@ -11,7 +11,6 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -57,17 +56,6 @@ private val LightColorScheme = lightColorScheme(
     outline = StudyLine,
     error = Color(0xFFB3261E)
 )
-
-/**
- * Soft pastel colours are tuned for the light theme. In the dark theme we blend them
- * into the surface so cards stay readable instead of glowing white.
- */
-@Composable
-fun softTint(base: Color): Color = if (isSystemInDarkTheme()) {
-    base.copy(alpha = 0.22f).compositeOver(MaterialTheme.colorScheme.surface)
-} else {
-    base
-}
 
 private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),

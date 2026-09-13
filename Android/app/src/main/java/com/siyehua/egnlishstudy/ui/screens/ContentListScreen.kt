@@ -89,7 +89,6 @@ import com.siyehua.egnlishstudy.ui.ContentUiState
 import com.siyehua.egnlishstudy.ui.ContentViewModel
 import com.siyehua.egnlishstudy.ui.FilterOption
 import com.siyehua.egnlishstudy.ui.theme.EgnlishStudyTheme
-import com.siyehua.egnlishstudy.ui.theme.softTint
 import com.siyehua.egnlishstudy.ui.theme.StudyBlue
 import com.siyehua.egnlishstudy.ui.theme.StudyBlueSoft
 import com.siyehua.egnlishstudy.ui.theme.StudyCoral
@@ -511,7 +510,8 @@ private fun FocusFilterMenu(
     onClearFilters: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val activeTags = buildList {
+    val activeTags = remember(selectedLevels, selectedTypes, selectedSources) {
+        buildList {
             selectedLevels
                 .sortedBy { it.ordinal }
                 .forEach { level ->
@@ -551,6 +551,7 @@ private fun FocusFilterMenu(
                         )
                     )
                 }
+        }
     }
 
     DropdownMenu(
@@ -808,7 +809,7 @@ private fun SourceFilterRow(
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
-        color = if (selected) softTint(StudyMint) else MaterialTheme.colorScheme.background,
+        color = if (selected) StudyMint else MaterialTheme.colorScheme.background,
         border = BorderStroke(
             1.dp,
             if (selected) StudyGreen.copy(alpha = 0.42f) else MaterialTheme.colorScheme.outline
@@ -1197,44 +1198,42 @@ private data class ContentVisual(
     val label: String
 )
 
-@Composable
 private fun ContentType.visual(): ContentVisual =
     when (this) {
         ContentType.ARTICLE -> ContentVisual(
             icon = Icons.AutoMirrored.Filled.Article,
-            containerColor = softTint(StudyBlueSoft),
+            containerColor = StudyBlueSoft,
             contentColor = StudyBlue,
             label = "Article"
         )
 
         ContentType.BLOG -> ContentVisual(
             icon = Icons.Default.EditNote,
-            containerColor = softTint(StudyOrangeSoft),
+            containerColor = StudyOrangeSoft,
             contentColor = StudyOrange,
             label = "Blog"
         )
 
         ContentType.NEWS -> ContentVisual(
             icon = Icons.Default.Newspaper,
-            containerColor = softTint(StudyYellowSoft),
-            contentColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = StudyYellowSoft,
+            contentColor = StudyInk,
             label = "News"
         )
 
         ContentType.DIALOGUE -> ContentVisual(
             icon = Icons.Default.ChatBubble,
-            containerColor = softTint(StudyCoralSoft),
+            containerColor = StudyCoralSoft,
             contentColor = StudyCoral,
             label = "Dialogue"
         )
     }
 
-@Composable
 private fun levelColor(level: ContentLevel): Color =
     when (level) {
-        ContentLevel.A1, ContentLevel.A2 -> softTint(StudyMint)
-        ContentLevel.B1, ContentLevel.B2 -> softTint(StudyYellowSoft)
-        ContentLevel.C1, ContentLevel.C2 -> softTint(StudyCoralSoft)
+        ContentLevel.A1, ContentLevel.A2 -> StudyMint
+        ContentLevel.B1, ContentLevel.B2 -> StudyYellowSoft
+        ContentLevel.C1, ContentLevel.C2 -> StudyCoralSoft
     }
 
 private fun Content.previewText(): String {

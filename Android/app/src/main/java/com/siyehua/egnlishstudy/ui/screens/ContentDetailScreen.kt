@@ -96,7 +96,6 @@ import com.siyehua.egnlishstudy.ui.theme.StudyOrange
 import com.siyehua.egnlishstudy.ui.theme.StudyOrangeSoft
 import com.siyehua.egnlishstudy.ui.theme.StudyYellow
 import com.siyehua.egnlishstudy.ui.theme.StudyYellowSoft
-import com.siyehua.egnlishstudy.ui.theme.softTint
 import com.siyehua.egnlishstudy.ui.wordinsight.ClickableReadingText
 import com.siyehua.egnlishstudy.ui.wordinsight.ClickedWord
 import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightSheet
@@ -732,7 +731,7 @@ private fun HighlightableSentenceRow(
     onWordClick: (ClickedWord) -> Unit,
     onSentenceTap: (SentencePlaybackRequest) -> Unit
 ) {
-    val background = if (isPlaying) softTint(StudyMint) else Color.Transparent
+    val background = if (isPlaying) StudyMint.copy(alpha = 0.72f) else Color.Transparent
     val leftColor = if (isPlaying) StudyGreen else Color.Transparent
 
     Row(
@@ -755,7 +754,7 @@ private fun HighlightableSentenceRow(
             text = text,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = if (isPlaying) StudyInk else MaterialTheme.colorScheme.onSurface,
             onWordClick = onWordClick,
             onSentenceTap = { sentence ->
                 onSentenceTap(SentencePlaybackRequest(sentence, sentenceIndex))
@@ -778,9 +777,9 @@ private fun DialogueLineCard(
     onLoopLine: () -> Unit
 ) {
     val containerColor = when {
-        isPlaying -> softTint(StudyMint)
-        isPrimary -> softTint(StudyBlueSoft)
-        else -> softTint(StudyYellowSoft)
+        isPlaying -> StudyMint
+        isPrimary -> StudyBlueSoft
+        else -> StudyYellowSoft
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -793,7 +792,7 @@ private fun DialogueLineCard(
             ClickableReadingText(
                 text = line.text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = StudyInk,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 onWordClick = onWordClick,
                 onSentenceTap = {
