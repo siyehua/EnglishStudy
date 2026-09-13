@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -45,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -167,42 +169,75 @@ fun ContentDetailScreen(
                 contentPadding = PaddingValues(start = 18.dp, top = 14.dp, end = 18.dp, bottom = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                item {
-                    val onWordClick: (ClickedWord) -> Unit = { clickedWord ->
-                        selectedWord = clickedWord
-                        wordInsightViewModel.load(clickedWord)
+                val onWordClick: (ClickedWord) -> Unit = { clickedWord ->
+                    selectedWord = clickedWord
+                    wordInsightViewModel.load(clickedWord)
+                }
+                when (content) {
+                    is Dialogue -> {
+                        // Each sentence is its own list item so the list can
+                        // auto-scroll to the line that is currently playing.
+                        item {
+                            Text(
+                                text = "Dialogue practice",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        itemsIndexed(
+                            items = content.lines,
+                            key = { index, _ -> "line-$index" }
+                        ) { index, line ->
+                            DialogueLineCard(
+                                line = line,
+                                sentenceIndex = index,
+                                isPrimary = index % 2 == 0,
+                                isPlaying = currentSentenceIndex == index,
+                                onWordClick = onWordClick,
+                                onPlayLine = { _, i ->
+                                    audioViewModel.playFromLine(content, i)
+                                }
+                            )
+                        }
                     }
-                    val onSentenceTap: (SentencePlaybackRequest) -> Unit = { request ->
-                        audioViewModel.playSentence(request.text, request.index)
+                    else -> item {
+                        val onSentenceTap: (SentencePlaybackRequest) -> Unit = { request ->
+                            audioViewModel.playSentence(request.text, request.index)
+                        }
+                        when (content) {
+                            is Article -> ArticleDetail(
+                                article = content,
+                                currentSentenceIndex = currentSentenceIndex,
+                                onWordClick = onWordClick,
+                                onSentenceTap = onSentenceTap
+                            )
+                            is Blog -> BlogDetail(
+                                blog = content,
+                                currentSentenceIndex = currentSentenceIndex,
+                                onWordClick = onWordClick,
+                                onSentenceTap = onSentenceTap
+                            )
+                            is News -> NewsDetail(
+                                news = content,
+                                currentSentenceIndex = currentSentenceIndex,
+                                onWordClick = onWordClick,
+                                onSentenceTap = onSentenceTap
+                            )
+                            is Dialogue -> Unit
+                        }
                     }
-                    when (content) {
-                        is Article -> ArticleDetail(
-                            article = content,
-                            currentSentenceIndex = currentSentenceIndex,
-                            onWordClick = onWordClick,
-                            onSentenceTap = onSentenceTap
-                        )
-                        is Blog -> BlogDetail(
-                            blog = content,
-                            currentSentenceIndex = currentSentenceIndex,
-                            onWordClick = onWordClick,
-                            onSentenceTap = onSentenceTap
-                        )
-                        is News -> NewsDetail(
-                            news = content,
-                            currentSentenceIndex = currentSentenceIndex,
-                            onWordClick = onWordClick,
-                            onSentenceTap = onSentenceTap
-                        )
-                        is Dialogue -> DialogueDetail(
-                            dialogue = content,
-                            currentSentenceIndex = currentSentenceIndex,
-                            onWordClick = onWordClick,
-                            onPlayLine = { _, index ->
-                                audioViewModel.playFromLine(content, index)
-                            }
-                        )
-                    }
+                }
+            }
+
+            LaunchedEffect(currentSentenceIndex, content.id) {
+                val index = currentSentenceIndex ?: return@LaunchedEffect
+                if (content !is Dialogue) return@LaunchedEffect
+                if (index < 0 || index >= content.lines.size) return@LaunchedEffect
+                val visible = listState.layoutInfo.visibleItemsInfo
+                if (visible.isEmpty()) return@LaunchedEffect
+                val isVisible = visible.any { it.index == index }
+                if (!isVisible) {
+                    listState.animateScrollToItem(index)
                 }
             }
         }
