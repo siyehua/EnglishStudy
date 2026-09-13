@@ -45,6 +45,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
@@ -70,7 +71,36 @@ fun WordInsightSheet(
     onSpeakText: (String) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    val scrollState = rememberScrollState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = { CompactDragHandle() }
+    ) {
+        WordInsightBody(
+            clickedWord = clickedWord,
+            uiState = uiState,
+            audioState = audioState,
+            onRetry = onRetry,
+            onSpeakWord = onSpeakWord,
+            onSpeakText = onSpeakText
+        )
+    }
+}
+
+/** Shared body used by both the bottom sheet and the full-screen word page. */
+@Composable
+fun WordInsightBody(
+    clickedWord: ClickedWord,
+    uiState: WordInsightUiState,
+    audioState: WordPronunciationUiState,
+    onRetry: () -> Unit = {},
+    onSpeakWord: (String, String?) -> Unit = { _, _ -> },
+    onSpeakText: (String) -> Unit = {},
+    bottomPadding: Dp = 28.dp
+) {
     val successState = uiState as? WordInsightUiState.Success
     val wordForm = successState?.wordForm
     val meaningState = successState?.meaningState ?: WordMeaningUiState.Idle
@@ -99,25 +129,18 @@ fun WordInsightSheet(
     val favoriteDatabase = remember { ContentCacheDatabase(context) }
     var isWordFavorited by remember(activeWord) {
         mutableStateOf(
-            runCatching { favoriteDatabase.isFavorited("word", activeWord, "", 0.0) }
+            runCatching { favoriteDatabase.isFavorited("word", activeWord, clickedWord.sentence, 0.0) }
                 .getOrDefault(false)
         )
     }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        dragHandle = { CompactDragHandle() }
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+            .padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = bottomPadding),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -160,7 +183,12 @@ fun WordInsightSheet(
                 IconButton(
                     onClick = {
                         if (isWordFavorited) {
-                            favoriteDatabase.deleteFavoriteByKey("word", activeWord, "", 0.0)
+                            favoriteDatabase.deleteFavoriteByKey(
+                                "word",
+                                activeWord,
+                                clickedWord.sentence,
+                                0.0
+                            )
                             isWordFavorited = false
                         } else {
                             favoriteDatabase.addFavorite(
@@ -168,7 +196,7 @@ fun WordInsightSheet(
                                     kind = "word",
                                     text = activeWord,
                                     audioUrl = dictionaryAudioUrl,
-                                    lessonTitle = "",
+                                    lessonTitle = clickedWord.sentence,
                                     startTime = 0.0,
                                     endTime = 0.0
                                 )
@@ -223,7 +251,6 @@ fun WordInsightSheet(
                 onSpeakText = onSpeakText
             )
         }
-    }
 }
 
 @Composable

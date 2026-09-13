@@ -1,22 +1,26 @@
 package com.siyehua.egnlishstudy.ui.screens
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -25,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,24 +40,43 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
-import com.siyehua.egnlishstudy.ui.ContentAudioViewModel
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
-import com.siyehua.egnlishstudy.ui.theme.StudyMint
+import com.siyehua.egnlishstudy.ui.theme.StudyYellow
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
     onBack: () -> Unit,
-    audioViewModel: ContentAudioViewModel = viewModel()
+    onOpenSentence: (String) -> Unit,
+    onOpenWord: (String, String) -> Unit
 ) {
     val context = LocalContext.current
     val database = remember { ContentCacheDatabase(context) }
-    var favorites by remember { mutableStateOf(runCatching { database.loadFavorites() }.getOrDefault(emptyList())) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var favorites by remember {
+        mutableStateOf(runCatching { database.loadFavorites() }.getOrDefault(emptyList()))
+    }
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                favorites = runCatching { database.loadFavorites() }.getOrDefault(emptyList())
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets.safeDrawing.only(
+            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+        )
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -60,13 +84,15 @@ fun FavoritesScreen(
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = StudyGreen
+                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+                color = StudyGreen,
+                shadowElevation = 4.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .padding(start = 10.dp, end = 18.dp, top = 6.dp, bottom = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -85,11 +111,17 @@ fun FavoritesScreen(
                         color = Color.White,
                         modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        text = "${favorites.size} 条",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    Surface(
+                        shape = MaterialTheme.shapes.large,
+                        color = StudyYellow
+                    ) {
+                        Text(
+                            text = "${favorites.size} 条",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFF1F2A24),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
 
@@ -121,15 +153,17 @@ fun FavoritesScreen(
                 items(favorites, key = { it.id }) { favorite ->
                     FavoriteCard(
                         favorite = favorite,
-                        onPlay = {
-                            val url = favorite.audioUrl
-                            if (!url.isNullOrBlank()) {
-                                audioViewModel.playFavoriteUrl(url)
+                        onOpen = {
+                            if (favorite.kind == "sentence") {
+                                onOpenSentence(favorite.contentId)
+                            } else {
+                                onOpenWord(favorite.text, favorite.lessonTitle)
                             }
                         },
                         onDelete = {
                             database.deleteFavorite(favorite.id)
-                            favorites = runCatching { database.loadFavorites() }.getOrDefault(emptyList())
+                            favorites = runCatching { database.loadFavorites() }
+                                .getOrDefault(emptyList())
                         }
                     )
                 }
@@ -141,21 +175,20 @@ fun FavoritesScreen(
 @Composable
 private fun FavoriteCard(
     favorite: FavoriteRecord,
-    onPlay: () -> Unit,
+    onOpen: () -> Unit,
     onDelete: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpen),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline
-        )
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(start = 14.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -166,9 +199,14 @@ private fun FavoriteCard(
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (favorite.lessonTitle.isNotBlank()) {
+                val subtitle = when {
+                    favorite.lessonTitle.isNotBlank() -> favorite.lessonTitle
+                    favorite.kind == "word" -> "单词"
+                    else -> ""
+                }
+                if (subtitle.isNotBlank()) {
                     Text(
-                        text = favorite.lessonTitle,
+                        text = subtitle,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -178,19 +216,6 @@ private fun FavoriteCard(
                 }
             }
 
-            IconButton(
-                onClick = onPlay,
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = StudyMint,
-                    contentColor = StudyGreen
-                )
-            ) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = "播放",
-                    modifier = Modifier.size(18.dp)
-                )
-            }
             IconButton(onClick = onDelete) {
                 Icon(
                     Icons.Default.Delete,

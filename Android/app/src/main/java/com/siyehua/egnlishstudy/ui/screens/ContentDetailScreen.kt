@@ -225,9 +225,14 @@ fun ContentDetailScreen(
                                     audioViewModel.playFromLine(content, i)
                                 },
                                 onToggleFavorite = {
-                                    val key = "sentence-${content.id}-$index"
                                     if (favoritedLineIndices.contains(index)) {
                                         favoritedLineIndices = favoritedLineIndices - index
+                                        favoriteDatabase.deleteFavoriteByKey(
+                                            "sentence",
+                                            line.text,
+                                            content.title,
+                                            line.start
+                                        )
                                     } else {
                                         favoritedLineIndices = favoritedLineIndices + index
                                         favoriteDatabase.addFavorite(
@@ -235,6 +240,7 @@ fun ContentDetailScreen(
                                                 kind = "sentence",
                                                 text = line.text,
                                                 audioUrl = line.audioUrl,
+                                                contentId = content.id,
                                                 lessonTitle = content.title,
                                                 startTime = line.start,
                                                 endTime = line.end
