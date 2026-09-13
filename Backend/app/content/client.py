@@ -73,7 +73,43 @@ def load_whisper_segments(number: int) -> list[dict] | None:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
-    return data if isinstance(data, list) and data else None
+    if not isinstance(data, list) or not data:
+        return None
+    return merge_segments_into_sentences(data)
+
+
+SENTENCE_END_PATTERN = re.compile(r"[.!?][\"')\u201d\u2019\]]*$")
+
+
+def merge_segments_into_sentences(segments: list[dict]) -> list[dict]:
+    """Whisper splits on pauses, not on sentence boundaries, so a single
+    sentence can arrive as several segments (e.g. "...involved, the" +
+    "waiter and the customer."). Merge fragments until the text ends with
+    terminal punctuation.
+    """
+    merged: list[dict] = []
+    current: dict | None = None
+
+    for seg in segments:
+        text = str(seg.get("text") or "").strip()
+        if not text:
+            continue
+        start = float(seg.get("start") or 0.0)
+        end = float(seg.get("end") or start)
+
+        if current is None:
+            current = {"text": text, "start": start, "end": end}
+        else:
+            current["text"] = f"{current['text']} {text}"
+            current["end"] = end
+
+        if SENTENCE_END_PATTERN.search(text):
+            merged.append(current)
+            current = None
+
+    if current is not None:
+        merged.append(current)
+    return merged
 
 
 class ContentClient:
