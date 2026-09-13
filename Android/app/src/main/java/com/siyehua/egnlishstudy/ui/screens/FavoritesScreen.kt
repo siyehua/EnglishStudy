@@ -51,7 +51,7 @@ import com.siyehua.egnlishstudy.ui.theme.StudyYellow
 @Composable
 fun FavoritesScreen(
     onBack: () -> Unit,
-    onOpenSentence: (String) -> Unit,
+    onOpenSentence: (FavoriteRecord) -> Unit,
     onOpenWord: (String, String) -> Unit
 ) {
     val context = LocalContext.current
@@ -155,7 +155,7 @@ fun FavoritesScreen(
                         favorite = favorite,
                         onOpen = {
                             if (favorite.kind == "sentence") {
-                                onOpenSentence(favorite.contentId)
+                                onOpenSentence(favorite)
                             } else {
                                 onOpenWord(favorite.text, favorite.lessonTitle)
                             }
