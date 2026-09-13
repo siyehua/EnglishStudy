@@ -85,14 +85,19 @@ def ting_segment(lesson: int, start: float, end: float) -> RawResponse:
     start = max(0.0, start)
     end = max(start + 0.05, end)
 
+    # Expand the cut slightly so quiet leading/trailing words (e.g. "Let's")
+    # are never clipped. Overlap with neighbours is preferable to losing audio.
+    pad_start = max(0.0, start - 0.20)
+    pad_end = end + 0.20
+
     handle, out_path = tempfile.mkstemp(suffix=".mp3")
     os.close(handle)
     try:
         subprocess.run(
             [
                 "ffmpeg", "-y", "-v", "error",
-                "-ss", f"{start:.3f}",
-                "-to", f"{end:.3f}",
+                "-ss", f"{pad_start:.3f}",
+                "-to", f"{pad_end:.3f}",
                 "-i", str(audio),
                 "-c:a", "libmp3lame", "-b:a", "64k",
                 out_path,
