@@ -10,11 +10,21 @@ EnglishStudy/
 └── Backend/   # FastAPI service (content, dictionary, TTS, sentence audio)
 ```
 
-- Backend API / config / deployment → [Backend/README.md](Backend/README.md)
-- App architecture & data flow → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- Playback & notification behaviour → [docs/PLAYBACK.md](docs/PLAYBACK.md)
-- Desktop caption (floating subtitle) → [docs/CAPTION.md](docs/CAPTION.md)
-- Release/build notes → [docs/BUILD.md](docs/BUILD.md)
+- 后端接口 / 配置 / 部署 → [Backend/README.md](Backend/README.md)
+- **架构设计（SPEC）** → [docs/SPEC.md](docs/SPEC.md)
+- **模块设计（cells）** → [docs/cells/](docs/cells/)
+- 构建、发版与调试 → [docs/cells/build.md](docs/cells/build.md)
+
+## 文档约定
+
+| 文档 | 定位 |
+| --- | --- |
+| `README.md` | 总说明：项目是什么、怎么跑、有哪些功能 |
+| `docs/SPEC.md` | 架构设计：分层、数据流、状态机、接口契约 |
+| `docs/cells/*.md` | 每个模块 / 功能的设计，**唯一说明入口** |
+
+**源码不写注释。** 代码本身即说明；设计意图、取舍原因与“不要这样做”的坑，统一写在
+`docs/cells/` 对应文档中。改动功能时必须同步更新对应 cell。
 
 ---
 
@@ -89,7 +99,7 @@ Layout intentionally mirrors a media notification:
   work.
 - Buttons exposed to the notification are the **system-standard** media actions
   (previous / play-pause / next). Custom buttons are stripped by Android 13+
-  for apps with `targetSdk >= 33` — see [docs/PLAYBACK.md](docs/PLAYBACK.md).
+  for apps with `targetSdk >= 33` — see [docs/cells/notification.md](docs/cells/notification.md).
 
 ### Desktop caption (floating subtitle)
 
@@ -166,7 +176,7 @@ cd Android
 
 Release builds enable **R8** (`optimization { enable = true }` plus
 `android.r8.gradual.support=true` in `gradle.properties`), which shrinks the APK
-from ≈ 47 MB to ≈ 2.9 MB. See [docs/BUILD.md](docs/BUILD.md).
+from ≈ 47 MB to ≈ 2.9 MB. See [docs/cells/build.md](docs/cells/build.md).
 
 The backend base URL lives in
 `Android/app/src/main/java/com/siyehua/egnlishstudy/data/wordform/WordFormApiClient.kt`

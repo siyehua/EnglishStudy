@@ -90,7 +90,6 @@ fun WordInsightSheet(
     }
 }
 
-/** Shared body used by both the bottom sheet and the full-screen word page. */
 @Composable
 fun WordInsightBody(
     clickedWord: ClickedWord,

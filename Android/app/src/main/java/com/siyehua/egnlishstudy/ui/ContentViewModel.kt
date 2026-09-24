@@ -165,7 +165,7 @@ class ContentViewModel(application: Application) : AndroidViewModel(application)
                     nextOffset += nextPage.size
                     hasMore = nextPage.size == PAGE_SIZE
                 } else if (!isRefreshingRemote) {
-                    // 本地缓存已耗尽，自动拉取更多远程内容
+
                     isRefreshingRemote = true
                     val remote = fetchDataManager.refreshRemoteContent(
                         fetchMore = true,

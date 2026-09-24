@@ -42,20 +42,11 @@ import com.siyehua.egnlishstudy.ui.theme.StudyCoral
 import kotlin.math.max
 import kotlin.math.min
 
-/**
- * 全局播放器条：任何页面都可以嵌入，用于随时播放/暂停、切换课程、开关字幕。
- *
- * 结构（与通知栏一致）：
- *   标题
- *   副标题（播放状态）
- *   五个按钮：循环 / 上一课 / 播放暂停 / 下一课 / 字幕
- *   进度条
- */
 @Composable
 fun GlobalPlayerBar(
     audioState: AudioUiState,
     content: Content?,
-    /** 当前正在播放的句子文本（副标题优先显示它） */
+
     subtitle: String = "",
     isLoopingLesson: Boolean,
     isCaptionOn: Boolean,
@@ -86,7 +77,7 @@ fun GlobalPlayerBar(
         shadowElevation = 6.dp
     ) {
         Column(
-            // 背景延伸到屏幕底部（含手势区），但内容通过 navigationBarsPadding 保持在其上方
+
             modifier = Modifier
                 .padding(horizontal = 12.dp)
                 .padding(top = 8.dp)
@@ -101,7 +92,7 @@ fun GlobalPlayerBar(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                // 副标题：优先显示正在播放的英文句子；没有句子时显示播放状态
+
                 text = subtitle.ifBlank { statusText },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -222,7 +213,6 @@ private fun PlayerProgress(currentMillis: Long, totalMillis: Long) {
     }
 }
 
-/** 播放状态文案（供播放器条使用） */
 fun AudioUiState.statusText(): String = when (this) {
     is AudioUiState.Idle -> "点播放开始收听"
     is AudioUiState.Preparing -> "正在准备音频…"

@@ -129,7 +129,6 @@ fun ContentListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // 同步课程队列给播放器：上一课/下一课/自动连播都按这个顺序
     LaunchedEffect(uiState) {
         (uiState as? ContentUiState.Success)?.let { state ->
             LessonQueueHolder.items = state.content

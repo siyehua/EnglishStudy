@@ -35,14 +35,14 @@ fun ClickableReadingText(
             color = color,
             modifier = modifier.pointerInput(text) {
                 detectTapGestures(
-                    // Single tap anywhere on the line: play this sentence's audio.
+
                     onTap = {
                         val sentence = text.trim()
                         if (sentence.isNotBlank()) {
                             currentOnSentenceTap(sentence)
                         }
                     },
-                    // Double tap on a word: show its dictionary meaning.
+
                     onDoubleTap = { offset ->
                         val layout = layoutResult ?: return@detectTapGestures
                         val charOffset = layout.getOffsetForPosition(offset)

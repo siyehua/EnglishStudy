@@ -1,6 +1,6 @@
-# Build, Release And Debugging
+# 构建、发版与调试
 
-## Android app
+## Android 应用
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
@@ -16,7 +16,7 @@ Outputs:
 - `app/build/outputs/apk/release/app-release.apk`
 - `app/build/outputs/apk/debug/app-debug.apk`
 
-### Release configuration
+### Release 配置
 
 `app/build.gradle.kts`:
 
@@ -50,14 +50,14 @@ material-icons-extended shipped unshrunk) to ≈ 2.9 MB.
 If R8 ever strips something needed at runtime, add keep rules via
 `proguardFiles(...)` in the same `optimization` block rather than disabling R8.
 
-### APK contents worth knowing
+### APK 内容大小
 
 - `classes.dex` should be a few MB, not tens of MB. A huge dex means minification
   got turned off.
 - Material icons are only pulled in per icon that is referenced, so adding a new
   icon means adding an import, not a dependency.
 
-## Backend
+## 后端
 
 ```bash
 cd Backend
@@ -68,7 +68,7 @@ python3 -m venv .venv
 ```
 
 Production deployment (supervisor + Caddy path route) is documented in
-[../Backend/README.md](../Backend/README.md). Summary:
+[../../Backend/README.md](../../Backend/README.md). Summary:
 
 - directory `/opt/EnglishStudy/Backend` on the Guangzhou server
   (`tencentCloud-guangzhou`, `43.139.205.128`),
@@ -90,7 +90,7 @@ Validate Caddy before reloading:
 systemctl reload caddy
 ```
 
-## Debugging on an emulator
+## 模拟器调试
 
 ```bash
 $ANDROID_HOME/emulator/emulator -avd TingApi29 -no-snapshot-save -no-audio &
@@ -120,13 +120,13 @@ Notes:
 - The overlay caption shows up in `dumpsys window windows` as a window owned by
   the app other than `MainActivity`.
 
-## Versioning
+## 版本号
 
 `versionCode` / `versionName` live in `app/build.gradle.kts`. Bump them when
 sending an APK to a tester: the version is visible under
 *Settings → Apps → English Study* and makes it obvious which build is installed.
 
-## Overlay permission on a device
+## 悬浮窗权限
 
 - The app requests it automatically the first time the caption is enabled.
 - To grant it manually for emulator testing:

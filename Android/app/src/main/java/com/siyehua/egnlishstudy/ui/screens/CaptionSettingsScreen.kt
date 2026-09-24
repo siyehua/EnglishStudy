@@ -52,7 +52,6 @@ import com.siyehua.egnlishstudy.ui.theme.StudyBlue
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 import com.siyehua.egnlishstudy.ui.theme.StudyYellow
 
-/** 文字颜色可选项 */
 private val TEXT_COLORS = listOf(
     0xFFFFFFFF.toInt() to "白色",
     0xFFFFF176.toInt() to "浅黄",
@@ -62,7 +61,6 @@ private val TEXT_COLORS = listOf(
     0xFFF8BBD0.toInt() to "浅粉"
 )
 
-/** 背景颜色可选项 */
 private val BG_COLORS = listOf(
     0xB3000000.toInt() to "半透明黑",
     0xE6FFFFFF.toInt() to "半透明白",
@@ -93,7 +91,7 @@ fun CaptionSettingsScreen(
     fun update(newStyle: CaptionStyle) {
         style = newStyle
         store.save(newStyle)
-        // 通知服务立即应用新样式
+
         runCatching {
             context.sendBroadcast(
                 android.content.Intent(
@@ -128,7 +126,7 @@ fun CaptionSettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // 顶部绿色头部（与收藏夹/课程页一致）
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
@@ -169,7 +167,6 @@ fun CaptionSettingsScreen(
             ) {
                 Spacer(Modifier.height(100.dp))
 
-                // 预览
                 SettingCard(title = "预览") {
                     Box(
                         modifier = Modifier
@@ -194,7 +191,6 @@ fun CaptionSettingsScreen(
 
                 Spacer(Modifier.height(14.dp))
 
-                // 位置
                 SettingCard(title = "位置") {
                     Slider(
                         value = style.yPercent.toFloat(),
@@ -210,7 +206,6 @@ fun CaptionSettingsScreen(
 
                 Spacer(Modifier.height(14.dp))
 
-                // 字号
                 SettingCard(title = "字号") {
                     Slider(
                         value = style.textSizeSp.toFloat(),
@@ -226,7 +221,6 @@ fun CaptionSettingsScreen(
 
                 Spacer(Modifier.height(14.dp))
 
-                // 文字颜色
                 SettingCard(title = "文字颜色") {
                     ColorRow(
                         colors = TEXT_COLORS,
@@ -237,7 +231,6 @@ fun CaptionSettingsScreen(
 
                 Spacer(Modifier.height(14.dp))
 
-                // 背景颜色
                 SettingCard(title = "背景颜色") {
                     ColorRow(
                         colors = BG_COLORS,
@@ -252,7 +245,6 @@ fun CaptionSettingsScreen(
     }
 }
 
-/** 统一样式的设置卡片 */
 @Composable
 private fun SettingCard(
     title: String,

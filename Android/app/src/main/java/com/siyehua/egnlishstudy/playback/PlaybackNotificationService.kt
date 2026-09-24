@@ -27,12 +27,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-/**
- * 媒体播放前台服务：只负责通知栏 + 锁屏控制（MediaSession），
- * 真正的播放仍在 ViewModel 的 MediaPlayer 中，两者通过 [PlaybackBus] 通信。
- *
- * 通知提供 播放/暂停、停止 按钮；划掉通知 = 停止播放。
- */
 class PlaybackNotificationService : Service() {
 
     private var session: MediaSessionCompat? = null
@@ -59,7 +53,6 @@ class PlaybackNotificationService : Service() {
         }
     }
 
-    /** 切换字幕开关并持久化偏好 + 立即显示/隐藏悬浮字幕 */
     private fun toggleCaptionWithPref() {
         captionEnabled = !captionEnabled
         captionStyleStore.setCaptionEnabled(captionEnabled)
@@ -77,7 +70,6 @@ class PlaybackNotificationService : Service() {
         PlaybackBus.send(PlaybackBus.Command.TOGGLE_CAPTION)
     }
 
-    /** 重新读取字幕样式并立即应用到已显示的悬浮字幕 */
     private fun applyCaptionStyle() {
         captionStyle = captionStyleStore.load()
         if (captionEnabled) {
@@ -90,10 +82,10 @@ class PlaybackNotificationService : Service() {
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        // 启动时先读取用户保存的字幕样式与开关偏好
+
         captionStyle = captionStyleStore.load()
         captionEnabled = captionStyleStore.isCaptionEnabled()
-        // 按钮点击用广播（不受后台服务启动限制，进程活着就一定收到）
+
         val filter = android.content.IntentFilter().apply {
             addAction(ACTION_PLAY); addAction(ACTION_PAUSE); addAction(ACTION_STOP)
             addAction(ACTION_NEXT); addAction(ACTION_PREV)
@@ -129,7 +121,7 @@ class PlaybackNotificationService : Service() {
                     lastNotifyKey = key
                     notificationManager().notify(NOTIFICATION_ID, buildNotification(info))
                 }
-                // 桌面悬浮字幕：实时跟随当前句子；字幕开关开启时显示（样式每次都读最新）
+
                 if (captionEnabled) {
                     DesktopCaptionOverlay.show(
                         this@PlaybackNotificationService,
@@ -142,7 +134,7 @@ class PlaybackNotificationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // startForegroundService 启动后必须立即进入前台
+
         startForegroundCompat(buildNotification(PlaybackBus.info.value ?: placeholderInfo()))
         when (intent?.action) {
             ACTION_PLAY -> PlaybackBus.send(PlaybackBus.Command.RESUME)
@@ -226,7 +218,7 @@ class PlaybackNotificationService : Service() {
             Intent(ACTION_STOP).setPackage(packageName),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        // 应用图标（自适应图标，取前景渲染成圆形底）
+
         val appIcon = runCatching {
             ContextCompat.getDrawable(this, R.mipmap.ic_launcher)?.toBitmap(108, 108)
         }.getOrNull()

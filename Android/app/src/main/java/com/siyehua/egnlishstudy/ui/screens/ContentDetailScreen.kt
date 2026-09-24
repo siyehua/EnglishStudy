@@ -142,19 +142,16 @@ fun ContentDetailScreen(
     val favoriteDatabase = remember { ContentCacheDatabase(context) }
     var activeLineIndex by remember(content.id) { mutableStateOf<Int?>(null) }
 
-    // 课程队列：按列表顺序支持 上一课/下一课 与整课自动连播
     LaunchedEffect(content.id) {
         audioViewModel.setLessonQueue(LessonQueueHolder.items, content.id)
     }
-    // 播放器自动切到下一课时，通知界面切换到对应文章
+
     val activeLesson by audioViewModel.currentLesson.collectAsState()
     LaunchedEffect(activeLesson?.id) {
         val lesson = activeLesson ?: return@LaunchedEffect
         if (lesson.id != content.id) onUpdateContent(lesson)
     }
 
-    // 收敛逻辑：手动点击与自动播放共用 activeLineIndex 这一个状态，
-    // 播放到哪句就选中哪句，上一句的扩展按钮自动收敛。
     LaunchedEffect(currentSentenceIndex) {
         if (currentSentenceIndex != null) {
             activeLineIndex = currentSentenceIndex
@@ -217,8 +214,7 @@ fun ContentDetailScreen(
                 }
                 when (content) {
                     is Dialogue -> {
-                        // Each sentence is its own list item so the list can
-                        // auto-scroll to the line that is currently playing.
+
                         item {
                             Text(
                                 text = "Dialogue practice",
@@ -315,11 +311,9 @@ fun ContentDetailScreen(
                 val index = currentSentenceIndex ?: return@LaunchedEffect
                 if (content !is Dialogue) return@LaunchedEffect
                 if (index < 0 || index >= content.lines.size) return@LaunchedEffect
-                // 列表第 0 项是"Dialogue practice"标题，句子 i 在列表中的位置是 i + 1
+
                 val itemIndex = index + 1
-                /* 只在必要时滚动，且绝不重置用户手动滚动的位置：
-                 * - 句子不在可见项里 → 滚到它
-                 * - 句子在可见项里但被底部播放器遮挡（y 超过播放器顶部） → 滚到它露出 */
+
                 val itemInfo = listState.layoutInfo.visibleItemsInfo
                     .firstOrNull { it.index == itemIndex }
                 if (itemInfo == null) {
@@ -701,7 +695,7 @@ private fun DialogueLineCard(
     var showTranslation by remember(line.text) { mutableStateOf(false) }
     val hasTranslation = line.trans.isNotBlank()
     val isLoopingThisLine = isPlaying && isLoopingSingle
-    // 译文显示 = 手动开启 && 这句处于选中态；换句自动收回（派生状态，无时序问题）
+
     val translationVisible = isActive && showTranslation && hasTranslation
 
     Column(modifier = Modifier.fillMaxWidth()) {

@@ -200,7 +200,6 @@ class TtsAudioManager(context: Context) {
     suspend fun ensureRealAudioForContent(content: Content): WordAudioResult =
         ensureContentAudio(content.audioUrl, "content")
 
-    /** Download (and cache) an arbitrary audio URL, e.g. a backend-cut sentence clip. */
     suspend fun ensureRemoteAudio(url: String): WordAudioResult =
         ensureContentAudio(url, "seg")
 

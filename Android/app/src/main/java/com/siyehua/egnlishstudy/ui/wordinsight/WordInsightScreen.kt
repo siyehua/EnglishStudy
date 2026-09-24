@@ -33,7 +33,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 
-/** Full-screen version of the word insight sheet, opened from the favourites list. */
 @Composable
 fun WordInsightScreen(
     word: String,

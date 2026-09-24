@@ -1,6 +1,21 @@
-# Architecture
+# 架构设计（SPEC）
 
-## Module map
+本文说明整体分层、数据流、状态机与接口契约。**具体模块与功能的设计见
+[`cells/`](cells/)，源码本身不写注释，以本文与 cells 为唯一说明来源。**
+
+## 目录
+
+- [模块地图](#模块地图)
+- [导航](#导航)
+- [ViewModel 作用域](#viewmodel-作用域)
+- [状态流](#状态流)
+- [PlaybackBus](#playbackbus)
+- [内容加载](#内容加载)
+- [查词](#查词)
+- [主题](#主题)
+- [模块文档索引](#模块文档索引)
+
+## 模块地图
 
 ```
 Android/app/src/main/java/com/siyehua/egnlishstudy/
@@ -28,7 +43,7 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 │   └── theme/                      Color, Theme, Type
 ```
 
-## Navigation
+## 导航
 
 `MainNavigation` (in `MainActivity.kt`) holds a `NavHost` with the destinations:
 
@@ -44,7 +59,7 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 `selectedContent` / `selectedWord` / `selectedFavorite` are `remember`ed state
 in `MainNavigation`; screens read them when they are (re)composed.
 
-## View model scoping
+## ViewModel 作用域
 
 - **`ContentAudioViewModel` is Activity-scoped** (`viewModel(viewModelStoreOwner = activity)`).
   This is what makes audio survive navigation: leaving the detail screen no
@@ -56,7 +71,7 @@ in `MainNavigation`; screens read them when they are (re)composed.
 `ContentAudioViewModel` is the single source of truth for playback; the service
 and the caption overlay are pure consumers.
 
-## State flow
+## 状态流
 
 ```
 ContentAudioViewModel
@@ -95,7 +110,7 @@ The reverse direction (service → ViewModel) uses explicit actions:
   `ACTION_NEED_OVERLAY_PERMISSION`; `MainActivity` listens and opens the system
   permission page.
 
-## Content loading
+## 内容加载
 
 `FetchDataManager`:
 
@@ -107,7 +122,7 @@ The reverse direction (service → ViewModel) uses explicit actions:
 Note: Android's `SQLiteQueryBuilder` only accepts the `offset, count` form of a
 LIMIT clause; `count OFFSET offset` throws `IllegalArgumentException` on API ≤ 29.
 
-## Word insight
+## 查词
 
 `WordInsightSheet` is fed by `WordInsightViewModel`, which calls the backend
 through the repositories in `data/wordform/`:
@@ -120,10 +135,32 @@ through the repositories in `data/wordform/`:
 A local-first resolver on the backend handles contractions and irregular forms
 before any LLM fallback is used.
 
-## Theming
+## 主题
 
 `ui/theme/Color.kt` defines the palette (`StudyGreen`, `StudyMint`,
 `StudyBackground`, `StudyDarkSurface`, …) and `Theme.kt` maps it to Material 3
 light/dark schemes plus an 8 dp shape scale. Screens should read colours from
 `MaterialTheme.colorScheme` (so dark mode works) and only use the raw `Study*`
 colours for brand accents on the green header surfaces.
+
+## 模块文档索引
+
+| 模块 | 文档 |
+| --- | --- |
+| 播放引擎（播放器、队列、循环、连播） | [cells/playback.md](cells/playback.md) |
+| 通知与前台服务 | [cells/notification.md](cells/notification.md) |
+| 桌面悬浮字幕 | [cells/caption.md](cells/caption.md) |
+| 全局播放器条 | [cells/player-bar.md](cells/player-bar.md) |
+| 首页与课程列表 | [cells/home.md](cells/home.md) |
+| 课程详情与逐句精听 | [cells/lesson-detail.md](cells/lesson-detail.md) |
+| 查词与释义 | [cells/word-insight.md](cells/word-insight.md) |
+| 收藏 | [cells/favourites.md](cells/favourites.md) |
+| 内容加载与本地缓存 | [cells/content.md](cells/content.md) |
+| 主题与视觉规范 | [cells/theme.md](cells/theme.md) |
+| 构建、发版与调试 | [cells/build.md](cells/build.md) |
+
+## 约束
+
+1. **源码不写注释。** 代码即说明；设计意图、为什么这样做、不要怎么做，全部写在 cells 文档里。
+2. **改功能必须同步改文档。** 对应 cell 文档是唯一入口，过期即视为缺陷。
+3. **坑要写下来。** 任何“看起来可以这样写但会坏”的地方，都必须在对应 cell 的「已知陷阱」中记录现象与后果。

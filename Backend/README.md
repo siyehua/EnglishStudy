@@ -5,9 +5,9 @@ audio cutting, word insight (form / pronunciation / phonics / meanings) and a
 TTS proxy.
 
 Project overview: [../README.md](../README.md) ·
-App architecture: [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) ·
-Playback: [../docs/PLAYBACK.md](../docs/PLAYBACK.md) ·
-Build & release: [../docs/BUILD.md](../docs/BUILD.md)
+App architecture: [../docs/SPEC.md](../docs/SPEC.md) ·
+Playback: [../docs/cells/notification.md](../docs/cells/notification.md) ·
+Build & release: [../docs/cells/build.md](../docs/cells/build.md)
 
 Production: **`https://handwriter.asia/english`** (supervisor + Caddy, see
 [Run On A Server](#run-on-a-server-current-production-setup)).

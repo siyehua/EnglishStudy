@@ -57,7 +57,6 @@ import com.siyehua.egnlishstudy.ui.wordinsight.ClickedWord
 import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightSheet
 import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightViewModel
 
-/** Detail page for a favourited sentence: play / loop the clip and tap words. */
 @Composable
 fun SentenceDetailScreen(
     favorite: FavoriteRecord,
@@ -76,8 +75,6 @@ fun SentenceDetailScreen(
     val database = remember { ContentCacheDatabase(context) }
     var translation by remember(favorite.id) { mutableStateOf(favorite.translation) }
 
-    // Older favourites were saved before the transcript translation was stored; fill it in
-    // from the locally cached lesson so the meaning block still shows up.
     LaunchedEffect(favorite.id) {
         if (translation.isBlank() && favorite.contentId.isNotBlank()) {
             val cached = runCatching {

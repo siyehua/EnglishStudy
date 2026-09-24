@@ -74,7 +74,7 @@ fun MainNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val database = remember { ContentCacheDatabase(context) }
-    // 播放 ViewModel 提升到 Activity 作用域：从详情页返回列表时音乐继续播放
+
     val activity = context as? androidx.activity.ComponentActivity
     val audioViewModel: ContentAudioViewModel = if (activity != null) {
         viewModel(viewModelStoreOwner = activity)

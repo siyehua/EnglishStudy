@@ -485,8 +485,7 @@ class ContentCacheDatabase(context: Context) :
                 null,
                 "$COLUMN_CACHE_ORDER ASC, $COLUMN_UPDATED_AT DESC",
                 "${offset.coerceAtLeast(0)}, ${limit.coerceAtLeast(1)}"
-                // 注意：Android 的 SQLiteQueryBuilder 只接受 "offset, count" 逗号格式，
-                // 不接受 "count OFFSET offset"，后者会直接抛 IllegalArgumentException
+
             ).use { cursor ->
                 buildList {
                     while (cursor.moveToNext()) {
