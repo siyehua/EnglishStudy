@@ -32,11 +32,37 @@
 AudioUiState
 ├── Idle                       无播放
 ├── Preparing                  正在下载/准备音频
-├── Playing(currentMillis, totalMillis, currentSentenceIndex,
+├── Playing(currentMillis, totalMillis, lessonId, currentSentenceIndex,
 │           isLoopingSingle, isLoopingLesson, isMuted, isCaptionOn)
 ├── Paused (同上)
 └── Error(message)
 ```
+
+`Playing` / `Paused` **必须携带 `lessonId`**：句子下标只有配上它所属的课程才有意义，
+订阅方据此判断"这件事是不是我这门课的"。
+
+### 当前句事件（StateFlow）
+
+```kotlin
+data class CurrentSentenceEvent(
+    val lessonId: String,
+    val sentenceIndex: Int?,   // null = 本课暂无选中句
+    val text: String
+)
+val currentSentenceEvent: StateFlow<CurrentSentenceEvent?>
+```
+
+这是"当前播放到哪一句"的**唯一对外出口**，取代了早期的裸句子/裸下标流。
+
+| 场景 | 广播内容 |
+| --- | --- |
+| 播放中 / 暂停 | `lessonId` = 本课，`sentenceIndex` = 当前句，`text` = 句子文本 |
+| `Preparing`（切课/加载中） | `lessonId` = 新课，`sentenceIndex = null` |
+| `Idle` | 整个事件置为 `null` |
+| `Error` | `lessonId` = 本课，`sentenceIndex = null` |
+
+订阅方（详情页、播放器条、通知、字幕）**必须自己判断 `lessonId` 是否与当前展示的内容一致**，
+一致才处理；`sentenceIndex == null` 表示清空选中。
 
 ViewModel 额外暴露四个独立流，供 UI 与通知使用：
 
@@ -62,8 +88,21 @@ ViewModel 额外暴露四个独立流，供 UI 与通知使用：
 
 ## 高亮与自动滚动
 
-- `matchByTime` 打开时，用 `lineRanges`（每句的 start/end）把播放位置映射成句子下标；否则回退到 `highlightedSentenceIndex` 或播放列表下标。
-- 详情页根据 `currentSentenceIndex` 高亮并**按需**滚动：只有当目标句不在可见项里、或被底部播放器遮挡时才滚动，避免打断用户手动浏览。
+`activeSentenceIndex()` 有三级回退，**必须同时看 `matchByTime` 与 `lineRanges` 的有效性**：
+
+1. `matchByTime && lineRanges.isNotEmpty()` → 用播放位置在行区间里查命中项；
+2. 否则回退 `highlightedSentenceIndex`；
+3. 再否则回退 `playlistIndex`。
+
+因为存在回退，**切课时必须先把 `lineRanges` 清空并把 `matchByTime` 置 false**，
+否则新课音频会用旧课的时间轴命中一个错误的行号。
+
+详情页消费事件的规则：
+
+- 只处理 `event.lessonId == content.id` 的事件；
+- `event.sentenceIndex == null` → 清空选中（不保留旧课的选中句）；
+- 高亮下标同样按课号过滤（`currentSentenceIndexFor(content.id)`），不匹配时视为无下标；
+- 滚动只在"目标句不可见或被底部播放器遮挡"时发生，避免打断手动浏览。
 
 ## 课程队列
 
@@ -74,7 +113,11 @@ ContentAudioViewModel.setLessonQueue(items, currentId)
 ```
 
 - `playNextLesson()` / `playPrevLesson()` 在队列内前后移动，切换后 UI、通知、字幕同步。
-- `playAt(index)` 更新 `queueIndex`、`currentLesson`，然后 `playAll(target)`。
+- `playAt(index)` 更新 `queueIndex`，再交给 `playAll(target)`（`playAll` 负责登记当前课）。
+
+**`setLessonQueue` 只登记"列表顺序 + 当前课在队列中的位置"，绝不写 `currentLesson`。**
+`currentLesson` 表示"正在播放的课"，只能由播放动作改变。早期它在 `setLessonQueue` 里被写入，
+导致详情页打开旧课时与播放课互相覆盖，表现为选中句来回跳。
 
 ## 播放结束的处理
 
@@ -112,6 +155,16 @@ NullPointerException: Attempt to invoke interface method
 
 单句循环、收藏夹片段播完后**不能**跳下一课。用 `lessonPlayMode` 区分；新增播放入口时记得设置它，否则要么不连播、要么乱连播。
 
-### 5. 离开详情页不要停播
+### 5. 当前句必须带课号，不能只用下标
+
+只有 `Int` 下标时，UI 无法分辨"第 5 句"属于哪一课。切课窗口期旧下标先到、新下标后到，
+表现为选中句在 `5 → 11 → 5 → 12` 之间抖动。**任何新增的"当前句"出口都必须携带 `lessonId`。**
+
+### 6. 详情页不要无条件跟随"正在播放的课"
+
+打开一门非播放中的课程时，若直接跟随 `currentLesson` 就会把页面强行切走。
+正确做法是记录进入页面时的播放课，只有**播放课发生变更**（下一课/上一课/自动连播）时才跟随。
+
+### 7. 离开详情页不要停播
 
 历史实现里有 `DisposableEffect { onDispose { stop() } }`，会让返回首页时音乐中断。已移除；如需在特定场景停止，请在业务逻辑里显式调用。

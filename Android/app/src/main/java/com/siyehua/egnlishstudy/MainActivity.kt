@@ -91,7 +91,7 @@ fun MainNavigation() {
             val listPlayerContent by audioViewModel.currentLesson.collectAsState()
             val listLooping by audioViewModel.loopingLessonFlow.collectAsState()
             val listCaptionOn by audioViewModel.captionOnFlow.collectAsState()
-            val listSubtitle by audioViewModel.currentSentenceFlow.collectAsState()
+            val listEvent by audioViewModel.currentSentenceEvent.collectAsState()
             ContentListScreen(
                 onContentClick = { content ->
                     selectedContent = content
@@ -99,7 +99,7 @@ fun MainNavigation() {
                 },
                 audioState = listAudioState,
                 playerContent = listPlayerContent,
-                playerSubtitle = listSubtitle,
+                playerSubtitle = listEvent?.text.orEmpty(),
                 isLoopingLesson = listLooping,
                 isCaptionOn = listCaptionOn,
                 onToggleLessonLoop = { audioViewModel.toggleLessonLoop() },
@@ -177,12 +177,12 @@ fun MainNavigation() {
             val settingsContent by audioViewModel.currentLesson.collectAsState()
             val settingsLooping by audioViewModel.loopingLessonFlow.collectAsState()
             val settingsCaptionOn by audioViewModel.captionOnFlow.collectAsState()
-            val settingsSubtitle by audioViewModel.currentSentenceFlow.collectAsState()
+            val settingsEvent by audioViewModel.currentSentenceEvent.collectAsState()
             CaptionSettingsScreen(
                 onBack = { navController.popBackStack() },
                 audioState = settingsAudioState,
                 playerContent = settingsContent,
-                playerSubtitle = settingsSubtitle,
+                playerSubtitle = settingsEvent?.text.orEmpty(),
                 isLoopingLesson = settingsLooping,
                 isCaptionOn = settingsCaptionOn,
                 onPlayPrevLesson = { audioViewModel.playPrevLesson() },

@@ -128,11 +128,11 @@ fun ContentDetailScreen(
     val audioState by audioViewModel.uiState.collectAsState()
     val wordInsightState by wordInsightViewModel.uiState.collectAsState()
     val wordPronunciationState by wordInsightViewModel.audioState.collectAsState()
-    val currentSentenceIndex = audioState.currentSentenceIndexOrNull()
+    val currentSentenceIndex = audioState.currentSentenceIndexFor(content.id)
     val isLoopingSingle = audioState.isLoopingSingleOrNull()
     val isLoopingLesson = audioState.isLoopingLessonOrNull()
     val isCaptionOn by audioViewModel.captionOnFlow.collectAsState()
-    val currentPlayingSentence by audioViewModel.currentSentenceFlow.collectAsState()
+    val sentenceEvent by audioViewModel.currentSentenceEvent.collectAsState()
     val listState = rememberLazyListState()
     val density = LocalDensity.current
     val collapseRangePx = with(density) { 160.dp.toPx() }
@@ -147,15 +147,21 @@ fun ContentDetailScreen(
     }
 
     val activeLesson by audioViewModel.currentLesson.collectAsState()
+    var followedLessonId by remember(content.id) { mutableStateOf(activeLesson?.id) }
+    LaunchedEffect(content.id) {
+        followedLessonId = activeLesson?.id
+    }
     LaunchedEffect(activeLesson?.id) {
         val lesson = activeLesson ?: return@LaunchedEffect
+        if (lesson.id == followedLessonId) return@LaunchedEffect
+        followedLessonId = lesson.id
         if (lesson.id != content.id) onUpdateContent(lesson)
     }
 
-    LaunchedEffect(currentSentenceIndex) {
-        if (currentSentenceIndex != null) {
-            activeLineIndex = currentSentenceIndex
-        }
+    LaunchedEffect(sentenceEvent) {
+        val event = sentenceEvent ?: return@LaunchedEffect
+        if (event.lessonId != content.id) return@LaunchedEffect
+        activeLineIndex = event.sentenceIndex
     }
     var favoritedLineIndices by remember(content.id) {
         mutableStateOf(runCatching {
@@ -328,7 +334,7 @@ fun ContentDetailScreen(
             GlobalPlayerBar(
                 audioState = audioState,
                 content = content,
-                subtitle = currentPlayingSentence,
+                subtitle = sentenceEvent?.takeIf { it.lessonId == content.id }?.text.orEmpty(),
                 isLoopingLesson = isLoopingLesson,
                 isCaptionOn = isCaptionOn,
                 onToggleLessonLoop = { audioViewModel.toggleLessonLoop() },
@@ -834,10 +840,10 @@ private fun AudioUiState.progressOrNull(): Pair<Long, Long>? =
         else -> null
     }
 
-private fun AudioUiState.currentSentenceIndexOrNull(): Int? =
+private fun AudioUiState.currentSentenceIndexFor(lessonId: String): Int? =
     when (this) {
-        is AudioUiState.Playing -> currentSentenceIndex
-        is AudioUiState.Paused -> currentSentenceIndex
+        is AudioUiState.Playing -> currentSentenceIndex.takeIf { this.lessonId == lessonId }
+        is AudioUiState.Paused -> currentSentenceIndex.takeIf { this.lessonId == lessonId }
         else -> null
     }
 

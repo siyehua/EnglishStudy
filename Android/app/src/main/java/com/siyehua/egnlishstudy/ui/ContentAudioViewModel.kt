@@ -30,9 +30,9 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     private var currentTitle = "英语听力"
 
     private var currentSentence = ""
-    private val _currentSentenceFlow = MutableStateFlow("")
+    private val _currentSentenceEvent = MutableStateFlow<CurrentSentenceEvent?>(null)
 
-    val currentSentenceFlow: StateFlow<String> = _currentSentenceFlow.asStateFlow()
+    val currentSentenceEvent: StateFlow<CurrentSentenceEvent?> = _currentSentenceEvent.asStateFlow()
 
     private var queueItems: List<Content> = emptyList()
     private var queueIndex = -1
@@ -55,6 +55,9 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     val currentLesson: StateFlow<Content?> = _currentLesson.asStateFlow()
 
     private var activeDialogueLines: List<String> = emptyList()
+
+    private val currentLessonId: String
+        get() = _currentLesson.value?.id.orEmpty()
 
     private fun sentenceForIndex(index: Int): String {
         activeDialogueLines.getOrNull(index)?.let { return it.take(80) }
@@ -114,20 +117,26 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
             else -> null
         }
 
-        if (state is AudioUiState.Playing || state is AudioUiState.Paused) {
-            val idx = when (state) {
-                is AudioUiState.Playing -> state.currentSentenceIndex
-                is AudioUiState.Paused -> state.currentSentenceIndex
-                else -> 0
-            }
-            _currentSentenceFlow.value = sentenceForIndex(idx)
-        } else if (state is AudioUiState.Idle) {
-            _currentSentenceFlow.value = ""
+        when (state) {
+            is AudioUiState.Playing -> emitSentenceEvent(state.lessonId, state.currentSentenceIndex)
+            is AudioUiState.Paused -> emitSentenceEvent(state.lessonId, state.currentSentenceIndex)
+            is AudioUiState.Preparing -> emitSentenceEvent(currentLessonId, null)
+            is AudioUiState.Idle -> _currentSentenceEvent.value = null
+            is AudioUiState.Error -> emitSentenceEvent(currentLessonId, null)
         }
 
         if (info != null || PlaybackBus.ownerId == ownerId) {
             if (info != null) ensurePlaybackService()
             PlaybackBus.publish(ownerId, info)
+        }
+    }
+
+    private fun emitSentenceEvent(lessonId: String, index: Int?) {
+        if (lessonId.isBlank()) return
+        val text = index?.let { sentenceForIndex(it) }.orEmpty()
+        val next = CurrentSentenceEvent(lessonId = lessonId, sentenceIndex = index, text = text)
+        if (_currentSentenceEvent.value != next) {
+            _currentSentenceEvent.value = next
         }
     }
 
@@ -168,6 +177,8 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         lessonPlayMode = true
         _currentLesson.value = content
         highlightedSentenceIndex = null
+        lineRanges = emptyList()
+        matchByTime = false
         currentTitle = content.title
 
         currentSentence = ""
@@ -327,7 +338,6 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         ) return
         queueItems = items
         queueIndex = items.indexOfFirst { it.id == currentId }
-        if (queueIndex >= 0) _currentLesson.value = items[queueIndex]
     }
 
     fun toggleCaptionOverlay() {
@@ -384,29 +394,33 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     private fun playAt(index: Int) {
         val target = queueItems.getOrNull(index) ?: return
         queueIndex = index
-        _currentLesson.value = target
         playAll(target)
     }
 
     fun playAll(content: Content) {
         loopSingle = false
+        _currentLesson.value = content
+        registerLineRanges(content)
+        play(content)
+    }
+
+    private fun registerLineRanges(content: Content) {
         lineRanges = (content as? Dialogue)
             ?.lines
             ?.map { it.start to it.end }
             .orEmpty()
         matchByTime = lineRanges.isNotEmpty()
-        play(content)
     }
 
     fun playFromLine(content: Content, lineIndex: Int) {
         loopSingle = false
         lessonPlayMode = true
+        _currentLesson.value = content
         currentTitle = content.title
         val lines = (content as? Dialogue)?.lines.orEmpty()
         activeDialogueLines = lines.map { it.text }
         currentSentence = lines.getOrNull(lineIndex)?.text.orEmpty().take(80)
-        lineRanges = lines.map { it.start to it.end }
-        matchByTime = lineRanges.isNotEmpty()
+        registerLineRanges(content)
         val startSec = lines.getOrNull(lineIndex)?.start ?: 0.0
         val audioUrl = content.audioUrl
         if (audioUrl.isNullOrBlank()) {
@@ -494,6 +508,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = AudioUiState.Paused(
             currentMillis = currentPlaybackMillis(),
             totalMillis = totalDurationMillis,
+            lessonId = currentLessonId,
             currentSentenceIndex = activeSentenceIndex(),
             isLoopingSingle = loopSingle,
             isLoopingLesson = loopLesson,
@@ -607,6 +622,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = AudioUiState.Playing(
             currentMillis = currentPlaybackMillis(),
             totalMillis = totalDurationMillis,
+            lessonId = currentLessonId,
             currentSentenceIndex = activeSentenceIndex(),
             isLoopingSingle = loopSingle,
             isLoopingLesson = loopLesson,
@@ -672,12 +688,19 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     }
 }
 
+data class CurrentSentenceEvent(
+    val lessonId: String,
+    val sentenceIndex: Int?,
+    val text: String
+)
+
 sealed class AudioUiState {
     object Idle : AudioUiState()
     object Preparing : AudioUiState()
     data class Playing(
         val currentMillis: Long,
         val totalMillis: Long,
+        val lessonId: String,
         val currentSentenceIndex: Int,
         val isLoopingSingle: Boolean = false,
         val isLoopingLesson: Boolean = false,
@@ -687,6 +710,7 @@ sealed class AudioUiState {
     data class Paused(
         val currentMillis: Long,
         val totalMillis: Long,
+        val lessonId: String,
         val currentSentenceIndex: Int,
         val isLoopingSingle: Boolean = false,
         val isLoopingLesson: Boolean = false,

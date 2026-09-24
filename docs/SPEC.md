@@ -80,7 +80,8 @@ ContentAudioViewModel
    │       ├── isLoopingSingle / isLoopingLesson / isMuted / isCaptionOn
    │       └── consumed by GlobalPlayerBar, the detail screen, PlaybackBus
    ├── currentLesson: StateFlow<Content?>      which lesson is loaded
-   ├── currentSentenceFlow: StateFlow<String>  current line text (player bar subtitle)
+   ├── currentSentenceEvent: StateFlow<CurrentSentenceEvent?>
+   │       当前句的唯一出口：lessonId + sentenceIndex + text；null 下标表示清空
    ├── captionOnFlow: StateFlow<Boolean>       caption toggle (persisted)
    └── loopingLessonFlow: StateFlow<Boolean>   lesson-loop toggle
 ```
