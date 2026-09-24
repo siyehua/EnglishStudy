@@ -68,6 +68,7 @@ class ContentAudioViewModel(application: Application) : AndroidViewModel(applica
     val uiState: StateFlow<AudioUiState> = _uiState.asStateFlow()
 
     init {
+        PlaybackBus.publish(ownerId, null)
 
         captionOn = captionPrefs.isCaptionEnabled()
         _captionOn.value = captionOn
