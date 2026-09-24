@@ -2,6 +2,7 @@ package com.siyehua.egnlishstudy.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,15 +24,21 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.GTranslate
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -44,6 +51,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
@@ -63,6 +71,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -71,6 +80,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
+import com.siyehua.egnlishstudy.data.LessonQueueHolder
+import com.siyehua.egnlishstudy.ui.components.GlobalPlayerBar
 import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.data.SentenceSplitter
 import com.siyehua.egnlishstudy.data.wordform.WordFormApiClient
@@ -102,12 +113,15 @@ import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightSheet
 import com.siyehua.egnlishstudy.ui.wordinsight.WordInsightViewModel
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContentDetailScreen(
     content: Content,
     onBack: () -> Unit,
+    onUpdateContent: (Content) -> Unit = {},
+    onOpenCaptionSettings: () -> Unit = {},
     audioViewModel: ContentAudioViewModel = viewModel(),
     wordInsightViewModel: WordInsightViewModel = viewModel()
 ) {
@@ -115,6 +129,10 @@ fun ContentDetailScreen(
     val wordInsightState by wordInsightViewModel.uiState.collectAsState()
     val wordPronunciationState by wordInsightViewModel.audioState.collectAsState()
     val currentSentenceIndex = audioState.currentSentenceIndexOrNull()
+    val isLoopingSingle = audioState.isLoopingSingleOrNull()
+    val isLoopingLesson = audioState.isLoopingLessonOrNull()
+    val isCaptionOn by audioViewModel.captionOnFlow.collectAsState()
+    val currentPlayingSentence by audioViewModel.currentSentenceFlow.collectAsState()
     val listState = rememberLazyListState()
     val density = LocalDensity.current
     val collapseRangePx = with(density) { 160.dp.toPx() }
@@ -123,6 +141,25 @@ fun ContentDetailScreen(
     val context = LocalContext.current
     val favoriteDatabase = remember { ContentCacheDatabase(context) }
     var activeLineIndex by remember(content.id) { mutableStateOf<Int?>(null) }
+
+    // 课程队列：按列表顺序支持 上一课/下一课 与整课自动连播
+    LaunchedEffect(content.id) {
+        audioViewModel.setLessonQueue(LessonQueueHolder.items, content.id)
+    }
+    // 播放器自动切到下一课时，通知界面切换到对应文章
+    val activeLesson by audioViewModel.currentLesson.collectAsState()
+    LaunchedEffect(activeLesson?.id) {
+        val lesson = activeLesson ?: return@LaunchedEffect
+        if (lesson.id != content.id) onUpdateContent(lesson)
+    }
+
+    // 收敛逻辑：手动点击与自动播放共用 activeLineIndex 这一个状态，
+    // 播放到哪句就选中哪句，上一句的扩展按钮自动收敛。
+    LaunchedEffect(currentSentenceIndex) {
+        if (currentSentenceIndex != null) {
+            activeLineIndex = currentSentenceIndex
+        }
+    }
     var favoritedLineIndices by remember(content.id) {
         mutableStateOf(runCatching {
             favoriteDatabase.loadFavorites()
@@ -134,12 +171,6 @@ fun ContentDetailScreen(
                 }
                 .toSet()
         }.getOrDefault(emptySet()))
-    }
-
-    DisposableEffect(content.id) {
-        onDispose {
-            audioViewModel.stop()
-        }
     }
 
     val collapseFractionTarget by remember(listState, collapseRangePx) {
@@ -174,23 +205,10 @@ fun ContentDetailScreen(
                 collapseFraction = collapseFraction
             )
 
-            AudioPracticeBar(
-                audioState = audioState,
-                collapseFraction = collapseFraction,
-                onTogglePlayback = {
-                    if (audioState is AudioUiState.Idle && content is Dialogue) {
-                        audioViewModel.playAll(content)
-                    } else {
-                        audioViewModel.togglePlayback(content)
-                    }
-                },
-                onStop = { audioViewModel.stop() }
-            )
-
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 18.dp, top = 14.dp, end = 18.dp, bottom = 28.dp),
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(start = 18.dp, top = 14.dp, end = 18.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 val onWordClick: (ClickedWord) -> Unit = { clickedWord ->
@@ -219,6 +237,7 @@ fun ContentDetailScreen(
                                 isPlaying = currentSentenceIndex == index,
                                 isActive = activeLineIndex == index,
                                 isFavorited = favoritedLineIndices.contains(index),
+                                isLoopingSingle = isLoopingSingle,
                                 onWordClick = onWordClick,
                                 onPlayLine = { _, i ->
                                     activeLineIndex = i
@@ -254,7 +273,9 @@ fun ContentDetailScreen(
                                     if (!segUrl.isNullOrBlank()) {
                                         audioViewModel.loopSegmentUrl(
                                             WordFormApiClient.DEFAULT_BASE_URL + segUrl,
-                                            index
+                                            index,
+                                            content.title,
+                                            line.text
                                         )
                                     }
                                 }
@@ -294,13 +315,40 @@ fun ContentDetailScreen(
                 val index = currentSentenceIndex ?: return@LaunchedEffect
                 if (content !is Dialogue) return@LaunchedEffect
                 if (index < 0 || index >= content.lines.size) return@LaunchedEffect
-                val visible = listState.layoutInfo.visibleItemsInfo
-                if (visible.isEmpty()) return@LaunchedEffect
-                val isVisible = visible.any { it.index == index }
-                if (!isVisible) {
-                    listState.animateScrollToItem(index)
+                // 列表第 0 项是"Dialogue practice"标题，句子 i 在列表中的位置是 i + 1
+                val itemIndex = index + 1
+                /* 只在必要时滚动，且绝不重置用户手动滚动的位置：
+                 * - 句子不在可见项里 → 滚到它
+                 * - 句子在可见项里但被底部播放器遮挡（y 超过播放器顶部） → 滚到它露出 */
+                val itemInfo = listState.layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == itemIndex }
+                if (itemInfo == null) {
+                    listState.animateScrollToItem(itemIndex)
+                } else {
+                    val barTop = listState.layoutInfo.viewportEndOffset - with(density) { 240.dp.toPx() }.roundToInt()
+                    val isCovered = itemInfo.offset + itemInfo.size > barTop
+                    if (isCovered) listState.animateScrollToItem(itemIndex)
                 }
             }
+
+            GlobalPlayerBar(
+                audioState = audioState,
+                content = content,
+                subtitle = currentPlayingSentence,
+                isLoopingLesson = isLoopingLesson,
+                isCaptionOn = isCaptionOn,
+                onToggleLessonLoop = { audioViewModel.toggleLessonLoop() },
+                onPlayNextLesson = { audioViewModel.playNextLesson() },
+                onPlayPrevLesson = { audioViewModel.playPrevLesson() },
+                onTogglePlayback = {
+                    if (audioState is AudioUiState.Idle && content is Dialogue) {
+                        audioViewModel.playAll(content)
+                    } else {
+                        audioViewModel.togglePlayback(content)
+                    }
+                },
+                onToggleCaption = { audioViewModel.toggleCaptionOverlay() }
+            )
         }
     }
 
@@ -416,139 +464,6 @@ private fun LessonDetailHeader(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AudioPracticeBar(
-    audioState: AudioUiState,
-    collapseFraction: Float,
-    onTogglePlayback: () -> Unit,
-    onStop: () -> Unit
-) {
-    val isAutoCollapsed = collapseFraction > 0.16f
-    var isManuallyExpanded by rememberSaveable { mutableStateOf(false) }
-    val isExpanded = !isAutoCollapsed || isManuallyExpanded
-    val isPlaying = audioState is AudioUiState.Playing
-    val isPaused = audioState is AudioUiState.Paused
-    val isPreparing = audioState is AudioUiState.Preparing
-    val canStop = isPlaying || isPaused || isPreparing
-    val progressText = audioState.audioCompactStatusText()
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 10.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = if (isExpanded) 1.dp else 3.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = if (isExpanded) 14.dp else 8.dp),
-            verticalArrangement = Arrangement.spacedBy(if (isExpanded) 12.dp else 0.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(if (isExpanded) 4.dp else 1.dp)
-                ) {
-                    Text(
-                        text = if (isExpanded) "Listening practice" else "Listening",
-                        style = if (isExpanded) {
-                            MaterialTheme.typography.titleMedium
-                        } else {
-                            MaterialTheme.typography.labelLarge
-                        },
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = if (isExpanded) audioState.audioStatusText() else progressText,
-                        style = if (isExpanded) {
-                            MaterialTheme.typography.bodyMedium
-                        } else {
-                            MaterialTheme.typography.labelMedium
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = if (isExpanded) 2 else 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(
-                    onClick = onTogglePlayback,
-                    enabled = !isPreparing,
-                    modifier = Modifier.size(38.dp),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = if (isPlaying) StudyCoral else StudyGreen,
-                        contentColor = Color.White,
-                        disabledContainerColor = StudyMint,
-                        disabledContentColor = StudyGreenDark
-                    )
-                ) {
-                    when {
-                        isPreparing -> CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = StudyGreenDark
-                        )
-
-                        isPlaying -> Icon(
-                            imageVector = Icons.Default.Pause,
-                            contentDescription = "Pause audio",
-                            modifier = Modifier.size(18.dp)
-                        )
-
-                        else -> Icon(
-                            imageVector = if (isPaused) Icons.Default.PlayArrow else Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = if (isPaused) "Resume audio" else "Play audio",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                if (canStop) {
-                    IconButton(
-                        onClick = onStop,
-                        modifier = Modifier.size(34.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = StudyCoral
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Stop,
-                            contentDescription = "Stop audio",
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
-
-                if (isAutoCollapsed) {
-                    IconButton(
-                        onClick = { isManuallyExpanded = !isExpanded },
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (isExpanded) "Collapse audio controls" else "Expand audio controls",
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            val progress = audioState.progressOrNull()
-            if (isExpanded && progress != null) {
-                AudioProgress(currentMillis = progress.first, totalMillis = progress.second)
             }
         }
     }
@@ -771,6 +686,7 @@ private fun DialogueLineCard(
     isPlaying: Boolean,
     isActive: Boolean,
     isFavorited: Boolean,
+    isLoopingSingle: Boolean,
     onWordClick: (ClickedWord) -> Unit,
     onPlayLine: (DialogueLine, Int) -> Unit,
     onToggleFavorite: () -> Unit,
@@ -782,6 +698,12 @@ private fun DialogueLineCard(
         else -> StudyYellowSoft
     }
 
+    var showTranslation by remember(line.text) { mutableStateOf(false) }
+    val hasTranslation = line.trans.isNotBlank()
+    val isLoopingThisLine = isPlaying && isLoopingSingle
+    // 译文显示 = 手动开启 && 这句处于选中态；换句自动收回（派生状态，无时序问题）
+    val translationVisible = isActive && showTranslation && hasTranslation
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -789,16 +711,26 @@ private fun DialogueLineCard(
             color = containerColor,
             border = if (isPlaying) BorderStroke(1.dp, StudyGreen.copy(alpha = 0.45f)) else null
         ) {
-            ClickableReadingText(
-                text = line.text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = StudyInk,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                onWordClick = onWordClick,
-                onSentenceTap = {
-                    onPlayLine(line, sentenceIndex)
+            Column {
+                ClickableReadingText(
+                    text = line.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = StudyInk,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    onWordClick = onWordClick,
+                    onSentenceTap = {
+                        onPlayLine(line, sentenceIndex)
+                    }
+                )
+                if (translationVisible) {
+                    Text(
+                        text = line.trans,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StudyInk.copy(alpha = 0.72f),
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp)
+                    )
                 }
-            )
+            }
         }
 
         if (isActive) {
@@ -811,14 +743,25 @@ private fun DialogueLineCard(
                     icon = if (isFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     label = if (isFavorited) "已收藏" else "收藏",
                     tint = Color(red = 0.9f, green = 0.32f, blue = 0.32f),
+                    selected = isFavorited,
                     onClick = onToggleFavorite
                 )
                 LineActionButton(
                     icon = Icons.Filled.Repeat,
-                    label = "循环",
+                    label = if (isLoopingThisLine) "循环中" else "循环",
                     tint = StudyBlue,
+                    selected = isLoopingThisLine,
                     onClick = onLoopLine
                 )
+                if (hasTranslation) {
+                    LineActionButton(
+                        icon = Icons.Filled.GTranslate,
+                        label = "翻译",
+                        tint = StudyGreenDark,
+                        selected = showTranslation,
+                        onClick = { showTranslation = !showTranslation }
+                    )
+                }
             }
         }
     }
@@ -829,12 +772,26 @@ private fun LineActionButton(
     icon: ImageVector,
     label: String,
     tint: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    selected: Boolean = false
 ) {
-    TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+        colors = if (selected) {
+            ButtonDefaults.textButtonColors(containerColor = tint.copy(alpha = 0.15f))
+        } else {
+            ButtonDefaults.textButtonColors()
+        }
+    ) {
         Icon(imageVector = icon, contentDescription = label, tint = tint, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
-        Text(text = label, style = MaterialTheme.typography.labelMedium, color = tint)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = tint,
+            fontWeight = if (selected) FontWeight.SemiBold else null
+        )
     }
 }
 
@@ -888,6 +845,27 @@ private fun AudioUiState.currentSentenceIndexOrNull(): Int? =
         is AudioUiState.Playing -> currentSentenceIndex
         is AudioUiState.Paused -> currentSentenceIndex
         else -> null
+    }
+
+private fun AudioUiState.isCaptionOnOrNull(): Boolean =
+    when (this) {
+        is AudioUiState.Playing -> isCaptionOn
+        is AudioUiState.Paused -> isCaptionOn
+        else -> false
+    }
+
+private fun AudioUiState.isLoopingLessonOrNull(): Boolean =
+    when (this) {
+        is AudioUiState.Playing -> isLoopingLesson
+        is AudioUiState.Paused -> isLoopingLesson
+        else -> false
+    }
+
+private fun AudioUiState.isLoopingSingleOrNull(): Boolean =
+    when (this) {
+        is AudioUiState.Playing -> isLoopingSingle
+        is AudioUiState.Paused -> isLoopingSingle
+        else -> false
     }
 
 private fun Long.formatAudioTime(): String {

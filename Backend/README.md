@@ -1,6 +1,18 @@
 # English Study Backend
 
-Lightweight backend for English Study word insight features.
+FastAPI service behind the English Study Android app: lesson content, sentence
+audio cutting, word insight (form / pronunciation / phonics / meanings) and a
+TTS proxy.
+
+Project overview: [../README.md](../README.md) ·
+App architecture: [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) ·
+Playback: [../docs/PLAYBACK.md](../docs/PLAYBACK.md) ·
+Build & release: [../docs/BUILD.md](../docs/BUILD.md)
+
+Production: **`https://handwriter.asia/english`** (supervisor + Caddy, see
+[Run On A Server](#run-on-a-server-current-production-setup)).
+
+## Word insight
 
 The first API resolves the clicked surface word into a structured word form record:
 
@@ -34,67 +46,99 @@ MIMO_BASE_URL=https://api.xiaomimimo.com/v1
 
 ## Run Locally
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```bash
+cd Backend
+python3 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
+./.venv/bin/python -m app.main            # 127.0.0.1:8000
+# or, with auto-reload:
+./.venv/bin/python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-## Run On A Server
+## API
 
-On a Linux server, run the backend without `--reload` and write logs to a fixed
-directory. The virtual environment name is intentionally project-specific so it
-is easy to recognize on the server:
+Base URL in production: **`https://handwriter.asia/english`**
+(Caddy `handle_path /english/*` strips the prefix before proxying to
+`127.0.0.1:8000`).
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | liveness probe → `{"status":"ok"}` |
+| `POST` | `/contents` | lesson list (EnglishPod transcripts) |
+| `GET` | `/ting/segment` | cut a sentence clip out of a lesson MP3 |
+| `POST` | `/word-form` | surface word → headword / relation / expansion |
+| `POST` | `/word-pronunciation` | IPA for a word |
+| `POST` | `/word-phonics` | syllable / phonics breakdown |
+| `POST` | `/word-meaning` | Chinese meanings + sentence translation |
+| `POST` | `/tts-audio` | TTS proxy (keeps the MIMO key server-side) |
+
+## Run On A Server (current production setup)
+
+Server: Tencent Cloud Guangzhou (`43.139.205.128`), directory
+**`/opt/EnglishStudy/Backend`**.
 
 ```bash
-cd /path/to/EnglishStudy/Backend
-python3 -m venv .venv-englishstudy-backend
-./.venv-englishstudy-backend/bin/python -m pip install -r requirements.txt
-mkdir -p logs
-nohup ./.venv-englishstudy-backend/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 \
-  > logs/uvicorn.out.log 2> logs/uvicorn.err.log &
-echo $! > logs/uvicorn.pid
+cd /opt/EnglishStudy/Backend
+python3 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
+mkdir -p log
 ```
 
-`.venv-englishstudy-backend` is created by `python3 -m venv` and stores the
-Python runtime plus installed packages. `.env` is a separate config file that
-you create yourself for API keys:
+Supervisor unit `/etc/supervisor/conf.d/english-study-api.conf`:
+
+```ini
+[program:english-study-api]
+command=/opt/EnglishStudy/Backend/.venv/bin/python -m app.main
+directory=/opt/EnglishStudy/Backend
+autostart=true
+autorestart=true
+startsecs=5
+startretries=3
+stdout_logfile=/opt/EnglishStudy/Backend/log/stdout.log
+stdout_logfile_maxbytes=10MB
+stdout_logfile_backups=2
+stderr_logfile=/opt/EnglishStudy/Backend/log/error.log
+stderr_logfile_maxbytes=10MB
+stderr_logfile_backups=2
+environment=PYTHONUNBUFFERED="1"
+```
+
+Caddy route inside the `handwriter.asia` block (before the catch-all
+`reverse_proxy`):
+
+```
+handle_path /english/* {
+    reverse_proxy 127.0.0.1:8000
+}
+```
+
+Apply changes:
 
 ```bash
-cp .env.example .env
-nano .env
+supervisorctl -c /etc/supervisor/supervisord.conf reread
+supervisorctl -c /etc/supervisor/supervisord.conf update english-study-api
+/usr/local/bin/caddy-duckdns validate --config /etc/caddy/Caddyfile --adapter caddyfile
+systemctl reload caddy
+curl -s https://handwriter.asia/english/health
 ```
 
-Check whether it is running:
+Operational commands:
 
 ```bash
-cat logs/uvicorn.pid
-ps -p "$(cat logs/uvicorn.pid)" -f
-curl http://127.0.0.1:8000/contents
+S="supervisorctl -c /etc/supervisor/supervisord.conf"
+$S status english-study-api
+$S restart english-study-api
+tail -f /opt/EnglishStudy/Backend/log/stdout.log
 ```
 
-Watch logs:
+> `/usr/bin/caddy` on this host is the stock build and cannot parse the current
+> Caddyfile (it needs the duckdns plugin). Always use
+> `/usr/local/bin/caddy-duckdns` to validate and `systemctl reload caddy` to
+> apply.
 
-```bash
-tail -f logs/uvicorn.out.log
-tail -f logs/uvicorn.err.log
-```
-
-Stop the backend:
-
-```bash
-kill "$(cat logs/uvicorn.pid)"
-```
-
-If the pid file is missing, find and stop the process by port:
-
-```bash
-lsof -i :8000
-kill <pid>
-```
-
-Keep `Backend/.env` on the server and put `DEEPSEEK_API_KEY` and `MIMO_API_KEY`
-there. Do not commit that file.
+The app binds to `127.0.0.1` only; all external access goes through Caddy over
+HTTPS. `Backend/.env` (with `DEEPSEEK_API_KEY` and `MIMO_API_KEY`) must exist on
+the server and must not be committed.
 
 ## Content Sources
 
@@ -134,8 +178,9 @@ imprecise seek over the untagged VBR source MP3.
 
 ## Test
 
-```powershell
-python -m unittest discover
+```bash
+cd Backend
+./.venv/bin/python -m unittest discover
 ```
 
 ## Example

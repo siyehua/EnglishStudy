@@ -33,10 +33,10 @@ android {
         targetSdk = 36
         
         // Internal version number used for updates
-        versionCode = 1
+        versionCode = 2
         
         // Human-readable version string
-        versionName = "1.0"
+        versionName = "2.0"
 
         // Runner for instrumentation tests
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -48,8 +48,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             // Configuration for release builds
             optimization {
-                // Disable optimization for now (e.g., R8/ProGuard)
-                enable = false
+                // R8 裁剪：不开启会把 Compose/Ktor/图标库全量打入（APK 47MB）
+                enable = true
             }
         }
     }
@@ -90,6 +90,9 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
+
+    // Media notification (MediaStyle + MediaSessionCompat)
+    implementation("androidx.media:media:1.7.0")
     
     // RSS Parsing
     implementation(libs.rss.parser)

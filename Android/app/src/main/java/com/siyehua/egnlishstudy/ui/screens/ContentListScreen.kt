@@ -49,6 +49,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -86,6 +89,9 @@ import com.siyehua.egnlishstudy.model.ContentType
 import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.model.News
 import com.siyehua.egnlishstudy.ui.ContentUiState
+import com.siyehua.egnlishstudy.data.LessonQueueHolder
+import com.siyehua.egnlishstudy.ui.AudioUiState
+import com.siyehua.egnlishstudy.ui.components.GlobalPlayerBar
 import com.siyehua.egnlishstudy.ui.ContentViewModel
 import com.siyehua.egnlishstudy.ui.FilterOption
 import com.siyehua.egnlishstudy.ui.theme.EgnlishStudyTheme
@@ -107,20 +113,51 @@ import kotlin.math.max
 fun ContentListScreen(
     onContentClick: (Content) -> Unit,
     onOpenFavorites: () -> Unit = {},
+    onOpenCaptionSettings: () -> Unit = {},
+    audioState: AudioUiState = AudioUiState.Idle,
+    playerContent: Content? = null,
+    playerSubtitle: String = "",
+    isLoopingLesson: Boolean = false,
+    isCaptionOn: Boolean = false,
+    onToggleLessonLoop: () -> Unit = {},
+    onPlayPrevLesson: () -> Unit = {},
+    onPlayNextLesson: () -> Unit = {},
+    onTogglePlayback: () -> Unit = {},
+    onToggleCaption: () -> Unit = {},
+    onSyncLessonQueue: (List<Content>, String?) -> Unit = { _, _ -> },
     viewModel: ContentViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // 同步课程队列给播放器：上一课/下一课/自动连播都按这个顺序
+    LaunchedEffect(uiState) {
+        (uiState as? ContentUiState.Success)?.let { state ->
+            LessonQueueHolder.items = state.content
+            onSyncLessonQueue(state.content, playerContent?.id)
+        }
+    }
 
     ContentListContent(
         uiState = uiState,
         onContentClick = onContentClick,
         onOpenFavorites = onOpenFavorites,
+        onOpenCaptionSettings = onOpenCaptionSettings,
         onTypeToggle = viewModel::toggleType,
         onLevelToggle = viewModel::toggleLevel,
         onSourceToggle = viewModel::toggleSource,
         onClearFilters = viewModel::clearFilters,
         onLoadNextPage = viewModel::loadNextPage,
-        onRefreshMore = viewModel::refreshMoreContent
+        onRefreshMore = viewModel::refreshMoreContent,
+        audioState = audioState,
+        playerContent = playerContent,
+        playerSubtitle = playerSubtitle,
+        isLoopingLesson = isLoopingLesson,
+        isCaptionOn = isCaptionOn,
+        onToggleLessonLoop = onToggleLessonLoop,
+        onPlayPrevLesson = onPlayPrevLesson,
+        onPlayNextLesson = onPlayNextLesson,
+        onTogglePlayback = onTogglePlayback,
+        onToggleCaption = onToggleCaption
     )
 }
 
@@ -130,12 +167,23 @@ fun ContentListContent(
     uiState: ContentUiState,
     onContentClick: (Content) -> Unit,
     onOpenFavorites: () -> Unit,
+    onOpenCaptionSettings: () -> Unit = {},
     onTypeToggle: (ContentType) -> Unit,
     onLevelToggle: (ContentLevel) -> Unit,
     onSourceToggle: (String) -> Unit,
     onClearFilters: () -> Unit,
     onLoadNextPage: () -> Unit,
-    onRefreshMore: () -> Unit
+    onRefreshMore: () -> Unit,
+    audioState: AudioUiState = AudioUiState.Idle,
+    playerContent: Content? = null,
+    playerSubtitle: String = "",
+    isLoopingLesson: Boolean = false,
+    isCaptionOn: Boolean = false,
+    onToggleLessonLoop: () -> Unit = {},
+    onPlayPrevLesson: () -> Unit = {},
+    onPlayNextLesson: () -> Unit = {},
+    onTogglePlayback: () -> Unit = {},
+    onToggleCaption: () -> Unit = {}
 ) {
     val selectedTypes = (uiState as? ContentUiState.Success)?.selectedTypes.orEmpty()
     val selectedLevels = (uiState as? ContentUiState.Success)?.selectedLevels.orEmpty()
@@ -155,8 +203,8 @@ fun ContentListContent(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets.safeDrawing.only(
-            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
-        )
+            WindowInsetsSides.Horizontal
+        ),
     ) { padding ->
         when (val state = uiState) {
             is ContentUiState.Loading -> {
@@ -241,7 +289,8 @@ fun ContentListContent(
                         onSourceToggle = onSourceToggle,
                         onClearFilters = onClearFilters,
                         collapseFraction = collapseFraction,
-                        onOpenFavorites = onOpenFavorites
+                        onOpenFavorites = onOpenFavorites,
+                        onOpenCaptionSettings = onOpenCaptionSettings
                     )
 
                     LazyColumn(
@@ -250,7 +299,7 @@ fun ContentListContent(
                             .weight(1f)
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.background),
-                        contentPadding = PaddingValues(bottom = 24.dp)
+                        contentPadding = PaddingValues(bottom = 16.dp)
                     ) {
                         item {
                             SectionHeader(
@@ -292,6 +341,19 @@ fun ContentListContent(
                             }
                         }
                     }
+
+                    GlobalPlayerBar(
+                        audioState = audioState,
+                        content = playerContent,
+                        subtitle = playerSubtitle,
+                        isLoopingLesson = isLoopingLesson,
+                        isCaptionOn = isCaptionOn,
+                        onToggleLessonLoop = onToggleLessonLoop,
+                        onPlayPrevLesson = onPlayPrevLesson,
+                        onPlayNextLesson = onPlayNextLesson,
+                        onTogglePlayback = onTogglePlayback,
+                        onToggleCaption = onToggleCaption
+                    )
                 }
             }
         }
@@ -318,7 +380,8 @@ private fun LearningHomeHeader(
     onSourceToggle: (String) -> Unit,
     onClearFilters: () -> Unit,
     collapseFraction: Float,
-    onOpenFavorites: () -> Unit
+    onOpenFavorites: () -> Unit,
+    onOpenCaptionSettings: () -> Unit = {}
 ) {
     val fraction = collapseFraction.coerceIn(0f, 1f)
     val topPadding = lerpDp(12.dp, 6.dp, fraction)
@@ -330,6 +393,7 @@ private fun LearningHomeHeader(
     val labelAlpha = (1f - fraction * 1.45f).coerceIn(0f, 1f)
     val titleText = if (fraction < 0.72f) "Pick a lesson" else "English Study"
     var isFilterOpen by rememberSaveable { mutableStateOf(false) }
+    var isMenuOpen by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
@@ -391,18 +455,6 @@ private fun LearningHomeHeader(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(
-                    onClick = onOpenFavorites,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = Color.White.copy(alpha = 0.18f),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Favorite,
-                        contentDescription = "收藏夹"
-                    )
-                }
                 Box {
                     IconButton(
                         onClick = { isFilterOpen = true },
@@ -452,6 +504,45 @@ private fun LearningHomeHeader(
                         )
                     } else {
                         Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh")
+                    }
+                }
+                Box {
+                    IconButton(
+                        onClick = { isMenuOpen = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.18f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "菜单"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = isMenuOpen,
+                        onDismissRequest = { isMenuOpen = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("我的收藏") },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Favorite, contentDescription = null)
+                            },
+                            onClick = {
+                                isMenuOpen = false
+                                onOpenFavorites()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("字幕设置") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Settings, contentDescription = null)
+                            },
+                            onClick = {
+                                isMenuOpen = false
+                                onOpenCaptionSettings()
+                            }
+                        )
                     }
                 }
             }
