@@ -134,6 +134,8 @@ fun ContentDetailScreen(
     val isCaptionOn by PlaybackCore.captionOnFlow.collectAsState()
     val sentenceEvent by PlaybackCore.currentSentenceEvent.collectAsState()
     val playingContent by PlaybackCore.currentLesson.collectAsState()
+    val isThisLessonPlaying =
+        playingContent?.id == content.id && (audioState is AudioUiState.Playing || audioState is AudioUiState.Preparing)
     val listState = rememberLazyListState()
     val density = LocalDensity.current
     val collapseRangePx = with(density) { 160.dp.toPx() }
@@ -194,7 +196,15 @@ fun ContentDetailScreen(
             LessonDetailHeader(
                 content = content,
                 onBack = onBack,
-                collapseFraction = collapseFraction
+                collapseFraction = collapseFraction,
+                isThisLessonPlaying = isThisLessonPlaying,
+                onToggleLessonPlayback = {
+                    if (isThisLessonPlaying) {
+                        audioViewModel.togglePlayback(content)
+                    } else {
+                        audioViewModel.playAll(content)
+                    }
+                }
             )
 
             LazyColumn(
@@ -358,7 +368,9 @@ fun ContentDetailScreen(
 private fun LessonDetailHeader(
     content: Content,
     onBack: () -> Unit,
-    collapseFraction: Float
+    collapseFraction: Float,
+    isThisLessonPlaying: Boolean,
+    onToggleLessonPlayback: () -> Unit
 ) {
     val fraction = collapseFraction.coerceIn(0f, 1f)
     val topPadding = lerpDp(12.dp, 6.dp, fraction)
@@ -397,6 +409,19 @@ private fun LessonDetailHeader(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
+                )
+            }
+
+            IconButton(
+                onClick = onToggleLessonPlayback,
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = Color.White.copy(alpha = 0.18f),
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    imageVector = if (isThisLessonPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isThisLessonPlaying) "暂停本篇" else "播放本篇"
                 )
             }
 

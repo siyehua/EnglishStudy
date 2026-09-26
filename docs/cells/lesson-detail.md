@@ -16,6 +16,18 @@
 | `ui/wordinsight/ClickableReadingText.kt` | 可点击单词的富文本 |
 | `ui/wordinsight/WordInsightSheet.kt` | 释义面板 |
 
+## 顶部播放按钮
+
+标题栏右侧有一个播放/暂停按钮，用于"播放我正在看的这篇"：
+
+- 本篇未在播 → 显示 ▶，点击 `playAll(本篇)`，**直接切换**到本篇从头播放；
+- 本篇正在播（`Playing` 或 `Preparing`）→ 显示 ⏸，点击暂停/继续。
+
+判定条件：`playingContent?.id == content.id && 状态为 Playing/Preparing`。
+
+因为播放核心是独立单例（见 `playback.md`），进入详情页**不会**自动播放当前文章，
+必须由这个按钮（或底部播放器条）显式触发。
+
 ## 句子卡片
 
 ```
@@ -49,21 +61,12 @@ LaunchedEffect(sentenceEvent) {
 - 高亮下标同样按课号过滤：`audioState.currentSentenceIndexFor(content.id)`，不匹配时视为无下标；
 - 因此不会出现“手动点过的那句一直挂着按钮”，也不会出现“切课时选中句来回跳”。
 
-### 页面是否跟随播放课
+### 页面不跟随播放课
 
-进入页面时记录当时的播放课，只有**播放课发生变更**（下一课/上一课/自动连播）才切换页面内容：
+页面始终显示用户点进来的那一课，**不会**因为播放切换到别的课而自动换页。
+播放器条（全局组件）显示正在播放的那一课，两者语义不同、允许不一致。
 
-```kotlin
-var followedLessonId by remember(content.id) { mutableStateOf(activeLesson?.id) }
-LaunchedEffect(activeLesson?.id) {
-    val lesson = activeLesson ?: return@LaunchedEffect
-    if (lesson.id == followedLessonId) return@LaunchedEffect
-    followedLessonId = lesson.id
-    if (lesson.id != content.id) onUpdateContent(lesson)
-}
-```
-
-打开一门**非播放中**的课程时，页面必须保持不变；无条件跟随会把用户正在看的课强行换掉。
+需要播放当前这篇时，用顶部的播放按钮显式触发。
 
 ## 翻译按钮
 
@@ -82,24 +85,29 @@ LaunchedEffect(activeLesson?.id) {
 
 ## 已知陷阱
 
-### 1. 播放器条副标题也要按课号过滤
+### 1. 顶部按钮要区分"本篇"和"正在播的课"
+
+按钮状态必须同时判断"播放中的课是不是本篇"（`playingContent?.id == content.id`）
+与播放状态，否则会出现"页面是第 6 篇，按钮却显示暂停"的错误。
+
+### 2. 播放器条副标题也要按课号过滤
 
 详情页的播放器条在显示"当前句"时要确认事件属于本课
 （`sentenceEvent?.takeIf { it.lessonId == content.id }`），否则会出现"页面是第 1 课、
 副标题却是第 5 课的句子"。首页与设置页的播放器条是全局的，显示正在播放的课程即可。
 
-### 2. 列表项偏移
+### 3. 列表项偏移
 
 忘记 `+1` 会滚到上一句，表现为“滚过去了但看不到正在播的那句”。
 
-### 3. 按钮显示条件
+### 4. 按钮显示条件
 
 按钮可见性必须只依赖唯一的选中状态。曾经的实现里 `isActive` 同时判断“手动点击”和“正在播放”两个状态，导致两句同时显示按钮。
 
-### 4. 译文渲染位置
+### 5. 译文渲染位置
 
 译文必须渲染在原文同一个 `Surface` 内部；放在 `Surface` 之外会变成“气泡下面另起一块”，不符合设计。
 
-### 5. 后台图标语义
+### 6. 后台图标语义
 
 `使用 Material Icons`：收藏 `Favorite` / `FavoriteBorder`，循环 `Repeat`，翻译 `GTranslate`（该版本图标库没有 `AutoMirrored.Translate`）。
