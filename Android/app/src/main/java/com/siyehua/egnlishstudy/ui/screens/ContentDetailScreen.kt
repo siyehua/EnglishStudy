@@ -90,10 +90,11 @@ import com.siyehua.egnlishstudy.model.Blog
 import com.siyehua.egnlishstudy.model.Content
 import com.siyehua.egnlishstudy.model.ContentLevel
 import com.siyehua.egnlishstudy.model.ContentType
+import com.siyehua.egnlishstudy.playback.AudioUiState
+import com.siyehua.egnlishstudy.playback.PlaybackCore
 import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.model.DialogueLine
 import com.siyehua.egnlishstudy.model.News
-import com.siyehua.egnlishstudy.ui.AudioUiState
 import com.siyehua.egnlishstudy.ui.ContentAudioViewModel
 import com.siyehua.egnlishstudy.ui.theme.EgnlishStudyTheme
 import com.siyehua.egnlishstudy.ui.theme.StudyBlue
@@ -120,19 +121,19 @@ import kotlin.math.roundToInt
 fun ContentDetailScreen(
     content: Content,
     onBack: () -> Unit,
-    onUpdateContent: (Content) -> Unit = {},
     onOpenCaptionSettings: () -> Unit = {},
     audioViewModel: ContentAudioViewModel = viewModel(),
     wordInsightViewModel: WordInsightViewModel = viewModel()
 ) {
-    val audioState by audioViewModel.uiState.collectAsState()
+    val audioState by PlaybackCore.uiState.collectAsState()
     val wordInsightState by wordInsightViewModel.uiState.collectAsState()
     val wordPronunciationState by wordInsightViewModel.audioState.collectAsState()
     val currentSentenceIndex = audioState.currentSentenceIndexFor(content.id)
     val isLoopingSingle = audioState.isLoopingSingleOrNull()
     val isLoopingLesson = audioState.isLoopingLessonOrNull()
-    val isCaptionOn by audioViewModel.captionOnFlow.collectAsState()
-    val sentenceEvent by audioViewModel.currentSentenceEvent.collectAsState()
+    val isCaptionOn by PlaybackCore.captionOnFlow.collectAsState()
+    val sentenceEvent by PlaybackCore.currentSentenceEvent.collectAsState()
+    val playingContent by PlaybackCore.currentLesson.collectAsState()
     val listState = rememberLazyListState()
     val density = LocalDensity.current
     val collapseRangePx = with(density) { 160.dp.toPx() }
@@ -144,18 +145,6 @@ fun ContentDetailScreen(
 
     LaunchedEffect(content.id) {
         audioViewModel.setLessonQueue(LessonQueueHolder.items, content.id)
-    }
-
-    val activeLesson by audioViewModel.currentLesson.collectAsState()
-    var followedLessonId by remember(content.id) { mutableStateOf(activeLesson?.id) }
-    LaunchedEffect(content.id) {
-        followedLessonId = activeLesson?.id
-    }
-    LaunchedEffect(activeLesson?.id) {
-        val lesson = activeLesson ?: return@LaunchedEffect
-        if (lesson.id == followedLessonId) return@LaunchedEffect
-        followedLessonId = lesson.id
-        if (lesson.id != content.id) onUpdateContent(lesson)
     }
 
     LaunchedEffect(sentenceEvent) {
@@ -333,7 +322,7 @@ fun ContentDetailScreen(
 
             GlobalPlayerBar(
                 audioState = audioState,
-                content = content,
+                content = playingContent,
                 subtitle = sentenceEvent?.takeIf { it.lessonId == content.id }?.text.orEmpty(),
                 isLoopingLesson = isLoopingLesson,
                 isCaptionOn = isCaptionOn,

@@ -15,6 +15,8 @@ import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.LessonQueueHolder
 import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.model.*
+import com.siyehua.egnlishstudy.playback.AudioUiState
+import com.siyehua.egnlishstudy.playback.PlaybackCore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siyehua.egnlishstudy.ui.ContentAudioViewModel
 import com.siyehua.egnlishstudy.ui.screens.CaptionSettingsScreen
@@ -87,11 +89,11 @@ fun MainNavigation() {
 
     NavHost(navController = navController, startDestination = "list") {
         composable("list") {
-            val listAudioState by audioViewModel.uiState.collectAsState()
-            val listPlayerContent by audioViewModel.currentLesson.collectAsState()
-            val listLooping by audioViewModel.loopingLessonFlow.collectAsState()
-            val listCaptionOn by audioViewModel.captionOnFlow.collectAsState()
-            val listEvent by audioViewModel.currentSentenceEvent.collectAsState()
+            val listAudioState by PlaybackCore.uiState.collectAsState()
+            val listPlayerContent by PlaybackCore.currentLesson.collectAsState()
+            val listLooping by PlaybackCore.loopingLessonFlow.collectAsState()
+            val listCaptionOn by PlaybackCore.captionOnFlow.collectAsState()
+            val listEvent by PlaybackCore.currentSentenceEvent.collectAsState()
             ContentListScreen(
                 onContentClick = { content ->
                     selectedContent = content
@@ -107,7 +109,7 @@ fun MainNavigation() {
                 onPlayNextLesson = { audioViewModel.playNextLesson() },
                 onTogglePlayback = {
                     val c = listPlayerContent ?: LessonQueueHolder.items.firstOrNull()
-                    if (listAudioState is com.siyehua.egnlishstudy.ui.AudioUiState.Idle && c != null) {
+                    if (listAudioState is com.siyehua.egnlishstudy.playback.AudioUiState.Idle && c != null) {
                         audioViewModel.playAll(c)
                     } else if (c != null) {
                         audioViewModel.togglePlayback(c)
@@ -173,11 +175,11 @@ fun MainNavigation() {
             }
         }
         composable("captionSettings") {
-            val settingsAudioState by audioViewModel.uiState.collectAsState()
-            val settingsContent by audioViewModel.currentLesson.collectAsState()
-            val settingsLooping by audioViewModel.loopingLessonFlow.collectAsState()
-            val settingsCaptionOn by audioViewModel.captionOnFlow.collectAsState()
-            val settingsEvent by audioViewModel.currentSentenceEvent.collectAsState()
+            val settingsAudioState by PlaybackCore.uiState.collectAsState()
+            val settingsContent by PlaybackCore.currentLesson.collectAsState()
+            val settingsLooping by PlaybackCore.loopingLessonFlow.collectAsState()
+            val settingsCaptionOn by PlaybackCore.captionOnFlow.collectAsState()
+            val settingsEvent by PlaybackCore.currentSentenceEvent.collectAsState()
             CaptionSettingsScreen(
                 onBack = { navController.popBackStack() },
                 audioState = settingsAudioState,
@@ -189,7 +191,7 @@ fun MainNavigation() {
                 onPlayNextLesson = { audioViewModel.playNextLesson() },
                 onTogglePlayback = {
                     val c = settingsContent
-                    if (settingsAudioState is com.siyehua.egnlishstudy.ui.AudioUiState.Idle && c != null) {
+                    if (settingsAudioState is com.siyehua.egnlishstudy.playback.AudioUiState.Idle && c != null) {
                         audioViewModel.playAll(c)
                     } else if (c != null) {
                         audioViewModel.togglePlayback(c)
@@ -204,7 +206,6 @@ fun MainNavigation() {
                 ContentDetailScreen(
                     content = content,
                     onBack = { navController.popBackStack() },
-                    onUpdateContent = { newContent -> selectedContent = newContent },
                     audioViewModel = audioViewModel,
                     onOpenCaptionSettings = {
                         val activity = context as? android.app.Activity

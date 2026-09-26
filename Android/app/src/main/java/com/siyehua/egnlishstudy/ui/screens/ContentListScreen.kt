@@ -84,13 +84,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.siyehua.egnlishstudy.model.Article
 import com.siyehua.egnlishstudy.model.Blog
 import com.siyehua.egnlishstudy.model.Content
+import com.siyehua.egnlishstudy.playback.AudioUiState
 import com.siyehua.egnlishstudy.model.ContentLevel
 import com.siyehua.egnlishstudy.model.ContentType
 import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.model.News
 import com.siyehua.egnlishstudy.ui.ContentUiState
 import com.siyehua.egnlishstudy.data.LessonQueueHolder
-import com.siyehua.egnlishstudy.ui.AudioUiState
 import com.siyehua.egnlishstudy.ui.components.GlobalPlayerBar
 import com.siyehua.egnlishstudy.ui.ContentViewModel
 import com.siyehua.egnlishstudy.ui.FilterOption

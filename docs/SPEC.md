@@ -59,27 +59,43 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 `selectedContent` / `selectedWord` / `selectedFavorite` are `remember`ed state
 in `MainNavigation`; screens read them when they are (re)composed.
 
-## ViewModel 作用域
+## 分层：单例播放核心 + 纯 UI 订阅
 
-- **`ContentAudioViewModel` is Activity-scoped** (`viewModel(viewModelStoreOwner = activity)`).
-  This is what makes audio survive navigation: leaving the detail screen no
-  longer destroys the player. It is created once and passed into the screens
-  that need it.
-- `ContentViewModel` stays screen-scoped to the `list` destination.
-- `WordInsightViewModel` is screen-scoped to the sheet/detail screens.
+```
+PlaybackCore（object，进程内唯一，持有唯一 MediaPlayer）
+   ├── 唯一状态出口：uiState / currentLesson / currentSentenceEvent
+   │                 captionOnFlow / loopingLessonFlow
+   ├── 唯一命令入口：play / pause / resume / stop / next / prev / toggle*
+   └── 唯一队列：setLessonQueue
 
-`ContentAudioViewModel` is the single source of truth for playback; the service
-and the caption overlay are pure consumers.
+UI（可多实例、可销毁重建，只订阅 + 发命令）
+   ├── 首页 / 详情页 / 设置页   → 订阅核心，展示"正在播放的课"
+   ├── 页面自己的标题           → 展示"用户正在浏览的课"
+   ├── 悬浮字幕                 → 订阅核心的当前句
+   └── 通知服务                 → 订阅 PlaybackBus（由核心发布）
+```
+
+规则：
+
+1. **数据驱动 UI**：UI 不持有播放状态、不自己算进度，一切从核心读。
+2. **谁播放谁提交**：想播哪一课，就把那一课交给核心。
+   详情页点播放 → 播本页课程；首页点某课 → 播该课。
+3. **允许"页面课 ≠ 播放课"**：两者语义不同，必须能同时正确表达。
+4. **页面不跟随播放课自动切页**。
+5. `PlaybackCore.init(application)` 在首个 ViewModel 创建时调用，之后进程内唯一。
+
+`ContentAudioViewModel` 退化为薄壳：只转发命令并触发 `init`，不再持有播放状态。
+`ContentViewModel` 保持页面级（列表数据），`WordInsightViewModel` 保持页面级。
 
 ## 状态流
 
 ```
-ContentAudioViewModel
+PlaybackCore
    ├── uiState: StateFlow<AudioUiState>        Idle | Preparing | Playing | Paused | Error
    │       ├── currentSentenceIndex, position, duration
    │       ├── isLoopingSingle / isLoopingLesson / isMuted / isCaptionOn
    │       └── consumed by GlobalPlayerBar, the detail screen, PlaybackBus
-   ├── currentLesson: StateFlow<Content?>      which lesson is loaded
+   ├── currentLesson: StateFlow<Content?>      which lesson is playing
    ├── currentSentenceEvent: StateFlow<CurrentSentenceEvent?>
    │       当前句的唯一出口：lessonId + sentenceIndex + text；null 下标表示清空
    ├── captionOnFlow: StateFlow<Boolean>       caption toggle (persisted)

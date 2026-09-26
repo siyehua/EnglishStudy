@@ -48,7 +48,8 @@ import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.data.wordform.WordFormApiClient
-import com.siyehua.egnlishstudy.ui.AudioUiState
+import com.siyehua.egnlishstudy.playback.AudioUiState
+import com.siyehua.egnlishstudy.playback.PlaybackCore
 import com.siyehua.egnlishstudy.ui.ContentAudioViewModel
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 import com.siyehua.egnlishstudy.ui.theme.StudyInk
@@ -65,7 +66,7 @@ fun SentenceDetailScreen(
     audioViewModel: ContentAudioViewModel = viewModel(),
     wordInsightViewModel: WordInsightViewModel = viewModel()
 ) {
-    val audioState by audioViewModel.uiState.collectAsState()
+    val audioState by PlaybackCore.uiState.collectAsState()
     val wordInsightState by wordInsightViewModel.uiState.collectAsState()
     val wordPronunciationState by wordInsightViewModel.audioState.collectAsState()
     var selectedWord by remember { mutableStateOf<ClickedWord?>(null) }

@@ -73,7 +73,7 @@ private val BG_COLORS = listOf(
 @Composable
 fun CaptionSettingsScreen(
     onBack: () -> Unit,
-    audioState: com.siyehua.egnlishstudy.ui.AudioUiState = com.siyehua.egnlishstudy.ui.AudioUiState.Idle,
+    audioState: com.siyehua.egnlishstudy.playback.AudioUiState = com.siyehua.egnlishstudy.playback.AudioUiState.Idle,
     playerContent: com.siyehua.egnlishstudy.model.Content? = null,
     playerSubtitle: String = "",
     isLoopingLesson: Boolean = false,

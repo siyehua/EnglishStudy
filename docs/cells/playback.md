@@ -1,6 +1,9 @@
-# 播放引擎
+# 播放引擎（PlaybackCore）
 
 ## 职责
+
+- **进程内唯一**的数据核心，持有唯一的 `MediaPlayer` 与全部播放状态。
+- UI 只能订阅它的状态、向它发命令，不允许自己保存播放状态。
 
 - 拥有唯一的 `MediaPlayer`，管理播放列表、进度、暂停/继续、停止。
 - 维护**课程队列**，实现上一课 / 下一课 / 整课循环 / 播完自动连播。
@@ -17,14 +20,20 @@
 | `ui/components/GlobalPlayerBar.kt` | UI 消费方 |
 | `data/LessonQueueHolder.kt` | 课程顺序来源 |
 
-## 作用域：Activity 级
+## 生命周期：进程级单例
 
-`ContentAudioViewModel` 在 `MainActivity` 中通过 `viewModel(viewModelStoreOwner = activity)` 创建，**不是**页面级。这样：
+`PlaybackCore` 是 `object`，通过 `PlaybackCore.init(application)` 初始化
+（由 `ContentAudioViewModel` 的构造触发），之后：
 
-- 从课程详情返回首页，播放**继续**，不会被销毁。
-- 只有显式暂停/停止、系统媒体键、或进程结束才会停止。
+- 页面随 Activity 重建、被销毁都不影响播放；
+- 从详情页返回首页继续播放；
+- 只有显式暂停/停止、系统媒体键或进程结束才停止。
 
-> 不要把它改回页面级 `viewModel()`，否则返回首页就会静音；也不要在详情页的 `DisposableEffect.onDispose` 里调用 `stop()`。
+> 不要把播放状态搬回 ViewModel。ViewModel 会随 Activity 重建，
+> 一旦重建，通知栏会留着上一条快照而新实例却读不到状态
+> （表现为"通知说在播、UI 说没播、详情页没有选中句"）。
+
+`ContentAudioViewModel` 只是薄壳：转发命令 + 触发 `init`。
 
 ## 状态
 
@@ -155,7 +164,29 @@ NullPointerException: Attempt to invoke interface method
 
 单句循环、收藏夹片段播完后**不能**跳下一课。用 `lessonPlayMode` 区分；新增播放入口时记得设置它，否则要么不连播、要么乱连播。
 
-### 5. 新 ViewModel 必须清理总线上的陈旧快照
+### 5. 播放状态必须在单例里（历史坑）
+
+早期把 `MediaPlayer` 与全部状态放在 Activity 作用域的 ViewModel 中。
+ViewModel 重建后：
+
+- `PlaybackBus` 上留着**已销毁实例**的快照，通知栏继续显示"正在播放"；
+- 新实例读不到状态，UI 显示"点播放开始收听"；
+- 详情页因为状态是 `Idle` 而没有选中句。
+
+把状态迁到单例后该问题从根上消失。若将来需要在 `init` 之前访问，
+先判断 `isInitialized`。
+
+### 6. 页面课与播放课是两件事
+
+播放器条必须显示**正在播放的课**（来自核心），页面标题显示**用户正在浏览的课**
+（页面参数）。两者允许不同，且不能互相覆盖——早期用同一个值导致
+"进第 3 篇显示第 3 篇标题，但播的还是第 2 篇"，语义错误。
+
+### 7. 不要自动把页面切到播放课
+
+没有这个需求。把页面切走会让用户丢失正在看的位置。
+
+### 8. 新 ViewModel 必须清理总线上的陈旧快照
 
 `PlaybackBus` 是**进程级单例**，`ownerId` 记录"最后一个发布者"。ViewModel 被重建后，
 上一个（已销毁的）实例留下的 `info` 仍在总线上，表现为：
@@ -169,16 +200,16 @@ NullPointerException: Attempt to invoke interface method
 **规则：ViewModel 初始化时必须先 `PlaybackBus.publish(ownerId, null)`**，抢占所有权并
 收掉陈旧通知，之后的播放再正常发布。
 
-### 6. 当前句必须带课号，不能只用下标
+### 9. 当前句必须带课号，不能只用下标
 
 只有 `Int` 下标时，UI 无法分辨"第 5 句"属于哪一课。切课窗口期旧下标先到、新下标后到，
 表现为选中句在 `5 → 11 → 5 → 12` 之间抖动。**任何新增的"当前句"出口都必须携带 `lessonId`。**
 
-### 7. 详情页不要无条件跟随"正在播放的课"
+### 10. 详情页不要无条件跟随"正在播放的课"
 
 打开一门非播放中的课程时，若直接跟随 `currentLesson` 就会把页面强行切走。
 正确做法是记录进入页面时的播放课，只有**播放课发生变更**（下一课/上一课/自动连播）时才跟随。
 
-### 8. 离开详情页不要停播
+### 11. 离开详情页不要停播
 
 历史实现里有 `DisposableEffect { onDispose { stop() } }`，会让返回首页时音乐中断。已移除；如需在特定场景停止，请在业务逻辑里显式调用。

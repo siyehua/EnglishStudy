@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.siyehua.egnlishstudy.model.Content
-import com.siyehua.egnlishstudy.ui.AudioUiState
+import com.siyehua.egnlishstudy.playback.AudioUiState
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 import com.siyehua.egnlishstudy.ui.theme.StudyGreenDark
 import com.siyehua.egnlishstudy.ui.theme.StudyMint
