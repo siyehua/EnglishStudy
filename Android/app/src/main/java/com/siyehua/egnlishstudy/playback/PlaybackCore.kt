@@ -90,8 +90,8 @@ object PlaybackCore {
     private val currentLessonId: String
         get() = _currentLesson.value?.id.orEmpty()
 
-    private fun sentenceForIndex(index: Int): String {
-        activeDialogueLines.getOrNull(index)?.let { return it.take(80) }
+    private fun sentenceForIndex(index: Int?): String {
+        index?.let { activeDialogueLines.getOrNull(it)?.let { text -> return text.take(80) } }
         return currentSentence
     }
 
@@ -159,7 +159,9 @@ object PlaybackCore {
     private var playlistDurations: List<Int> = emptyList()
     private var totalDurationMillis = 0L
     private var playlistIndex = 0
-    private var highlightedSentenceIndex: Int? = null
+    private var currentSentenceIndex: Int? = null
+    private var lastResolvedMillis = 0L
+    private val restartToleranceMs = 2000L
     private var prepareJob: Job? = null
     private var progressJob: Job? = null
     private var segmentStartMs = 0L
@@ -182,7 +184,7 @@ object PlaybackCore {
         stop(resetState = false)
         lessonPlayMode = true
         _currentLesson.value = content
-        highlightedSentenceIndex = null
+        currentSentenceIndex = null
         lineRanges = emptyList()
         matchByTime = false
         registerLineRanges(content)
@@ -253,7 +255,7 @@ object PlaybackCore {
         currentSentence = target.take(80)
 
         stop(resetState = false)
-        highlightedSentenceIndex = sentenceIndex
+        currentSentenceIndex = sentenceIndex
         prepareJob = scope.launch {
             _uiState.value = AudioUiState.Preparing
             val audioUri = when (val result = ttsAudioManager.ensureAudioForText(target)) {
@@ -288,7 +290,7 @@ object PlaybackCore {
         }
 
         stop(resetState = false)
-        highlightedSentenceIndex = sentenceIndex
+        currentSentenceIndex = sentenceIndex
         prepareJob = scope.launch {
             _uiState.value = AudioUiState.Preparing
             when (val result = ttsAudioManager.ensureRealAudioForContent(content)) {
@@ -318,7 +320,7 @@ object PlaybackCore {
         matchByTime = false
         lineRanges = emptyList()
         stop(resetState = false)
-        highlightedSentenceIndex = sentenceIndex
+        currentSentenceIndex = sentenceIndex
         prepareJob = scope.launch {
             _uiState.value = AudioUiState.Preparing
             when (val result = ttsAudioManager.ensureRemoteAudio(url)) {
@@ -410,10 +412,11 @@ object PlaybackCore {
     }
 
     private fun registerLineRanges(content: Content) {
-        lineRanges = (content as? Dialogue)
-            ?.lines
-            ?.map { it.start to it.end }
-            .orEmpty()
+        val lines = (content as? Dialogue)?.lines.orEmpty()
+        lineRanges = lines.mapIndexed { index, line ->
+            val nextStart = lines.getOrNull(index + 1)?.start ?: line.end
+            line.start to maxOf(line.end, nextStart)
+        }
         matchByTime = lineRanges.isNotEmpty()
     }
 
@@ -434,7 +437,7 @@ object PlaybackCore {
         }
 
         stop(resetState = false)
-        highlightedSentenceIndex = lineIndex
+        currentSentenceIndex = lineIndex
         prepareJob = scope.launch {
             _uiState.value = AudioUiState.Preparing
             when (val result = ttsAudioManager.ensureRealAudioForContent(content)) {
@@ -462,7 +465,7 @@ object PlaybackCore {
         lineRanges = emptyList()
         loopSingle = false
         stop(resetState = false)
-        highlightedSentenceIndex = sentenceIndex
+        currentSentenceIndex = sentenceIndex
         prepareJob = scope.launch {
             _uiState.value = AudioUiState.Preparing
             when (val result = ttsAudioManager.ensureRemoteAudio(url)) {
@@ -497,7 +500,7 @@ object PlaybackCore {
         playlistDurations = emptyList()
         totalDurationMillis = 0L
         playlistIndex = 0
-        highlightedSentenceIndex = null
+        currentSentenceIndex = null
         segmentStartMs = 0L
         segmentEndMs = 0L
         loopSingle = false
@@ -514,7 +517,7 @@ object PlaybackCore {
             currentMillis = currentPlaybackMillis(),
             totalMillis = totalDurationMillis,
             lessonId = currentLessonId,
-            currentSentenceIndex = activeSentenceIndex(),
+            currentSentenceIndex = resolveSentenceIndex(),
             isLoopingSingle = loopSingle,
             isLoopingLesson = loopLesson,
             isMuted = isMuted,
@@ -628,7 +631,7 @@ object PlaybackCore {
             currentMillis = currentPlaybackMillis(),
             totalMillis = totalDurationMillis,
             lessonId = currentLessonId,
-            currentSentenceIndex = activeSentenceIndex(),
+            currentSentenceIndex = resolveSentenceIndex(),
             isLoopingSingle = loopSingle,
             isLoopingLesson = loopLesson,
             isMuted = isMuted,
@@ -636,13 +639,20 @@ object PlaybackCore {
         )
     }
 
-    private fun activeSentenceIndex(): Int {
-        if (matchByTime && lineRanges.isNotEmpty()) {
-            val seconds = currentPlaybackMillis() / 1000.0
-            val matched = lineRanges.indexOfFirst { seconds >= it.first && seconds < it.second }
-            if (matched >= 0) return matched
+    private fun resolveSentenceIndex(): Int? {
+        if (!matchByTime || lineRanges.isEmpty()) return currentSentenceIndex
+        val millis = currentPlaybackMillis()
+        if (millis + restartToleranceMs < lastResolvedMillis) {
+            currentSentenceIndex = null
         }
-        return highlightedSentenceIndex ?: playlistIndex
+        lastResolvedMillis = millis
+        val seconds = millis / 1000.0
+        val matched = lineRanges.indexOfFirst { seconds >= it.first && seconds < it.second }
+        if (matched >= 0) {
+            currentSentenceIndex = matched
+            return matched
+        }
+        return currentSentenceIndex
     }
 
     private fun currentPlaybackMillis(): Long {
@@ -699,7 +709,7 @@ sealed class AudioUiState {
         val currentMillis: Long,
         val totalMillis: Long,
         val lessonId: String,
-        val currentSentenceIndex: Int,
+        val currentSentenceIndex: Int?,
         val isLoopingSingle: Boolean = false,
         val isLoopingLesson: Boolean = false,
         val isMuted: Boolean = false,
@@ -709,7 +719,7 @@ sealed class AudioUiState {
         val currentMillis: Long,
         val totalMillis: Long,
         val lessonId: String,
-        val currentSentenceIndex: Int,
+        val currentSentenceIndex: Int?,
         val isLoopingSingle: Boolean = false,
         val isLoopingLesson: Boolean = false,
         val isMuted: Boolean = false,

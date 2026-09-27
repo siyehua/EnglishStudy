@@ -97,14 +97,24 @@ ViewModel 额外暴露四个独立流，供 UI 与通知使用：
 
 ## 高亮与自动滚动
 
-`activeSentenceIndex()` 有三级回退，**必须同时看 `matchByTime` 与 `lineRanges` 的有效性**：
+### 当前句的权威状态机
 
-1. `matchByTime && lineRanges.isNotEmpty()` → 用播放位置在行区间里查命中项；
-2. 否则回退 `highlightedSentenceIndex`；
-3. 再否则回退 `playlistIndex`。
+`currentSentenceIndex` 是**唯一权威状态**，规则只有四条：
 
-因为存在回退，**切课时必须先把 `lineRanges` 清空并把 `matchByTime` 置 false**，
-否则新课音频会用旧课的时间轴命中一个错误的行号。
+1. **命中某一行** → 更新为命中行（这是唯一会推进的地方）；
+2. **未命中**（行间空隙、音频未就绪、进度异常）→ **保持不动**，绝不回退到任何旧值；
+3. **切换课程** → 置为 `null`（本课暂无选中句），等新音频就绪并命中后才产出下标；
+4. **同一课内播放位置大幅回退**（重播，超过 2 秒容差）→ 视为重新开始，置 `null` 后重新命中。
+
+时间轴匹配用「本行的 `start` ~ **下一行的 `start`**」，把行与行之间的空隙归给上一行
+（课程数据的 `start/end` 并不首尾相接，第 1 课存在 6.5 秒的空档）。
+
+`AudioUiState.Playing/Paused` 的 `currentSentenceIndex` 因此是 `Int?`：
+`null` 表示"本课还没有当前句"，订阅方据此清空选中。
+
+> **历史教训**：早期实现允许在匹配失败时回退到 `highlightedSentenceIndex`
+> （播放开始时设置、之后不再更新），于是任何一次匹配失败都会"跳回旧位置"，
+> 表现为 10 → 5 → 11 这样的跳变。**不要再引入任何形式的静默回退。**
 
 详情页消费事件的规则：
 
@@ -200,21 +210,12 @@ ViewModel 重建后：
 **规则：ViewModel 初始化时必须先 `PlaybackBus.publish(ownerId, null)`**，抢占所有权并
 收掉陈旧通知，之后的播放再正常发布。
 
-### 9. `play()` 与 `registerLineRanges` 的调用顺序
+### 9. 当前句不允许任何静默回退
 
-`play()` 会先清空 `lineRanges`/`matchByTime`（防止上一课的时间轴污染新课），
-**随后必须自己重新注册一次新课的时间轴**。
+见上文「当前句的权威状态机」。任何"匹配不到就退回某个旧值"的写法都会造成跳变，
+历史实现用 `highlightedSentenceIndex` 回退，产生 10 → 5 → 11 的跳变。
 
-历史 bug：`playAll` 在调用 `play()` **之前**注册时间轴，而 `play()` 又把它清空了，
-导致 `matchByTime == false`、时间轴匹配永久失效，`activeSentenceIndex()` 只能回退到
-`highlightedSentenceIndex ?: playlistIndex`，表现为：
-
-- 通知栏与页面上的"当前句"**永远停在第一句**，播放推进也不更新；
-- 详情页不会自动选中正在播放的句子，也不会自动滚动；
-- 看起来像"列表 item 复用导致的选中错乱"，实际是当前句根本没在推进。
-
-规则：**时间轴注册必须发生在清理之后**，目前统一由 `play()` 内部完成，
-`playAll` 不再重复注册。
+新增播放路径时，只允许通过"命中"或"显式重置（切课/重播）"改变当前句。
 
 ### 10. 当前句必须带课号，不能只用下标
 
