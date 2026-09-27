@@ -185,6 +185,7 @@ object PlaybackCore {
         highlightedSentenceIndex = null
         lineRanges = emptyList()
         matchByTime = false
+        registerLineRanges(content)
         currentTitle = content.title
 
         currentSentence = ""
@@ -405,8 +406,6 @@ object PlaybackCore {
 
     fun playAll(content: Content) {
         loopSingle = false
-        _currentLesson.value = content
-        registerLineRanges(content)
         play(content)
     }
 
