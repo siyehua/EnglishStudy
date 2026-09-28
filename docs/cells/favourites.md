@@ -127,13 +127,25 @@
 </activity>
 ```
 
-行为与静默入口的区别：**它会弹出一个释义对话框**（半透明背景 + 居中卡片），
-内容为「文本 + 类型（单词/句子）+ 翻译」以及「关闭 / 加入单词本」两个按钮。
+叠放在调用方任务之上，靠三个声明做到：
 
-- 文本取自 `SearchManager.QUERY`
-- 类型判定与翻译复用 `ManualFavorite`
-- 「加入单词本」把当前翻译直接写入收藏，然后关闭
-- 关闭（或点卡片外）不做任何写入
+| 属性 | 作用 |
+| --- | --- |
+| `android:taskAffinity=""` | 不新建自己的任务，叠加在当前 App 之上（不会把 Notion 切到后台） |
+| `android:excludeFromRecents="true"` | 不出现在最近任务里 |
+| `android:launchMode="singleTop"` | 重复触发不叠加多个实例 |
+
+行为与静默入口的区别：**它会弹出一个对话框**（半透明背景 + 居中卡片）。
+
+- **单词**：直接复用双击单词用的 `WordInsightBody`，所以读音、音标、读音拆分、
+  中文释义、词形变化、例句的排版与双击面板**完全一致**；
+- **句子**：显示原文 + 整句翻译，另有「加入单词本」按钮；
+- 文本取自 `SearchManager.QUERY`；类型判定与翻译复用 `ManualFavorite`；
+- 关闭不做任何写入。
+
+> **不要给 `WordInsightBody` 再套一层 `verticalScroll`**：它自身已经可滚动，
+> 叠加会产生无限高度约束并抛
+> `IllegalStateException: Vertically scrollable component was measured with an infinity maximum height constraints`。
 
 > **注意**：`WEB_SEARCH` 只保证拿到宿主填进 `query` 的文本，**拿不到所在句子的上下文**，
 > 因此词形关系、上下句翻译这类依赖上下文的信息会缺失，`sentence` 传空串，
@@ -174,7 +186,15 @@
 点句子会毫无反应。正确做法是 `clipUrl == null` 时回退到
 `PlaybackCore.playSentence(text, 0)`（TTS）。
 
-### 5. 自绘选择菜单的宿主只列 WEB_SEARCH
+### 5. WEB_SEARCH 入口要叠在调用方之上
+
+`WordLookupActivity` 若不设 `taskAffinity=""`，会启动在**自己应用的任务栈**里，
+表现为"一点就把当前 App（如 Notion）切到后台"。
+
+三个属性缺一不可：`taskAffinity=""`（叠加在调用方任务）、`excludeFromRecents`（不进最近任务）、
+主题透明（背景可见）。
+
+### 6. 自绘选择菜单的宿主只列 WEB_SEARCH
 
 表现：Chrome / UC / QQ 浏览器 / 今日头条 的长按菜单里有「添加到单词本」，
 但 Notion 里没有；Notion 的选择菜单只有「网页搜索」以及 QQ 浏览器等 App 的「翻译」项。
@@ -186,7 +206,7 @@
 应对：额外提供 `WEB_SEARCH` 入口，用对话框展示释义后再决定是否收藏。
 无法保证每个宿主都显示这一项，最终仍由宿主决定。
 
-### 6. 后台写入不能挂在 Activity 生命周期上
+### 7. 后台写入不能挂在 Activity 生命周期上
 
 `CaptureTextActivity` 在 `onCreate` 里就 `finish()` 返回原 App。
 如果翻译/写入用 activity 自己的 `CoroutineScope`（并在 `onDestroy` 里 `cancel()`），
@@ -195,7 +215,7 @@
 正确做法是把任务丢给**不随 Activity 销毁的进程级作用域**
 （当前的 `CaptureWork.scope`），Activity 只负责取文本、提示、结束。
 
-### 7. 手动收藏的课名是占位符
+### 8. 手动收藏的课名是占位符
 
 `lessonTitle = "手动添加"`、`contentId = ""`，所以：
 
