@@ -34,7 +34,9 @@
 - **标题取值规则**：来自核心的"正在播放的课"（`PlaybackCore.currentLesson`），
   不是宿主页面的课程。因此"页面在看第 4 篇、正在播第 2 篇"时，
   页面标题显示第 4 篇，播放器条显示第 2 篇——语义正确，不互相污染。
-- 副标题优先显示 `currentSentenceFlow`（当前英文句子），无内容时回退为状态文案（如“点播放开始收听”）。
+- 详情页的副标题需要按课号过滤（`sentenceEvent?.takeIf { it.lessonId == content.id }`），
+  否则会出现"页面是第 1 课、副标题却是第 5 课句子"。
+- 副标题显示 `currentSentenceEvent.text`（当前英文句子），无内容时回退为状态文案（如"点播放开始收听"）。
 - 进度条仅在 `Playing` / `Paused` 时显示。
 
 ## 边缘延伸
@@ -52,11 +54,11 @@
 
 ```kotlin
 GlobalPlayerBar(
-    audioState = ...,        // ViewModel.uiState
-    content = ...,           // ViewModel.currentLesson
-    subtitle = ...,          // ViewModel.currentSentenceFlow
-    isLoopingLesson = ...,   // ViewModel.loopingLessonFlow
-    isCaptionOn = ...,       // ViewModel.captionOnFlow
+    audioState = ...,        // PlaybackCore.uiState
+    content = ...,           // PlaybackCore.currentLesson（正在播放的课）
+    subtitle = ...,          // PlaybackCore.currentSentenceEvent.text
+    isLoopingLesson = ...,   // PlaybackCore.loopingLessonFlow
+    isCaptionOn = ...,       // PlaybackCore.captionOnFlow
     onToggleLessonLoop = ...,
     onPlayPrevLesson = ...,
     onPlayNextLesson = ...,

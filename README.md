@@ -63,6 +63,11 @@ Layout intentionally mirrors a media notification:
 ### Lesson reading
 
 - A lesson is a dialogue made of transcript lines, one card per line.
+- **Entering a lesson never starts playback** — the playback core is a global
+  singleton and does not follow the page. Use the **▶ button in the lesson
+  header** to play the lesson you are viewing (it switches straight to it if a
+  different lesson is playing, and pauses/resumes while this lesson plays), or
+  use the player bar.
 - **Tap a line** → seek into the lesson audio and keep playing; the active line
   is highlighted and auto-scrolled into view (only when it would otherwise be
   off-screen or hidden behind the player bar).
@@ -75,6 +80,8 @@ Layout intentionally mirrors a media notification:
     bubble** as the English text. Collapses automatically when the selection
     moves to another line.
 - Playback advances line by line; the selected line always follows playback.
+- The header shows the lesson being **browsed**; the player bar shows the lesson
+  being **played**. The two may differ and are both correct.
 
 ### Playback
 

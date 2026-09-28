@@ -23,7 +23,7 @@
 | 项 | 行为 |
 | --- | --- |
 | 开关入口 | 播放器条的 📺 按钮；通知里的字幕 action |
-| 内容 | 当前播放句子（`currentSentenceFlow`） |
+| 内容 | 当前播放句子（`PlaybackCore.currentSentenceEvent.text`） |
 | 换句 | 跟随播放自动更新 |
 | 长句 | **完整换行，不截断**（`maxLines = Int.MAX_VALUE`） |
 | 触摸 | 完全穿透（不消费、不抢焦点），可以正常操作其他应用 |

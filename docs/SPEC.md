@@ -7,7 +7,7 @@
 
 - [模块地图](#模块地图)
 - [导航](#导航)
-- [ViewModel 作用域](#viewmodel-作用域)
+- [分层：单例播放核心 + 纯 UI 订阅](#分层单例播放核心--纯-ui-订阅)
 - [状态流](#状态流)
 - [PlaybackBus](#playbackbus)
 - [内容加载](#内容加载)
@@ -19,7 +19,7 @@
 
 ```
 Android/app/src/main/java/com/siyehua/egnlishstudy/
-├── MainActivity.kt                 Navigation host + Activity-scoped view models
+├── MainActivity.kt                 Navigation host；创建并注入 ViewModel
 ├── model/
 │   └── ContentModels.kt            Content / Dialogue / DialogueLine / Article / Blog / News
 ├── data/
@@ -31,12 +31,13 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 │   ├── CaptionStyleStore.kt        Desktop-caption style + on/off preference
 │   └── wordform/                   Word-form API client, models, repositories
 ├── playback/
-│   ├── PlaybackBus.kt              PlaybackInfo snapshot + command bus (singleton)
-│   ├── PlaybackNotificationService.kt  Foreground media service, notification, MediaSession
-│   └── DesktopCaptionOverlay.kt    Floating subtitle window (TYPE_APPLICATION_OVERLAY)
+│   ├── PlaybackCore.kt             播放核心单例：唯一 MediaPlayer、队列、当前课/当前句
+│   ├── PlaybackBus.kt              核心 → 前台服务的单向通道（状态快照 + 命令）
+│   ├── PlaybackNotificationService.kt  前台媒体服务、通知、MediaSession
+│   └── DesktopCaptionOverlay.kt    悬浮字幕窗口（TYPE_APPLICATION_OVERLAY）
 ├── ui/
 │   ├── ContentViewModel.kt         Home list state, filters, paging
-│   ├── ContentAudioViewModel.kt    All playback logic (MediaPlayer, queue, loop, captions)
+│   ├── ContentAudioViewModel.kt    薄壳：转发命令 + 触发 PlaybackCore.init
 │   ├── components/GlobalPlayerBar.kt   Shared player bar used by every screen
 │   ├── screens/                    List, Detail, Favourites, SentenceDetail, CaptionSettings
 │   ├── wordinsight/                Word insight sheet + clickable reading text
@@ -92,32 +93,26 @@ UI（可多实例、可销毁重建，只订阅 + 发命令）
 ```
 PlaybackCore
    ├── uiState: StateFlow<AudioUiState>        Idle | Preparing | Playing | Paused | Error
-   │       ├── currentSentenceIndex, position, duration
+   │       ├── lessonId、currentSentenceIndex(Int?)、position、duration
    │       ├── isLoopingSingle / isLoopingLesson / isMuted / isCaptionOn
-   │       └── consumed by GlobalPlayerBar, the detail screen, PlaybackBus
-   ├── currentLesson: StateFlow<Content?>      which lesson is playing
+   │       └── 被播放器条、详情页、PlaybackBus 消费
+   ├── currentLesson: StateFlow<Content?>      正在播放的课
    ├── currentSentenceEvent: StateFlow<CurrentSentenceEvent?>
    │       当前句的唯一出口：lessonId + sentenceIndex + text；null 下标表示清空
-   ├── captionOnFlow: StateFlow<Boolean>       caption toggle (persisted)
-   └── loopingLessonFlow: StateFlow<Boolean>   lesson-loop toggle
+   ├── captionOnFlow: StateFlow<Boolean>       字幕开关（含持久化偏好）
+   └── loopingLessonFlow: StateFlow<Boolean>   整课循环开关
 ```
 
 ### PlaybackBus
 
-The ViewModel and the foreground service run in the same process but are
-decoupled through `PlaybackBus`:
+核心与前台服务通过 `PlaybackBus` 单向通信（核心发布，服务消费）：
 
-- `PlaybackBus.info: StateFlow<PlaybackInfo?>` — the service renders a
-  notification from this. `null` means "stop the service".
+- `PlaybackBus.info: StateFlow<PlaybackInfo?>` — 服务据此渲染通知；`null` 表示关闭服务。
 - `PlaybackBus.commands: SharedFlow<Command>` — `PAUSE / RESUME / STOP / NEXT /
-  PREV / TOGGLE_LESSON_LOOP / TOGGLE_CAPTION`.
-- `PlaybackBus.ownerId` — only the ViewModel instance that last published
-  non-null state reacts to commands. This prevents stale screen-scoped
-  instances from hijacking the notification.
-- A ViewModel only publishes `null` when it already owns the bus, so other
-  screens' instances cannot accidentally dismiss a live notification.
+  PREV / TOGGLE_LESSON_LOOP / TOGGLE_CAPTION`。
+- `PlaybackBus.ownerId` — 记录发布者；核心是唯一发布者，恒为 `"core"`。
 
-The reverse direction (service → ViewModel) uses explicit actions:
+服务 → 核心方向使用显式 action（广播）：
 
 - Notification buttons are `PendingIntent.getBroadcast` into a receiver
   registered by the service (`ACTION_PLAY/PAUSE/STOP/NEXT/PREV/TOGGLE_LOOP/

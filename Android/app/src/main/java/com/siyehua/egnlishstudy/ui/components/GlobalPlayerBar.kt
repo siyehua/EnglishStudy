@@ -46,7 +46,6 @@ import kotlin.math.min
 fun GlobalPlayerBar(
     audioState: AudioUiState,
     content: Content?,
-
     subtitle: String = "",
     isLoopingLesson: Boolean,
     isCaptionOn: Boolean,

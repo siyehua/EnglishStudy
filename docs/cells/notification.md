@@ -32,21 +32,21 @@
 
 ## 通信模型
 
-服务与 ViewModel 同进程但解耦，两个方向各用一套机制。
+服务与播放核心同进程、单向解耦：**核心发布，服务消费**。
 
-### ViewModel → 服务：`PlaybackBus`
+### 核心 → 服务：`PlaybackBus`
 
 ```kotlin
 PlaybackBus.info: StateFlow<PlaybackInfo?>          // 服务据此渲染通知；null 表示关闭服务
 PlaybackBus.commands: SharedFlow<Command>           // PAUSE/RESUME/STOP/NEXT/PREV/TOGGLE_*
-PlaybackBus.ownerId: String?                        // 当前“播放所有者”标识
+PlaybackBus.ownerId: String?                        // 发布者标识，核心恒为 "core"
 ```
 
 - 服务订阅 `info`，任何变化都重绘通知；`null` 时 `stopForeground()` + `stopSelf()`。
-- ViewModel 订阅 `commands`，但**只有 `ownerId` 与自己相等的实例才执行**，避免多个页面实例抢答。
-- ViewModel 只在“自己已经是 owner”时才发布 `null`，防止其他屏幕的实例误关掉正在播放的通知。
+- `PlaybackCore` 是**唯一发布者**，因此不需要"多实例抢答"的守卫。
+- 核心订阅 `commands` 接收暂停 / 继续 / 切课 / 循环等命令。
 
-### 服务 → ViewModel：显式 Action
+### 服务 → 核心：显式 Action
 
 通知按钮用 `PendingIntent.getBroadcast` 发给服务内注册的 `BroadcastReceiver`：
 
@@ -59,7 +59,7 @@ PlaybackBus.ownerId: String?                        // 当前“播放所有者�
 | `ACTION_UPDATE_CAPTION_STYLE` | 样式变更后立即重绘字幕 |
 | `ACTION_NEED_OVERLAY_PERMISSION` | 缺少悬浮窗权限，通知 App 去授权 |
 
-接收器再把命令转成 `PlaybackBus.commands` 发给 ViewModel。
+接收器再把命令转成 `PlaybackBus.commands` 发给播放核心。
 
 ## 通知内容
 

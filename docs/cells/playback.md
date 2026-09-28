@@ -73,13 +73,13 @@ val currentSentenceEvent: StateFlow<CurrentSentenceEvent?>
 订阅方（详情页、播放器条、通知、字幕）**必须自己判断 `lessonId` 是否与当前展示的内容一致**，
 一致才处理；`sentenceIndex == null` 表示清空选中。
 
-ViewModel 额外暴露四个独立流，供 UI 与通知使用：
+`PlaybackCore` 额外暴露以下流，供 UI 与通知使用：
 
 | Flow | 用途 |
 | --- | --- |
 | `uiState` | 播放器条、详情页、通知总线 |
-| `currentLesson` | 当前课程（用于切课同步 UI） |
-| `currentSentenceFlow` | 播放器条副标题（当前英文句子） |
+| `currentLesson` | 正在播放的课 |
+| `currentSentenceEvent` | 当前句（`lessonId + sentenceIndex + text`） |
 | `captionOnFlow` | 字幕开关（含持久化偏好） |
 | `loopingLessonFlow` | 整课循环开关 |
 
