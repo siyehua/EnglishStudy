@@ -135,13 +135,19 @@
 | `android:excludeFromRecents="true"` | 不出现在最近任务里 |
 | `android:launchMode="singleTop"` | 重复触发不叠加多个实例 |
 
-行为与静默入口的区别：**它会弹出一个对话框**（半透明背景 + 居中卡片）。
+行为与静默入口的区别：**它会弹出一个底部面板**，交互与 App 内双击单词完全一致。
 
-- **单词**：直接复用双击单词用的 `WordInsightBody`，所以读音、音标、读音拆分、
-  中文释义、词形变化、例句的排版与双击面板**完全一致**；
-- **句子**：显示原文 + 整句翻译，另有「加入单词本」按钮；
+- **单词**：直接复用 `WordInsightSheet`（`ModalBottomSheet` + `WordInsightBody`），
+  读音、音标、读音拆分、中文释义、词形变化、例句与双击面板**完全一致**；
+- **句子**：同样用 `ModalBottomSheet`，显示原文 + 整句翻译 + 「加入单词本」；
 - 文本取自 `SearchManager.QUERY`；类型判定与翻译复用 `ManualFavorite`；
+- **不提供"关闭"按钮**：点上半部分遮罩、返回手势、下拉即可关闭，与原有交互一致；
 - 关闭不做任何写入。
+
+面板是 `singleTop`，重复触发时通过 `onNewIntent` **就地刷新**内容，不重叠多个实例。
+
+> **不要另写一套居中卡片**：早期版本自己实现了居中对话框，导致观感与 App 内面板不一致，
+> 也没有"从下往上弹出 + 可拖动"的交互。统一走 `ModalBottomSheet`。
 
 > **不要给 `WordInsightBody` 再套一层 `verticalScroll`**：它自身已经可滚动，
 > 叠加会产生无限高度约束并抛
