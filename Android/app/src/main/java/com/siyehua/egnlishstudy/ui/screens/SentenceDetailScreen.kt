@@ -103,13 +103,21 @@ fun SentenceDetailScreen(
     }
 
     fun playSentence() {
-        val url = clipUrl ?: return
-        audioViewModel.playSegmentUrl(url, favorite.text, 0)
+        val url = clipUrl
+        if (url != null) {
+            audioViewModel.playSegmentUrl(url, favorite.text, 0)
+        } else {
+            audioViewModel.playSentence(favorite.text, 0)
+        }
     }
 
     fun loopSentence() {
-        val url = clipUrl ?: return
-        audioViewModel.loopSegmentUrl(url, 0)
+        val url = clipUrl
+        if (url != null) {
+            audioViewModel.loopSegmentUrl(url, 0)
+        } else {
+            audioViewModel.playSentence(favorite.text, 0)
+        }
     }
 
     Scaffold(

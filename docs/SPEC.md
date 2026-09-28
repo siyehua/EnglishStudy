@@ -39,7 +39,7 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 │   ├── ContentViewModel.kt         Home list state, filters, paging
 │   ├── ContentAudioViewModel.kt    薄壳：转发命令 + 触发 PlaybackCore.init
 │   ├── components/GlobalPlayerBar.kt   Shared player bar used by every screen
-│   ├── screens/                    List, Detail, Favourites, SentenceDetail, CaptionSettings
+│   ├── screens/                    List, Detail, Favourites（含手动添加）, SentenceDetail, CaptionSettings
 │   ├── wordinsight/                Word insight sheet + clickable reading text
 │   └── theme/                      Color, Theme, Type
 ```

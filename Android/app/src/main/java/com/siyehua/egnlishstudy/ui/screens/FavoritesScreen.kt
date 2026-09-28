@@ -25,6 +25,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.input.ImeAction
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,8 +62,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
+import com.siyehua.egnlishstudy.data.wordform.WordMeaningRepository
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 import com.siyehua.egnlishstudy.ui.theme.StudyYellow
+
+private const val MANUAL_LESSON_TITLE = "手动添加"
 
 @Composable
 fun FavoritesScreen(
@@ -60,15 +80,82 @@ fun FavoritesScreen(
     var favorites by remember {
         mutableStateOf(runCatching { database.loadFavorites() }.getOrDefault(emptyList()))
     }
+    var showAddDialog by remember { mutableStateOf(false) }
+    val addState = remember { AddFavoriteState() }
+    val meaningRepository = remember { WordMeaningRepository(context) }
+    val scope = rememberCoroutineScope()
+
+    fun reloadFavorites() {
+        favorites = runCatching { database.loadFavorites() }.getOrDefault(emptyList())
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                favorites = runCatching { database.loadFavorites() }.getOrDefault(emptyList())
+                reloadFavorites()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    fun submit(text: String) {
+        val value = text.trim()
+        if (value.isEmpty()) return
+        addState.isLoading = true
+        addState.error = null
+        scope.launch {
+            val isWord = value.looksLikeSingleWord() == true
+            val translation = runCatching {
+                if (isWord) {
+                    val response = meaningRepository.resolve(value, "")
+                    response.meanings
+                        .joinToString("；") { entry ->
+                            if (entry.partOfSpeech.isBlank()) entry.meaning
+                            else "${entry.partOfSpeech} ${entry.meaning}"
+                        }
+                        .ifBlank { response.sentenceChinese }
+                } else {
+                    val response = meaningRepository.resolve(value.split(" ").first(), value)
+                    response.sentenceChinese
+                }
+            }.getOrElse { error ->
+                addState.error = error.message ?: "翻译失败，请检查网络后重试"
+                null
+            }
+
+            if (translation == null) {
+                addState.isLoading = false
+                return@launch
+            }
+            if (translation.isBlank()) {
+                addState.error = "没有获取到翻译，请检查拼写"
+                addState.isLoading = false
+                return@launch
+            }
+
+            runCatching {
+                database.addFavorite(
+                    FavoriteRecord(
+                        kind = if (isWord) "word" else "sentence",
+                        text = value,
+                        audioUrl = null,
+                        contentId = "",
+                        translation = translation,
+                        lessonTitle = MANUAL_LESSON_TITLE
+                    )
+                )
+            }.onFailure { error ->
+                addState.error = error.message ?: "保存失败"
+                addState.isLoading = false
+                return@launch
+            }
+
+            addState.isLoading = false
+            showAddDialog = false
+            addState.reset()
+            reloadFavorites()
+        }
     }
 
     Scaffold(
@@ -111,6 +198,18 @@ fun FavoritesScreen(
                         color = Color.White,
                         modifier = Modifier.weight(1f)
                     )
+                    IconButton(
+                        onClick = {
+                            addState.reset()
+                            showAddDialog = true
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.White.copy(alpha = 0.18f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "添加收藏")
+                    }
                     Surface(
                         shape = MaterialTheme.shapes.large,
                         color = StudyYellow
@@ -162,14 +261,126 @@ fun FavoritesScreen(
                         },
                         onDelete = {
                             database.deleteFavorite(favorite.id)
-                            favorites = runCatching { database.loadFavorites() }
-                                .getOrDefault(emptyList())
+                            reloadFavorites()
                         }
                     )
                 }
             }
         }
     }
+
+    if (showAddDialog) {
+        AddFavoriteDialog(
+            state = addState,
+            onDismiss = {
+                showAddDialog = false
+                addState.reset()
+            },
+            onSubmit = { submit(it) }
+        )
+    }
+}
+
+@Composable
+private fun AddFavoriteDialog(
+    state: AddFavoriteState,
+    onDismiss: () -> Unit,
+    onSubmit: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { if (!state.isLoading) onDismiss() },
+        title = { Text("添加收藏") },
+        text = {
+            Column {
+                Text(
+                    text = "输入单词或句子，会自动翻译并按类型收藏",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = state.input,
+                    onValueChange = state::onInputChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5,
+                    enabled = !state.isLoading,
+                    placeholder = { Text("例如 remember 或 Nice to meet you.") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = state.inputKindLabel(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = StudyGreen
+                )
+                state.error?.let { message ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSubmit(state.input) },
+                enabled = state.canSubmit,
+                colors = ButtonDefaults.buttonColors(containerColor = StudyGreen)
+            ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("翻译中")
+                } else {
+                    Text("添加")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !state.isLoading) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+class AddFavoriteState {
+    var input by mutableStateOf("")
+    var isLoading by mutableStateOf(false)
+    var error by mutableStateOf<String?>(null)
+
+    fun reset() {
+        input = ""
+        isLoading = false
+        error = null
+    }
+
+    fun onInputChange(value: String) {
+        input = value
+        error = null
+    }
+
+    val canSubmit: Boolean
+        get() = !isLoading && input.trim().isNotEmpty()
+
+    fun inputKindLabel(): String = when (input.trim().looksLikeSingleWord()) {
+        true -> "识别为：单词"
+        false -> "识别为：句子"
+        null -> "输入内容后自动判断类型"
+    }
+}
+
+private fun String.looksLikeSingleWord(): Boolean? {
+    val text = trim()
+    if (text.isEmpty()) return null
+    return text.none { it.isWhitespace() } && text.all { it.isLetter() || it == '\'' || it == '-' }
 }
 
 @Composable

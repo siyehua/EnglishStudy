@@ -152,6 +152,10 @@ Reached from **☰ Menu → 字幕设置** on the home screen.
 
 - Mixed list of favourited sentences and words, newest first, delete via the
   trash button.
+- **＋ in the header** adds a word or sentence manually: the app decides the type
+  (a single word vs. a sentence), has the backend translate it, and stores it
+  with the matching template. Manual entries have no lesson audio, so they use
+  the backend TTS for pronunciation.
 - Tapping an entry opens the matching detail page; the list refreshes on resume.
 - Sentences saved by older builds are back-filled with their translation from
   the locally cached lesson the first time they are opened.
