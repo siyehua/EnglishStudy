@@ -42,6 +42,7 @@ class WordLookupActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.siyehua.egnlishstudy.data.AppLog.init(this)
         query.value = extractQuery(intent)
         if (query.value.isEmpty()) {
             finish()

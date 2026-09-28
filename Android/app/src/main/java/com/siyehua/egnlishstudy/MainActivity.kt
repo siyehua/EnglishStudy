@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.siyehua.egnlishstudy.data.AppLog
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.LessonQueueHolder
 import com.siyehua.egnlishstudy.data.FavoriteRecord
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppLog.init(this)
         enableEdgeToEdge()
         requestNotificationPermissionIfNeeded()
         val filter = android.content.IntentFilter(
@@ -120,6 +122,27 @@ fun MainNavigation() {
                     audioViewModel.setLessonQueue(items, currentId ?: items.firstOrNull()?.id.orEmpty())
                 },
                 onOpenFavorites = { navController.navigate("favorites") },
+                onExportLog = {
+                    val logFile = AppLog.file(context)
+                    if (logFile != null && logFile.exists() && logFile.length() > 0) {
+                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            logFile
+                        )
+                        val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
+                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(
+                            android.content.Intent.createChooser(share, "导出日志")
+                        )
+                    } else {
+                        android.widget.Toast.makeText(context, "暂无日志", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                },
                 onOpenCaptionSettings = {
                     val activity = context as? android.app.Activity
                     if (android.provider.Settings.canDrawOverlays(context)) {

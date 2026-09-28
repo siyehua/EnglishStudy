@@ -34,7 +34,9 @@ class DictionaryClient:
         except urllib.error.HTTPError as error:
             if error.code == 404:
                 return enrich_with_phonetic_fallback(not_found(word, normalized))
-            raise
+            return enrich_with_phonetic_fallback(not_found(word, normalized))
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            return enrich_with_phonetic_fallback(not_found(word, normalized))
 
         return enrich_with_phonetic_fallback(
             parse_dictionary_response(word=word, normalized=normalized, payload=payload)
@@ -102,7 +104,9 @@ def enrich_with_phonetic_fallback(
     if response.phonetic is not None or not response.normalized:
         return response
 
-    fallback = lookup_deepseek_phonetic(response.normalized)
+    fallback = lookup_cmudict_phonetic(response.normalized) or lookup_deepseek_phonetic(
+        response.normalized
+    )
     if fallback is None:
         return response
 
@@ -115,6 +119,28 @@ def enrich_with_phonetic_fallback(
         source=f"{response.source}+{source}",
         found=True,
     )
+
+
+def lookup_cmudict_phonetic(word: str) -> tuple[str, str] | None:
+    try:
+        import pronouncing
+    except ImportError:
+        return None
+
+    try:
+        phones = pronouncing.phones_for_word(word.lower())
+    except Exception:
+        return None
+    if not phones:
+        return None
+
+    try:
+        ipa = pronouncing.ipa(phones[0])
+    except Exception:
+        return None
+    if not ipa:
+        return None
+    return f"/{ipa}/", "cmudict"
 
 
 def lookup_deepseek_phonetic(word: str) -> tuple[str, str] | None:
@@ -151,7 +177,7 @@ def lookup_deepseek_phonetic(word: str) -> tuple[str, str] | None:
     try:
         with urllib.request.urlopen(request, timeout=DEEPSEEK_TIMEOUT_SECONDS) as response:
             response_payload = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError):
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
         return None
 
     phonetic = parse_phonetic_content(extract_message_content(response_payload))
@@ -223,10 +249,10 @@ def normalize_word(word: str) -> str:
 
 
 API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en"
-REQUEST_TIMEOUT_SECONDS = 8
+REQUEST_TIMEOUT_SECONDS = 3
 DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEFAULT_DEEPSEEK_MODEL = "deepseek-v4-flash"
-DEEPSEEK_TIMEOUT_SECONDS = 12
+DEEPSEEK_TIMEOUT_SECONDS = 6
 MAX_PHONETIC_LENGTH = 80
 IPA_SYSTEM_PROMPT = """
 You return IPA pronunciations for an English learning app.

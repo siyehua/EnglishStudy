@@ -30,6 +30,18 @@ Base URL：`https://handwriter.asia/english`（见 `wordform/WordFormApiClient.k
 
 词形解析是**本地优先**的：后端先用内置的缩写表与不规则变化表，再加保守的后缀规则，LLM 只作为兜底。
 
+## 四张缓存表
+
+| 表 | 键 | 兜底 |
+| --- | --- | --- |
+| `word_meaning_cache` | `(词, 句子)` | 词级（最近一条） |
+| `word_form_cache` | `(词, 句子)` | 词级 |
+| `word_phonics_cache` | `(词, 句子, ipa)` | 词级 |
+| `word_pronunciation_cache` | `(词)` | —（单键，天然命中） |
+
+**发音的阴性缓存**：接口失败时不再抛异常，而是写入一条 `phonetic = null` 的记录，
+10 分钟内视为"查过了、暂无"，直接返回空结果而**不再联网**，避免后端抖动时反复重试。
+
 ## 释义缓存
 
 `word_meaning_cache` 表按 **`(normalized, stableHash(sentence))`** 作主键 —— 同一个单词在不同句子里
@@ -72,6 +84,15 @@ Base URL：`https://handwriter.asia/english`（见 `wordform/WordFormApiClient.k
 
 两者都要：句级精确命中优先，词级兜底次之，最后才联网。
 
-### 3. 释义面板与播放器条
+### 3. 发音接口失败会导致无限重试
+
+后端 `/word-pronunciation` 曾因调外部 IPA 服务超时而返回 **500**。客户端拿到异常后
+`phonetic` 为空 → 不写缓存 → 下次仍然 MISS → 再请求 → 再 500，表现为"每次查同一个词
+都要等一次超时"。
+
+两处都要防：后端把网络异常降级为可用结果（本地兜底），客户端失败时写**阴性缓存**
+并在 TTL 内不重试。只做一个都还会复发。
+
+### 4. 释义面板与播放器条
 
 面板是覆盖层，不要因为它而暂停播放；查词时音频应继续。

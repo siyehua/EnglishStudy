@@ -647,23 +647,46 @@ class ContentCacheDatabase(context: Context) :
                 null,
                 null,
                 "1"
-            ).use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
+            ).use { cursor -> cursor.toWordFormResponse() }
+        }
 
-                val relationType = cursor.getNullableString(COLUMN_WORD_FORM_RELATION_TYPE)
-                val relationTarget = cursor.getNullableString(COLUMN_WORD_FORM_RELATION_TARGET)
-                val relationLabel = cursor.getNullableString(COLUMN_WORD_FORM_RELATION_LABEL)
+    fun loadLatestWordFormByWord(normalized: String): WordFormResponse? {
+        val key = latestCacheKey(
+            table = TABLE_WORD_FORM_CACHE,
+            normalizedColumn = COLUMN_WORD_FORM_NORMALIZED,
+            keyColumn = COLUMN_WORD_FORM_CACHE_KEY,
+            updatedColumn = COLUMN_WORD_FORM_UPDATED_AT,
+            normalized = normalized
+        ) ?: return null
+        return readableDatabase.use { db ->
+            db.query(
+                TABLE_WORD_FORM_CACHE,
+                null,
+                "$COLUMN_WORD_FORM_CACHE_KEY = ?",
+                arrayOf(key),
+                null, null, null, "1"
+            ).use { cursor ->
+                cursor.toWordFormResponse()?.copy(surface = normalized)
+            }
+        }
+    }
+
+    private fun android.database.Cursor.toWordFormResponse(): WordFormResponse? {
+        if (!moveToFirst()) return null
+                val relationType = this.getNullableString(COLUMN_WORD_FORM_RELATION_TYPE)
+                val relationTarget = this.getNullableString(COLUMN_WORD_FORM_RELATION_TARGET)
+                val relationLabel = this.getNullableString(COLUMN_WORD_FORM_RELATION_LABEL)
                 val variantGroups = runCatching {
                     json.decodeFromString<List<WordFormVariantGroup>>(
-                        cursor.getNullableString(COLUMN_WORD_FORM_VARIANT_GROUPS_JSON).orEmpty()
+                        this.getNullableString(COLUMN_WORD_FORM_VARIANT_GROUPS_JSON).orEmpty()
                     )
                 }.getOrDefault(emptyList())
-                WordFormResponse(
-                    surface = cursor.getString(cursor.columnIndex(COLUMN_WORD_FORM_SURFACE)),
-                    normalized = cursor.getString(cursor.columnIndex(COLUMN_WORD_FORM_NORMALIZED)),
-                    headword = cursor.getString(cursor.columnIndex(COLUMN_WORD_FORM_HEADWORD)),
-                    pronunciationTarget = cursor.getString(
-                        cursor.columnIndex(COLUMN_WORD_FORM_PRONUNCIATION_TARGET)
+                return WordFormResponse(
+                    surface = this.getString(this.columnIndex(COLUMN_WORD_FORM_SURFACE)),
+                    normalized = this.getString(this.columnIndex(COLUMN_WORD_FORM_NORMALIZED)),
+                    headword = this.getString(this.columnIndex(COLUMN_WORD_FORM_HEADWORD)),
+                    pronunciationTarget = this.getString(
+                        this.columnIndex(COLUMN_WORD_FORM_PRONUNCIATION_TARGET)
                     ),
                     relation = if (
                         relationType != null &&
@@ -678,17 +701,16 @@ class ContentCacheDatabase(context: Context) :
                     } else {
                         null
                     },
-                    expansion = cursor.getNullableString(COLUMN_WORD_FORM_EXPANSION),
-                    currentPartOfSpeech = cursor.getNullableString(COLUMN_WORD_FORM_CURRENT_POS),
-                    currentPartOfSpeechLabel = cursor.getNullableString(
+                    expansion = this.getNullableString(COLUMN_WORD_FORM_EXPANSION),
+                    currentPartOfSpeech = this.getNullableString(COLUMN_WORD_FORM_CURRENT_POS),
+                    currentPartOfSpeechLabel = this.getNullableString(
                         COLUMN_WORD_FORM_CURRENT_POS_LABEL
                     ).orEmpty(),
                     variantGroups = variantGroups,
-                    confidence = cursor.getString(cursor.columnIndex(COLUMN_WORD_FORM_CONFIDENCE)),
-                    source = cursor.getString(cursor.columnIndex(COLUMN_WORD_FORM_SOURCE))
+                    confidence = this.getString(this.columnIndex(COLUMN_WORD_FORM_CONFIDENCE)),
+                    source = this.getString(this.columnIndex(COLUMN_WORD_FORM_SOURCE))
                 )
-            }
-        }
+    }
 
     fun upsertWordForm(wordForm: WordFormResponse) {
         upsertWordForm(wordForm = wordForm, sentence = "")
@@ -721,6 +743,19 @@ class ContentCacheDatabase(context: Context) :
         }
     }
 
+    fun loadWordPronunciationUpdatedAt(normalized: String): Long? =
+        readableDatabase.use { db ->
+            db.query(
+                TABLE_WORD_PRONUNCIATION_CACHE,
+                arrayOf(COLUMN_WORD_PRONUNCIATION_UPDATED_AT),
+                "$COLUMN_WORD_PRONUNCIATION_NORMALIZED = ?",
+                arrayOf(normalized),
+                null, null, null, "1"
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) null else cursor.getLong(0)
+            }
+        }
+
     fun loadWordPronunciation(normalized: String): WordPronunciationResponse? =
         readableDatabase.use { db ->
             db.query(
@@ -748,7 +783,7 @@ class ContentCacheDatabase(context: Context) :
 
     fun upsertWordPronunciation(pronunciation: WordPronunciationResponse) {
         writableDatabase.use { db ->
-            if (pronunciation.phonetic.isNullOrBlank()) {
+            if (pronunciation.phonetic.isNullOrBlank() && pronunciation.found) {
                 deleteWordPronunciation(db, pronunciation.normalized)
                 return@use
             }
@@ -882,38 +917,81 @@ class ContentCacheDatabase(context: Context) :
                 null,
                 null,
                 "1"
-            ).use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
+            ).use { cursor -> cursor.toWordPhonicsResponse() }
+        }
 
+    fun loadLatestWordPhonicsByWord(normalized: String): WordPhonicsResponse? {
+        val key = latestCacheKey(
+            table = TABLE_WORD_PHONICS_CACHE,
+            normalizedColumn = COLUMN_WORD_PHONICS_NORMALIZED,
+            keyColumn = COLUMN_WORD_PHONICS_CACHE_KEY,
+            updatedColumn = COLUMN_WORD_PHONICS_UPDATED_AT,
+            normalized = normalized
+        ) ?: return null
+        return readableDatabase.use { db ->
+            db.query(
+                TABLE_WORD_PHONICS_CACHE,
+                null,
+                "$COLUMN_WORD_PHONICS_CACHE_KEY = ?",
+                arrayOf(key),
+                null, null, null, "1"
+            ).use { cursor ->
+                cursor.toWordPhonicsResponse()?.copy(word = normalized)
+            }
+        }
+    }
+
+    private fun android.database.Cursor.toWordPhonicsResponse(): WordPhonicsResponse? {
+        if (!moveToFirst()) return null
                 val phonemes = runCatching {
                     json.decodeFromString<List<String>>(
-                        cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_PHONEMES_JSON))
+                        this.getString(this.columnIndex(COLUMN_WORD_PHONICS_PHONEMES_JSON))
                     )
                 }.getOrDefault(emptyList())
                 val segments = runCatching {
                     json.decodeFromString<List<WordPhonicsSegment>>(
-                        cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_SEGMENTS_JSON))
+                        this.getString(this.columnIndex(COLUMN_WORD_PHONICS_SEGMENTS_JSON))
                     )
                 }.getOrDefault(emptyList())
                 val chunks = runCatching {
                     json.decodeFromString<List<WordPhonicsChunk>>(
-                        cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_CHUNKS_JSON))
+                        this.getString(this.columnIndex(COLUMN_WORD_PHONICS_CHUNKS_JSON))
                     )
                 }.getOrDefault(emptyList())
 
-                WordPhonicsResponse(
-                    word = cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_WORD)),
-                    normalized = cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_NORMALIZED)),
-                    ipa = cursor.getNullableString(COLUMN_WORD_PHONICS_IPA),
+                return WordPhonicsResponse(
+                    word = this.getString(this.columnIndex(COLUMN_WORD_PHONICS_WORD)),
+                    normalized = this.getString(this.columnIndex(COLUMN_WORD_PHONICS_NORMALIZED)),
+                    ipa = this.getNullableString(COLUMN_WORD_PHONICS_IPA),
                     phonemes = phonemes,
                     segments = segments,
                     chunks = chunks,
-                    note = cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_NOTE)),
-                    verification = cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_VERIFICATION)),
-                    source = cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_SOURCE)),
-                    found = cursor.getInt(cursor.columnIndex(COLUMN_WORD_PHONICS_FOUND)) == 1,
-                    message = cursor.getString(cursor.columnIndex(COLUMN_WORD_PHONICS_MESSAGE))
+                    note = this.getString(this.columnIndex(COLUMN_WORD_PHONICS_NOTE)),
+                    verification = this.getString(this.columnIndex(COLUMN_WORD_PHONICS_VERIFICATION)),
+                    source = this.getString(this.columnIndex(COLUMN_WORD_PHONICS_SOURCE)),
+                    found = this.getInt(this.columnIndex(COLUMN_WORD_PHONICS_FOUND)) == 1,
+                    message = this.getString(this.columnIndex(COLUMN_WORD_PHONICS_MESSAGE))
                 )
+    }
+
+    private fun latestCacheKey(
+        table: String,
+        normalizedColumn: String,
+        keyColumn: String,
+        updatedColumn: String,
+        normalized: String
+    ): String? =
+        readableDatabase.use { db ->
+            db.query(
+                table,
+                arrayOf(keyColumn),
+                "$normalizedColumn = ?",
+                arrayOf(normalized.trim().lowercase()),
+                null, null,
+                "$updatedColumn DESC",
+                "1"
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) null else cursor.getString(0)
             }
         }
 

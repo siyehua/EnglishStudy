@@ -1,6 +1,7 @@
 package com.siyehua.egnlishstudy.data.wordform
 
 import android.content.Context
+import com.siyehua.egnlishstudy.data.AppLog
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,18 +16,34 @@ class WordPronunciationRepository(
         withContext(Dispatchers.IO) {
             val normalized = word.normalizeWordSurface()
             database.loadWordPronunciation(normalized)?.let { cached ->
-                if (cached.phonetic.isNullOrBlank()) {
-                    database.deleteWordPronunciation(normalized)
-                } else {
+                if (!cached.phonetic.isNullOrBlank()) {
+                    AppLog.log("pronunciation", "HIT word=$normalized ipa=${cached.phonetic}")
                     return@withContext cached.copy(word = word)
                 }
+                val updatedAt = database.loadWordPronunciationUpdatedAt(normalized) ?: 0L
+                if (System.currentTimeMillis() - updatedAt < NEGATIVE_TTL_MS) {
+                    AppLog.log("pronunciation", "HIT negative word=$normalized")
+                    return@withContext cached.copy(word = word)
+                }
+                database.deleteWordPronunciation(normalized)
             }
 
-            val response = apiClient.resolveWordPronunciation(word)
+            AppLog.log("pronunciation", "MISS -> network word=$normalized")
+            val response = runCatching { apiClient.resolveWordPronunciation(word) }.getOrElse { error ->
+                AppLog.log("pronunciation", "FAILED word=$normalized " + error.message)
+                return@withContext WordPronunciationResponse(
+                    word = word,
+                    normalized = normalized,
+                    phonetic = null,
+                    audioUrl = null,
+                    source = "unavailable",
+                    found = false
+                )
+            }
             if (!response.phonetic.isNullOrBlank()) {
-                database.upsertWordPronunciation(response)
+                runCatching { database.upsertWordPronunciation(response) }
             } else {
-                database.deleteWordPronunciation(response.normalized)
+                runCatching { database.upsertWordPronunciation(response) }
             }
             response
         }
@@ -42,3 +59,5 @@ internal fun String.normalizeWordSurface(): String =
                 ?.value
                 .orEmpty()
         }
+
+private const val NEGATIVE_TTL_MS = 10 * 60 * 1000L

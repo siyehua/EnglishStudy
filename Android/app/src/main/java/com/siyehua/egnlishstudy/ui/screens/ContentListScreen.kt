@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -114,6 +115,7 @@ fun ContentListScreen(
     onContentClick: (Content) -> Unit,
     onOpenFavorites: () -> Unit = {},
     onOpenCaptionSettings: () -> Unit = {},
+    onExportLog: () -> Unit = {},
     audioState: AudioUiState = AudioUiState.Idle,
     playerContent: Content? = null,
     playerSubtitle: String = "",
@@ -141,6 +143,7 @@ fun ContentListScreen(
         onContentClick = onContentClick,
         onOpenFavorites = onOpenFavorites,
         onOpenCaptionSettings = onOpenCaptionSettings,
+        onExportLog = onExportLog,
         onTypeToggle = viewModel::toggleType,
         onLevelToggle = viewModel::toggleLevel,
         onSourceToggle = viewModel::toggleSource,
@@ -167,6 +170,7 @@ fun ContentListContent(
     onContentClick: (Content) -> Unit,
     onOpenFavorites: () -> Unit,
     onOpenCaptionSettings: () -> Unit = {},
+    onExportLog: () -> Unit = {},
     onTypeToggle: (ContentType) -> Unit,
     onLevelToggle: (ContentLevel) -> Unit,
     onSourceToggle: (String) -> Unit,
@@ -380,7 +384,8 @@ private fun LearningHomeHeader(
     onClearFilters: () -> Unit,
     collapseFraction: Float,
     onOpenFavorites: () -> Unit,
-    onOpenCaptionSettings: () -> Unit = {}
+    onOpenCaptionSettings: () -> Unit = {},
+    onExportLog: () -> Unit = {}
 ) {
     val fraction = collapseFraction.coerceIn(0f, 1f)
     val topPadding = lerpDp(12.dp, 6.dp, fraction)
@@ -530,6 +535,16 @@ private fun LearningHomeHeader(
                             onClick = {
                                 isMenuOpen = false
                                 onOpenFavorites()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("导出日志") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Share, contentDescription = null)
+                            },
+                            onClick = {
+                                isMenuOpen = false
+                                onExportLog()
                             }
                         )
                         DropdownMenuItem(

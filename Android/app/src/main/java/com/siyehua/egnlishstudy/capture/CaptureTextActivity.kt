@@ -14,6 +14,7 @@ class CaptureTextActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.siyehua.egnlishstudy.data.AppLog.init(this)
         val text = extractText(intent)?.trim().orEmpty()
         if (text.isEmpty()) {
             finish()

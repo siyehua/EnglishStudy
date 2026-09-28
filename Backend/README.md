@@ -67,7 +67,7 @@ Base URL in production: **`https://handwriter.asia/english`**
 | `POST` | `/contents` | lesson list (EnglishPod transcripts) |
 | `GET` | `/ting/segment` | cut a sentence clip out of a lesson MP3 |
 | `POST` | `/word-form` | surface word → headword / relation / expansion |
-| `POST` | `/word-pronunciation` | IPA for a word |
+| `POST` | `/word-pronunciation` | IPA for a word（外部词典超时会降级到本地 cmudict / LLM，不再返回 5xx） |
 | `POST` | `/word-phonics` | syllable / phonics breakdown |
 | `POST` | `/word-meaning` | Chinese meanings + sentence translation |
 | `POST` | `/tts-audio` | TTS proxy (keeps the MIMO key server-side) |

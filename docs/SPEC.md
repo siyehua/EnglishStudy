@@ -30,6 +30,7 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 │   ├── LessonQueueHolder.kt        Home-screen lesson order handed to playback
 │   ├── CaptionStyleStore.kt        Desktop-caption style + on/off preference
 │   ├── ManualFavorite.kt           手动收藏共用逻辑（判定 / 翻译 / 写入）
+│   ├── AppLog.kt                   轻量日志（写文件 + 轮转，供导出排查）
 │   └── wordform/                   Word-form API client, models, repositories
 ├── capture/
 │   ├── CaptureTextActivity.kt      PROCESS_TEXT / SEND 系统入口，静默加入单词本
@@ -173,6 +174,7 @@ colours for brand accents on the green header surfaces.
 | 收藏 | [cells/favourites.md](cells/favourites.md) |
 | 内容加载与本地缓存 | [cells/content.md](cells/content.md) |
 | 主题与视觉规范 | [cells/theme.md](cells/theme.md) |
+| 日志 | [cells/logging.md](cells/logging.md) |
 | 构建、发版与调试 | [cells/build.md](cells/build.md) |
 
 ## 约束
