@@ -161,6 +161,10 @@ Reached from **☰ Menu → 字幕设置** on the home screen.
   sentence is detected automatically, the item is saved immediately (a toast
   confirms it) and translation happens silently in the background, so you can
   stay in the original app.
+- **System-wide lookup**: hosts that only list "web search" style entries (for
+  example Notion) still get an entry point through `ACTION_WEB_SEARCH`. It opens
+  a dialog showing the text, whether it is a word or a sentence, and its
+  translation, with a button to add it to the word book.
 - Tapping an entry opens the matching detail page; the list refreshes on resume.
 - Sentences saved by older builds are back-filled with their translation from
   the locally cached lesson the first time they are opened.

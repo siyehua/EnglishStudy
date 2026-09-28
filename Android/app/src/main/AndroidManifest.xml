@@ -54,6 +54,20 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".capture.WordLookupActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="@string/capture_lookup"
+            android:noHistory="true"
+            android:theme="@style/Theme.TranslucentNoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.WEB_SEARCH" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".playback.PlaybackNotificationService"
             android:exported="false"

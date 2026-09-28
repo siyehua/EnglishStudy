@@ -13,7 +13,8 @@
 | 文件 | 说明 |
 | --- | --- |
 | `ui/screens/FavoritesScreen.kt` | 收藏列表 + 手动添加弹窗 |
-| `capture/CaptureTextActivity.kt` | 系统级入口：`PROCESS_TEXT` / `SEND` |
+| `capture/CaptureTextActivity.kt` | 系统级静默入口：`PROCESS_TEXT` / `SEND` |
+| `capture/WordLookupActivity.kt` | 系统级查词入口：`WEB_SEARCH`，弹出释义对话框 |
 | `data/ManualFavorite.kt` | 手动收藏的共用逻辑（判定 / 翻译 / 写入） |
 | `ui/screens/SentenceDetailScreen.kt` | 句子详情 |
 | `ui/wordinsight/WordInsightScreen.kt` | 单词详情（全屏释义） |
@@ -100,14 +101,43 @@
 
 入口能力差异（系统决定，非应用可控）：
 
-| 入口 | 触达 |
-| --- | --- |
-| `PROCESS_TEXT` | 使用系统文本选择菜单的 App（Chrome、多数新闻类）；自绘选择菜单的 App 不显示 |
-| `SEND` | 支持"分享"的绝大多数 App |
+| 入口 | 触达 | 行为 |
+| --- | --- | --- |
+| `PROCESS_TEXT` | 使用系统文本选择菜单的 App（Chrome、UC、QQ 浏览器、今日头条等） | 静默入库 + Toast，返回原 App |
+| `SEND` | 支持"分享"的绝大多数 App（含 Notion） | 静默入库 + Toast，返回原 App |
+| `WEB_SEARCH` | 列出"网页搜索"类项的宿主（含 Notion） | 弹出释义对话框，可查看后再加入 |
 
 菜单项名称固定取自 Activity 的 `android:label`，**不能按选中内容变化**。
 
-### 手动收藏的发音
+## 系统级查词入口（WEB_SEARCH）
+
+有些宿主（例如 Notion 这类自绘编辑器的选择菜单）**不列出 `PROCESS_TEXT` 项**，
+但会列出「网页搜索」类的项。为了覆盖这类 App，额外声明了 `ACTION_WEB_SEARCH`：
+
+```xml
+<activity android:name=".capture.WordLookupActivity"
+    android:exported="true"
+    android:label="@string/capture_lookup"
+    android:theme="@style/Theme.TranslucentNoDisplay"
+    android:noHistory="true">
+    <intent-filter>
+        <action android:name="android.intent.action.WEB_SEARCH" />
+        <category android:name="android.intent.category.DEFAULT" />
+    </intent-filter>
+</activity>
+```
+
+行为与静默入口的区别：**它会弹出一个释义对话框**（半透明背景 + 居中卡片），
+内容为「文本 + 类型（单词/句子）+ 翻译」以及「关闭 / 加入单词本」两个按钮。
+
+- 文本取自 `SearchManager.QUERY`
+- 类型判定与翻译复用 `ManualFavorite`
+- 「加入单词本」把当前翻译直接写入收藏，然后关闭
+- 关闭（或点卡片外）不做任何写入
+
+> **注意**：`WEB_SEARCH` 只保证拿到宿主填进 `query` 的文本，**拿不到所在句子的上下文**，
+> 因此词形关系、上下句翻译这类依赖上下文的信息会缺失，`sentence` 传空串，
+> 与手动添加的行为一致。
 
 手动添加没有 `audioUrl`，发音改走后端 TTS：
 
@@ -144,7 +174,19 @@
 点句子会毫无反应。正确做法是 `clipUrl == null` 时回退到
 `PlaybackCore.playSentence(text, 0)`（TTS）。
 
-### 5. 后台写入不能挂在 Activity 生命周期上
+### 5. 自绘选择菜单的宿主只列 WEB_SEARCH
+
+表现：Chrome / UC / QQ 浏览器 / 今日头条 的长按菜单里有「添加到单词本」，
+但 Notion 里没有；Notion 的选择菜单只有「网页搜索」以及 QQ 浏览器等 App 的「翻译」项。
+
+原因：宿主自己决定把哪些 action 排进选择菜单。Notion 只收录 `WEB_SEARCH` 类项，
+不收录 `PROCESS_TEXT`。这类 App 的项点击后会**跳到另一个 App**，正是因为它们用的是
+`WEB_SEARCH` 语义（去别处处理），而不是 `PROCESS_TEXT`（就地处理）。
+
+应对：额外提供 `WEB_SEARCH` 入口，用对话框展示释义后再决定是否收藏。
+无法保证每个宿主都显示这一项，最终仍由宿主决定。
+
+### 6. 后台写入不能挂在 Activity 生命周期上
 
 `CaptureTextActivity` 在 `onCreate` 里就 `finish()` 返回原 App。
 如果翻译/写入用 activity 自己的 `CoroutineScope`（并在 `onDestroy` 里 `cancel()`），
@@ -153,7 +195,7 @@
 正确做法是把任务丢给**不随 Activity 销毁的进程级作用域**
 （当前的 `CaptureWork.scope`），Activity 只负责取文本、提示、结束。
 
-### 6. 手动收藏的课名是占位符
+### 7. 手动收藏的课名是占位符
 
 `lessonTitle = "手动添加"`、`contentId = ""`，所以：
 

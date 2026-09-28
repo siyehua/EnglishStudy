@@ -32,7 +32,8 @@ Android/app/src/main/java/com/siyehua/egnlishstudy/
 │   ├── ManualFavorite.kt           手动收藏共用逻辑（判定 / 翻译 / 写入）
 │   └── wordform/                   Word-form API client, models, repositories
 ├── capture/
-│   └── CaptureTextActivity.kt      PROCESS_TEXT / SEND 系统入口，静默加入单词本
+│   ├── CaptureTextActivity.kt      PROCESS_TEXT / SEND 系统入口，静默加入单词本
+│   └── WordLookupActivity.kt       WEB_SEARCH 系统入口，弹出释义对话框
 ├── playback/
 │   ├── PlaybackCore.kt             播放核心单例：唯一 MediaPlayer、队列、当前课/当前句
 │   ├── PlaybackBus.kt              核心 → 前台服务的单向通道（状态快照 + 命令）
