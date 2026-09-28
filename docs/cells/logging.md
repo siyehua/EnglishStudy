@@ -16,8 +16,9 @@
 - 日志落在 `files/logs/app.log`，超过 512 KB 轮转为 `app.log.1`；
 - `AppLog.log(tag, message)` **立即返回**，实际写盘在单线程后台完成，不阻塞调用方；
 - 入口：首页 **☰ 菜单 → 导出日志**，通过系统分享把文件发出；
-- 打点范围**刻意克制**：只在查词链路（释义 / 词形 / 发音 / 读音拆分）记录
-  `HIT exact` / `HIT word-level` / `MISS -> network` / `FAILED`。
+- 打点范围**刻意克制**：只在查词链路记录
+  `HIT` / `MISS -> network` / `FAILED`，以及聚合接口的
+  `aggregate OK` / `aggregate from local cache` / `aggregate FAILED`。
 
 ## 为什么不用 Mars xlog
 

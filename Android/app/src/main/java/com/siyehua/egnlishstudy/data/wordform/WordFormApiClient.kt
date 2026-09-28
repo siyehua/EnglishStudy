@@ -99,6 +99,17 @@ class WordFormApiClient(
             throw WordFormNetworkException("Cannot reach word meaning service.", exception)
         }
 
+    suspend fun resolveWordInsight(word: String, sentence: String): WordInsightResponse =
+        try {
+            client.post("$normalizedBaseUrl/word-insight") {
+                setBody(WordInsightRequest(word = word, sentence = sentence))
+            }.body()
+        } catch (exception: HttpRequestTimeoutException) {
+            throw WordFormNetworkException("Word insight service timed out.", exception)
+        } catch (exception: IOException) {
+            throw WordFormNetworkException("Cannot reach word insight service.", exception)
+        }
+
     suspend fun fetchContent(
         fetchMore: Boolean,
         types: List<String>,

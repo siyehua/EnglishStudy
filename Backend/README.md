@@ -44,6 +44,18 @@ MIMO_AUDIO_FORMAT=wav
 MIMO_BASE_URL=https://api.xiaomimimo.com/v1
 ```
 
+## 缓存
+
+服务端有一层**可丢弃**的缓存（`app/cache/store.py`）：进程内 LRU + SQLite 落盘。
+
+- 缓存不是真相来源：清空后自动重建，服务端仍然无状态；
+- key 带 `CACHE_VERSION` 前缀，改提示词 / 换模型时提升版本即可整体失效；
+- 默认 TTL 30 天（`RL_CACHE_TTL`），条数上限 5 万（`RL_CACHE_MAX_ENTRIES`），LRU 内存 512 条（`RL_CACHE_LRU`）；
+- 落盘位置 `data/cache.db`（`RL_CACHE_DB`），只缓存成功结果；
+- `/ting/segment` 的音频切片沿用独立的 `/tmp/ting_audio_cache`。
+
+实测：同一词第二次请求 **1.1s → 0.06s**。`GET /health` 返回缓存统计。
+
 ## Run Locally
 
 ```bash
@@ -68,6 +80,8 @@ Base URL in production: **`https://handwriter.asia/english`**
 | `GET` | `/ting/segment` | cut a sentence clip out of a lesson MP3 |
 | `POST` | `/word-form` | surface word → headword / relation / expansion |
 | `POST` | `/word-pronunciation` | IPA for a word（外部词典超时会降级到本地 cmudict / LLM，不再返回 5xx） |
+| `POST` | `/word-insight` | **聚合**：一次返回词形 / 发音 / 读音拆分 / 释义 |
+| `POST` | `/admin/cache/clear` | 清空缓存（缓存可丢，自动重建） |
 | `POST` | `/word-phonics` | syllable / phonics breakdown |
 | `POST` | `/word-meaning` | Chinese meanings + sentence translation |
 | `POST` | `/tts-audio` | TTS proxy (keeps the MIMO key server-side) |

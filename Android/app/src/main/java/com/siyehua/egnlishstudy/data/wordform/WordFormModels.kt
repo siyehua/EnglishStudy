@@ -121,6 +121,20 @@ data class WordMeaningRequest(
 )
 
 @Serializable
+data class WordInsightRequest(
+    val word: String,
+    val sentence: String = ""
+)
+
+@Serializable
+data class WordInsightResponse(
+    val wordForm: WordFormResponse,
+    val pronunciation: WordPronunciationResponse,
+    val phonics: WordPhonicsResponse,
+    val meaning: WordMeaningResponse
+)
+
+@Serializable
 data class WordMeaningResponse(
     val word: String,
     val normalized: String,

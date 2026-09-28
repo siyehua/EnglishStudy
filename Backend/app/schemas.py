@@ -117,6 +117,18 @@ class WordMeaningResponse(BaseModel):
     sentenceChinese: str = ""
 
 
+class WordInsightRequest(BaseModel):
+    word: str = Field(..., min_length=1)
+    sentence: str = ""
+
+
+class WordInsightResponse(BaseModel):
+    wordForm: WordFormResponse
+    pronunciation: WordPronunciationResponse
+    phonics: WordPhonicsResponse
+    meaning: WordMeaningResponse
+
+
 class TtsAudioRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000)
     instruction: str = Field(..., min_length=1, max_length=500)

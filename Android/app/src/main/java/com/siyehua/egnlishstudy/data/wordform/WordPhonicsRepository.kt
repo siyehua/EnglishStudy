@@ -20,14 +20,6 @@ class WordPhonicsRepository(
                 return@withContext cached.copy(word = word)
             }
 
-            database.loadLatestWordPhonicsByWord(normalized)?.let { cached ->
-                if (sentence.isNotBlank() || !ipa.isNullOrBlank()) {
-                    database.upsertWordPhonics(phonics = cached, sentence = sentence, ipa = ipa)
-                }
-                AppLog.log("phonics", "HIT word-level word=$normalized")
-                return@withContext cached.copy(word = word)
-            }
-
             AppLog.log("phonics", "MISS -> network word=$normalized sent=${sentence.tagSent()} ipa=$ipa")
             val response = apiClient.resolveWordPhonics(
                 word = word,

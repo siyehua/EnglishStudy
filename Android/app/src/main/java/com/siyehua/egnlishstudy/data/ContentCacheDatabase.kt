@@ -65,6 +65,18 @@ class ContentCacheDatabase(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 32) {
+            // key 规则变更：词形/读音拆分不再依赖句子，直接重建这几张表
+            listOf(
+                "word_form_cache",
+                "word_phonics_cache",
+                "word_meaning_cache"
+            ).forEach { db.execSQL("DROP TABLE IF EXISTS $it") }
+            createWordFormTable(db)
+            createWordPhonicsTable(db)
+            createWordMeaningTable(db)
+            return
+        }
         if (oldVersion < 2) {
             db.execSQL(
                 "ALTER TABLE $TABLE_CONTENT ADD COLUMN $COLUMN_LEVEL TEXT NOT NULL DEFAULT '${ContentLevel.B1.name}'"
@@ -650,26 +662,6 @@ class ContentCacheDatabase(context: Context) :
             ).use { cursor -> cursor.toWordFormResponse() }
         }
 
-    fun loadLatestWordFormByWord(normalized: String): WordFormResponse? {
-        val key = latestCacheKey(
-            table = TABLE_WORD_FORM_CACHE,
-            normalizedColumn = COLUMN_WORD_FORM_NORMALIZED,
-            keyColumn = COLUMN_WORD_FORM_CACHE_KEY,
-            updatedColumn = COLUMN_WORD_FORM_UPDATED_AT,
-            normalized = normalized
-        ) ?: return null
-        return readableDatabase.use { db ->
-            db.query(
-                TABLE_WORD_FORM_CACHE,
-                null,
-                "$COLUMN_WORD_FORM_CACHE_KEY = ?",
-                arrayOf(key),
-                null, null, null, "1"
-            ).use { cursor ->
-                cursor.toWordFormResponse()?.copy(surface = normalized)
-            }
-        }
-    }
 
     private fun android.database.Cursor.toWordFormResponse(): WordFormResponse? {
         if (!moveToFirst()) return null
@@ -920,26 +912,6 @@ class ContentCacheDatabase(context: Context) :
             ).use { cursor -> cursor.toWordPhonicsResponse() }
         }
 
-    fun loadLatestWordPhonicsByWord(normalized: String): WordPhonicsResponse? {
-        val key = latestCacheKey(
-            table = TABLE_WORD_PHONICS_CACHE,
-            normalizedColumn = COLUMN_WORD_PHONICS_NORMALIZED,
-            keyColumn = COLUMN_WORD_PHONICS_CACHE_KEY,
-            updatedColumn = COLUMN_WORD_PHONICS_UPDATED_AT,
-            normalized = normalized
-        ) ?: return null
-        return readableDatabase.use { db ->
-            db.query(
-                TABLE_WORD_PHONICS_CACHE,
-                null,
-                "$COLUMN_WORD_PHONICS_CACHE_KEY = ?",
-                arrayOf(key),
-                null, null, null, "1"
-            ).use { cursor ->
-                cursor.toWordPhonicsResponse()?.copy(word = normalized)
-            }
-        }
-    }
 
     private fun android.database.Cursor.toWordPhonicsResponse(): WordPhonicsResponse? {
         if (!moveToFirst()) return null
@@ -1255,13 +1227,16 @@ class ContentCacheDatabase(context: Context) :
     }
 
     private fun wordMeaningCacheKey(normalized: String, sentence: String): String =
-        "${normalized.trim().lowercase()}|${stableHash(sentence.normalizeCacheSentence())}"
+        "$CACHE_KEY_VERSION|meaning|${normalized.trim().lowercase()}|${stableHash(sentence.normalizeCacheSentence())}"
 
     private fun wordFormCacheKey(normalized: String, sentence: String): String =
-        "${normalized.trim().lowercase()}|${stableHash(sentence.normalizeCacheSentence())}"
+        "$CACHE_KEY_VERSION|form|${normalized.trim().lowercase()}"
 
     private fun wordPhonicsCacheKey(normalized: String, sentence: String, ipa: String?): String =
-        "${normalized.trim().lowercase()}|${stableHash(sentence.normalizeCacheSentence())}|${ipa.normalizeCacheIpa()}"
+        "$CACHE_KEY_VERSION|phonics|${normalized.trim().lowercase()}|${ipa.normalizeCacheIpa()}"
+
+    private fun wordKeyOf(normalized: String): String =
+        "$CACHE_KEY_VERSION|${normalized.trim().lowercase()}"
 
     private fun String.normalizeCacheSentence(): String =
         trim().replace(Regex("\\s+"), " ")
@@ -1277,7 +1252,8 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 31
+        private const val DATABASE_VERSION = 32
+        internal const val CACHE_KEY_VERSION = "v2"
 
         private const val TABLE_CONTENT = "content_cache"
         private const val COLUMN_ID = "id"

@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response as RawResponse
 
+from app.cache import store as cache_store
 from app.content.client import ContentClient, englishpod_original_audio_url
 from app.dictionary.client import DictionaryClient
 from app.meaning.client import WordMeaningClient
@@ -18,6 +19,8 @@ from app.schemas import (
     TtsAudioRequest,
     WordFormRequest,
     WordFormResponse,
+    WordInsightRequest,
+    WordInsightResponse,
     WordMeaningRequest,
     WordMeaningResponse,
     WordPhonicsRequest,
@@ -46,13 +49,14 @@ dictionary_client = DictionaryClient()
 meaning_client = WordMeaningClient()
 tts_client = TtsClient()
 content_client = ContentClient()
+cache_store.init_db()
 phonics_client = WordPhonicsClient()
 logger = logging.getLogger("uvicorn.error")
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, object]:
+    return {"status": "ok", **cache_store.stats()}
 
 
 AUDIO_CACHE_DIR = Path(
@@ -123,27 +127,89 @@ def ting_segment(lesson: int, start: float, end: float) -> RawResponse:
 
 @app.post("/word-form", response_model=WordFormResponse)
 def resolve_word_form(request: WordFormRequest) -> WordFormResponse:
+    key = cache_store.make_key("form", request.surface)
+    cached = cache_store.get(key)
+    if cached is not None:
+        return WordFormResponse(**cached)
+
     word_form = resolver.resolve(surface=request.surface, sentence=request.sentence)
-    return form_enricher.enrich(word_form=word_form, sentence=request.sentence)
+    enriched = form_enricher.enrich(word_form=word_form, sentence=request.sentence)
+    cache_store.put(key, enriched.model_dump())
+    return enriched
 
 
 @app.post("/word-pronunciation", response_model=WordPronunciationResponse)
 def resolve_word_pronunciation(request: WordPronunciationRequest) -> WordPronunciationResponse:
-    return dictionary_client.lookup(request.word)
+    key = cache_store.make_key("pron", request.word)
+    cached = cache_store.get(key)
+    if cached is not None:
+        return WordPronunciationResponse(**cached)
+
+    result = dictionary_client.lookup(request.word)
+    if result.found and result.phonetic:
+        cache_store.put(key, result.model_dump())
+    return result
 
 
 @app.post("/word-phonics", response_model=WordPhonicsResponse)
 def resolve_word_phonics(request: WordPhonicsRequest) -> WordPhonicsResponse:
-    return phonics_client.lookup(
+    key = cache_store.make_key("phonics", request.word, request.ipa or "")
+    cached = cache_store.get(key)
+    if cached is not None:
+        return WordPhonicsResponse(**cached)
+
+    result = phonics_client.lookup(
         word=request.word,
         sentence=request.sentence,
         ipa=request.ipa,
     )
+    if result.found:
+        cache_store.put(key, result.model_dump())
+    return result
 
 
 @app.post("/word-meaning", response_model=WordMeaningResponse)
 def resolve_word_meaning(request: WordMeaningRequest) -> WordMeaningResponse:
-    return meaning_client.lookup(word=request.word, sentence=request.sentence)
+    key = cache_store.make_key("meaning", request.word, request.sentence)
+    cached = cache_store.get(key)
+    if cached is not None:
+        return WordMeaningResponse(**cached)
+
+    result = meaning_client.lookup(word=request.word, sentence=request.sentence)
+    if result.found:
+        cache_store.put(key, result.model_dump())
+    return result
+
+
+@app.post("/word-insight", response_model=WordInsightResponse)
+def resolve_word_insight(request: WordInsightRequest) -> WordInsightResponse:
+    """聚合接口：一次返回词形 / 发音 / 读音拆分 / 释义，减少客户端往返。"""
+    pronunciation = resolve_word_pronunciation(WordPronunciationRequest(word=request.word))
+    word_form = resolve_word_form(
+        WordFormRequest(surface=request.word, sentence=request.sentence)
+    )
+    phonics = resolve_word_phonics(
+        WordPhonicsRequest(
+            word=request.word,
+            sentence=request.sentence,
+            ipa=pronunciation.phonetic,
+        )
+    )
+    meaning = resolve_word_meaning(
+        WordMeaningRequest(word=request.word, sentence=request.sentence)
+    )
+    return WordInsightResponse(
+        wordForm=word_form,
+        pronunciation=pronunciation,
+        phonics=phonics,
+        meaning=meaning,
+    )
+
+
+@app.post("/admin/cache/clear")
+def clear_cache() -> dict[str, int]:
+    """清空缓存（缓存可丢，清空后自动重建）。"""
+    return {"cleared": cache_store.clear()}
 
 
 @app.post("/tts-audio")

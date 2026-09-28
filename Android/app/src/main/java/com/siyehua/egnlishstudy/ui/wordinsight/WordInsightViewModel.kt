@@ -6,7 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.siyehua.egnlishstudy.data.TtsAudioManager
 import com.siyehua.egnlishstudy.data.WordAudioResult
+import com.siyehua.egnlishstudy.data.AppLog
 import com.siyehua.egnlishstudy.data.wordform.WordFormRepository
+import com.siyehua.egnlishstudy.data.wordform.WordInsightRepository
 import com.siyehua.egnlishstudy.data.wordform.WordFormResponse
 import com.siyehua.egnlishstudy.data.wordform.WordMeaningRepository
 import com.siyehua.egnlishstudy.data.wordform.WordMeaningResponse
@@ -27,6 +29,7 @@ class WordInsightViewModel(
     private val repository = WordFormRepository(application)
     private val pronunciationRepository = WordPronunciationRepository(application)
     private val meaningRepository = WordMeaningRepository(application)
+    private val insightRepository = WordInsightRepository(application)
     private val phonicsRepository = WordPhonicsRepository(application)
     private val ttsAudioManager = TtsAudioManager(application)
 
@@ -44,6 +47,24 @@ class WordInsightViewModel(
         _audioState.value = WordPronunciationUiState.Idle
         _uiState.value = WordInsightUiState.Loading(clickedWord)
         resolveJob = viewModelScope.launch {
+            val insight = runCatching {
+                insightRepository.resolve(
+                    word = clickedWord.normalized,
+                    sentence = clickedWord.sentence
+                )
+            }.getOrNull()
+            if (insight != null) {
+                AppLog.log("insight", "aggregate OK word=${clickedWord.normalized}")
+                _uiState.value = WordInsightUiState.Success(
+                    clickedWord = clickedWord,
+                    wordForm = insight.wordForm,
+                    pronunciation = insight.pronunciation,
+                    meaningState = WordMeaningUiState.Success(insight.meaning),
+                    phonicsState = WordPhonicsUiState.Success(insight.phonics)
+                )
+                return@launch
+            }
+            AppLog.log("insight", "aggregate FAILED word=${clickedWord.normalized}, fallback to 4 calls")
             val wordFormLookup = async {
                 runCatching {
                     repository.resolve(
