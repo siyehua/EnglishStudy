@@ -817,6 +817,35 @@ class ContentCacheDatabase(context: Context) :
             }
         }
 
+    fun loadLatestWordMeaningByWord(normalized: String): WordMeaningResponse? =
+        readableDatabase.use { db ->
+            db.query(
+                TABLE_WORD_MEANING_CACHE,
+                null,
+                "$COLUMN_WORD_MEANING_NORMALIZED = ?",
+                arrayOf(normalized.trim().lowercase()),
+                null,
+                null,
+                "$COLUMN_WORD_MEANING_UPDATED_AT DESC",
+                "1"
+            ).use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                val meanings = runCatching {
+                    json.decodeFromString<List<WordMeaningEntry>>(
+                        cursor.getString(cursor.columnIndex(COLUMN_WORD_MEANING_ITEMS_JSON))
+                    )
+                }.getOrDefault(emptyList())
+                WordMeaningResponse(
+                    word = cursor.getString(cursor.columnIndex(COLUMN_WORD_MEANING_WORD)),
+                    normalized = cursor.getString(cursor.columnIndex(COLUMN_WORD_MEANING_NORMALIZED)),
+                    meanings = meanings,
+                    source = cursor.getString(cursor.columnIndex(COLUMN_WORD_MEANING_SOURCE)),
+                    found = cursor.getInt(cursor.columnIndex(COLUMN_WORD_MEANING_FOUND)) == 1,
+                    sentenceChinese = cursor.getNullableString(COLUMN_WORD_MEANING_SENTENCE_CHINESE).orEmpty()
+                )
+            }
+        }
+
     fun upsertWordMeaning(meaning: WordMeaningResponse) {
         upsertWordMeaning(meaning = meaning, sentence = "")
     }

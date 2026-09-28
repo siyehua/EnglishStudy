@@ -18,6 +18,13 @@ class WordMeaningRepository(
                 return@withContext cached.copy(word = word)
             }
 
+            database.loadLatestWordMeaningByWord(normalized)?.let { cached ->
+                if (sentence.isNotBlank()) {
+                    database.upsertWordMeaning(meaning = cached, sentence = sentence)
+                }
+                return@withContext cached.copy(word = word)
+            }
+
             val response = apiClient.resolveWordMeaning(
                 word = word,
                 sentence = sentence
