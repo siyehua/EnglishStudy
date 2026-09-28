@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">EgnlishStudy</string>
+    <string name="capture_add_to_wordbook">添加到单词本</string>
 </resources>

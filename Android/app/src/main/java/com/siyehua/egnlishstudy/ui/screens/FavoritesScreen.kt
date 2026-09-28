@@ -62,11 +62,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
+import com.siyehua.egnlishstudy.data.ManualFavorite
 import com.siyehua.egnlishstudy.data.wordform.WordMeaningRepository
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 import com.siyehua.egnlishstudy.ui.theme.StudyYellow
-
-private const val MANUAL_LESSON_TITLE = "手动添加"
 
 @Composable
 fun FavoritesScreen(
@@ -105,52 +104,23 @@ fun FavoritesScreen(
         addState.isLoading = true
         addState.error = null
         scope.launch {
-            val isWord = value.looksLikeSingleWord() == true
-            val translation = runCatching {
-                if (isWord) {
-                    val response = meaningRepository.resolve(value, "")
-                    response.meanings
-                        .joinToString("；") { entry ->
-                            if (entry.partOfSpeech.isBlank()) entry.meaning
-                            else "${entry.partOfSpeech} ${entry.meaning}"
-                        }
-                        .ifBlank { response.sentenceChinese }
-                } else {
-                    val response = meaningRepository.resolve(value.split(" ").first(), value)
-                    response.sentenceChinese
+            val translation = runCatching { ManualFavorite.translate(context, value) }
+                .getOrElse { error ->
+                    addState.error = error.message ?: "翻译失败，请检查网络后重试"
+                    addState.isLoading = false
+                    return@launch
                 }
-            }.getOrElse { error ->
-                addState.error = error.message ?: "翻译失败，请检查网络后重试"
-                null
-            }
-
-            if (translation == null) {
-                addState.isLoading = false
-                return@launch
-            }
             if (translation.isBlank()) {
                 addState.error = "没有获取到翻译，请检查拼写"
                 addState.isLoading = false
                 return@launch
             }
-
-            runCatching {
-                database.addFavorite(
-                    FavoriteRecord(
-                        kind = if (isWord) "word" else "sentence",
-                        text = value,
-                        audioUrl = null,
-                        contentId = "",
-                        translation = translation,
-                        lessonTitle = MANUAL_LESSON_TITLE
-                    )
-                )
-            }.onFailure { error ->
-                addState.error = error.message ?: "保存失败"
-                addState.isLoading = false
-                return@launch
-            }
-
+            runCatching { ManualFavorite.save(context, value, translation) }
+                .onFailure { error ->
+                    addState.error = error.message ?: "保存失败"
+                    addState.isLoading = false
+                    return@launch
+                }
             addState.isLoading = false
             showAddDialog = false
             addState.reset()
@@ -370,17 +340,11 @@ class AddFavoriteState {
     val canSubmit: Boolean
         get() = !isLoading && input.trim().isNotEmpty()
 
-    fun inputKindLabel(): String = when (input.trim().looksLikeSingleWord()) {
+    fun inputKindLabel(): String = when (ManualFavorite.looksLikeSingleWord(input.trim())) {
         true -> "识别为：单词"
         false -> "识别为：句子"
         null -> "输入内容后自动判断类型"
     }
-}
-
-private fun String.looksLikeSingleWord(): Boolean? {
-    val text = trim()
-    if (text.isEmpty()) return null
-    return text.none { it.isWhitespace() } && text.all { it.isLetter() || it == '\'' || it == '-' }
 }
 
 @Composable

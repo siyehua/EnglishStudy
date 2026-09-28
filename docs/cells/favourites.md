@@ -6,12 +6,15 @@
 - 提供收藏列表，支持进入句子详情、单词详情与删除。
 - 与课程详情页的收藏按钮联动（同一份数据）。
 - 支持在收藏夹内**手动添加**单词或句子（自动翻译后按类型入库）。
+- 支持在**任意 App** 里长按选中文字或分享文字，直接加入单词本（系统级入口）。
 
 ## 涉及文件
 
 | 文件 | 说明 |
 | --- | --- |
-| `ui/screens/FavoritesScreen.kt` | 收藏列表 |
+| `ui/screens/FavoritesScreen.kt` | 收藏列表 + 手动添加弹窗 |
+| `capture/CaptureTextActivity.kt` | 系统级入口：`PROCESS_TEXT` / `SEND` |
+| `data/ManualFavorite.kt` | 手动收藏的共用逻辑（判定 / 翻译 / 写入） |
 | `ui/screens/SentenceDetailScreen.kt` | 句子详情 |
 | `ui/wordinsight/WordInsightScreen.kt` | 单词详情（全屏释义） |
 | `data/ContentCacheDatabase.kt` | `favorite` 表读写 |
@@ -62,6 +65,48 @@
 翻译在提交后进行，期间按钮显示「翻译中」，失败时在弹窗内提示且**不写入**收藏
 （`翻译失败` / `没有获取到翻译` / `保存失败` 三种提示）。
 
+## 系统级入口（任意 App）
+
+选中文字后，系统选择菜单里会出现「**添加到单词本**」；分享菜单里也会出现本应用。
+两个入口都指向 `CaptureTextActivity`。
+
+```xml
+<activity android:name=".capture.CaptureTextActivity"
+    android:exported="true"
+    android:label="@string/capture_add_to_wordbook"
+    android:theme="@style/Theme.TranslucentNoDisplay"
+    android:noHistory="true"
+    android:excludeFromRecents="true">
+    <intent-filter>
+        <action android:name="android.intent.action.PROCESS_TEXT" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="text/plain" />
+    </intent-filter>
+    <intent-filter>
+        <action android:name="android.intent.action.SEND" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="text/plain" />
+    </intent-filter>
+</activity>
+```
+
+取文本：`PROCESS_TEXT` → `EXTRA_PROCESS_TEXT`；`SEND` → `EXTRA_TEXT`。
+
+流程与行为：
+
+1. 立即 `Toast`「已添加到单词本」，然后 `finish()` **回到原来的 App**，用户不被打断；
+2. 翻译与写入在**后台静默完成**，成功不提示，失败也不提示；
+3. 用户在 App 内打开该条目时会重新翻译（有缓存则直接用缓存）。
+
+入口能力差异（系统决定，非应用可控）：
+
+| 入口 | 触达 |
+| --- | --- |
+| `PROCESS_TEXT` | 使用系统文本选择菜单的 App（Chrome、多数新闻类）；自绘选择菜单的 App 不显示 |
+| `SEND` | 支持"分享"的绝大多数 App |
+
+菜单项名称固定取自 Activity 的 `android:label`，**不能按选中内容变化**。
+
 ### 手动收藏的发音
 
 手动添加没有 `audioUrl`，发音改走后端 TTS：
@@ -99,7 +144,16 @@
 点句子会毫无反应。正确做法是 `clipUrl == null` 时回退到
 `PlaybackCore.playSentence(text, 0)`（TTS）。
 
-### 5. 手动收藏的课名是占位符
+### 5. 后台写入不能挂在 Activity 生命周期上
+
+`CaptureTextActivity` 在 `onCreate` 里就 `finish()` 返回原 App。
+如果翻译/写入用 activity 自己的 `CoroutineScope`（并在 `onDestroy` 里 `cancel()`），
+协程会被取消，**收藏静默丢失**——表现为"Toast 弹了但列表里没有"。
+
+正确做法是把任务丢给**不随 Activity 销毁的进程级作用域**
+（当前的 `CaptureWork.scope`），Activity 只负责取文本、提示、结束。
+
+### 6. 手动收藏的课名是占位符
 
 `lessonTitle = "手动添加"`、`contentId = ""`，所以：
 

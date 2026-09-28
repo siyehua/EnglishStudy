@@ -156,6 +156,11 @@ Reached from **☰ Menu → 字幕设置** on the home screen.
   (a single word vs. a sentence), has the backend translate it, and stores it
   with the matching template. Manual entries have no lesson audio, so they use
   the backend TTS for pronunciation.
+- **System-wide capture**: select text in any other app and pick
+  **添加到单词本** from the selection menu, or share text to this app. Word or
+  sentence is detected automatically, the item is saved immediately (a toast
+  confirms it) and translation happens silently in the background, so you can
+  stay in the original app.
 - Tapping an entry opens the matching detail page; the list refreshes on resume.
 - Sentences saved by older builds are back-filled with their translation from
   the locally cached lesson the first time they are opened.
