@@ -35,7 +35,12 @@ object ManualFavorite {
                 }
                 .ifBlank { response.sentenceChinese }
         } else {
-            val response = meaningRepository.resolve(value.split(" ").first(), value)
+            // 句子翻译：整句翻译不能复用词级缓存（否则会串到别的句子的翻译），直接走网络。
+            val response = meaningRepository.resolve(
+                value.split(" ").first(),
+                value,
+                allowWordLevelFallback = false
+            )
             response.sentenceChinese
         }
     }

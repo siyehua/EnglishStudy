@@ -12,7 +12,11 @@ class WordMeaningRepository(
 ) {
     private val database = ContentCacheDatabase(context.applicationContext)
 
-    suspend fun resolve(word: String, sentence: String): WordMeaningResponse =
+    suspend fun resolve(
+        word: String,
+        sentence: String,
+        allowWordLevelFallback: Boolean = true
+    ): WordMeaningResponse =
         withContext(Dispatchers.IO) {
             val normalized = word.normalizeWordSurface()
             val tag = "meaning"
@@ -21,12 +25,13 @@ class WordMeaningRepository(
                 return@withContext cached.copy(word = word)
             }
 
-            database.loadLatestWordMeaningByWord(normalized)?.let { cached ->
-                if (sentence.isNotBlank()) {
-                    database.upsertWordMeaning(meaning = cached, sentence = sentence)
+            if (allowWordLevelFallback) {
+                database.loadLatestWordMeaningByWord(normalized)?.let { cached ->
+                    AppLog.log(tag, "HIT word-level word=$normalized sent=${sentence.tagSent()}")
+                    // sentenceChinese 是整句翻译，与具体句子绑定，不能随词级缓存跨句子复用。
+                    // 这里只复用单词释义（meanings），整句翻译清空，避免张冠李戴。
+                    return@withContext cached.copy(word = word, sentenceChinese = "")
                 }
-                AppLog.log(tag, "HIT word-level word=$normalized sent=${sentence.tagSent()}")
-                return@withContext cached.copy(word = word)
             }
 
             AppLog.log(tag, "MISS -> network word=$normalized sent=${sentence.tagSent()}")

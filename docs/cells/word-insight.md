@@ -45,7 +45,17 @@ Base URL：`https://handwriter.asia/english`（见 `wordform/WordFormApiClient.k
 - 只有释义需要上下文，miss 时回落到 **word key 的最近一条**。
 
 > 早期把句子（甚至 IPA）塞进词形/读音拆分的 key，导致同一词在不同入口各存一份、
-> 永远命中不了，只能靠"词级兜底"补丁维持。**兜底是治症状，收敛 key 才是治本。**
+> 永远命中不了，只能靠“词级兜底”补丁维持。**兜底是治症状，收敛 key 才是治本。**
+
+### 词级兜底只能复用「释义」，不能复用「整句翻译」
+
+`resolve()` 的 fallback（`loadLatestWordMeaningByWord`）只把**单词释义（meanings）**带回来，
+**整句翻译（sentenceChinese）一律清空**——因为整句翻译与具体句子绑定，把别的句子的翻译
+复用过来就是张冠李戴（曾出现过“They run away”被译成“他们戴着宽檐帽”）。
+
+需要整句翻译的场景（WebSearch 选句、手动添加句子）传 `allowWordLevelFallback = false`，
+**直接走网络**，不走词级兜底；双击单词的释义场景才允许兜底（代价是原句翻译可能缺失，
+但单词释义正确）。
 
 ### 版本前缀
 

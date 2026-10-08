@@ -125,20 +125,29 @@ fun MainNavigation() {
                 onExportLog = {
                     val logFile = AppLog.file(context)
                     if (logFile != null && logFile.exists() && logFile.length() > 0) {
-                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            logFile
-                        )
-                        val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                            putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
-                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        runCatching {
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                logFile
+                            )
+                            val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            val chooser = android.content.Intent.createChooser(share, "导出日志")
+                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(chooser)
+                        }.onFailure { error ->
+                            AppLog.log("export", "failed: ${error.message}")
+                            android.widget.Toast.makeText(
+                                context,
+                                "导出失败：${error.message}",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
                         }
-                        context.startActivity(
-                            android.content.Intent.createChooser(share, "导出日志")
-                        )
                     } else {
                         android.widget.Toast.makeText(context, "暂无日志", android.widget.Toast.LENGTH_SHORT).show()
                     }
