@@ -293,7 +293,8 @@ fun ContentListContent(
                         onClearFilters = onClearFilters,
                         collapseFraction = collapseFraction,
                         onOpenFavorites = onOpenFavorites,
-                        onOpenCaptionSettings = onOpenCaptionSettings
+                        onOpenCaptionSettings = onOpenCaptionSettings,
+                        onExportLog = onExportLog
                     )
 
                     LazyColumn(
