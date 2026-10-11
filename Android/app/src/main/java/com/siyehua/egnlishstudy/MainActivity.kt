@@ -123,36 +123,21 @@ fun MainNavigation() {
                 },
                 onOpenFavorites = { navController.navigate("favorites") },
                 onExportLog = {
-                    android.util.Log.d("ExportLog", "onExportLog 触发")
                     AppLog.flush()
-                    val logFile = AppLog.file(context)
-                    android.util.Log.d("ExportLog", "logFile=$logFile exists=${logFile?.exists()} length=${logFile?.length()}")
-                    if (logFile != null && logFile.exists() && logFile.length() > 0) {
+                    val logText = AppLog.text(context)
+                    if (logText.isBlank()) {
+                        android.widget.Toast.makeText(context, "暂无日志", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
+                            putExtra(android.content.Intent.EXTRA_TEXT, logText)
+                        }
                         runCatching {
-                            val uri = androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                logFile
+                            context.startActivity(
+                                android.content.Intent.createChooser(share, "导出日志")
                             )
-                            val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                clipData = android.content.ClipData.newRawUri("English Study log", uri)
-                                putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
-                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            val chooser = android.content.Intent.createChooser(share, "导出日志").apply {
-                                // Android 13+ 的系统分享面板不会总是继承原 Intent 的 URI 授权，
-                                // 必须在 chooser 上也携带 ClipData 和读取权限。
-                                clipData = android.content.ClipData.newRawUri("English Study log", uri)
-                                addFlags(
-                                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                                        or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                )
-                            }
-                            context.startActivity(chooser)
                         }.onFailure { error ->
-                            android.util.Log.d("ExportLog", "导出失败: ${error.message}", error)
                             AppLog.log("export", "failed: ${error.message}")
                             android.widget.Toast.makeText(
                                 context,
@@ -160,9 +145,6 @@ fun MainNavigation() {
                                 android.widget.Toast.LENGTH_LONG
                             ).show()
                         }
-                    } else {
-                        android.util.Log.d("ExportLog", "日志为空，走暂无日志分支")
-                        android.widget.Toast.makeText(context, "暂无日志", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
                 onOpenCaptionSettings = {
