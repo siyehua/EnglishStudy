@@ -141,8 +141,15 @@ fun MainNavigation() {
                                 putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
                                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            val chooser = android.content.Intent.createChooser(share, "导出日志")
-                            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            val chooser = android.content.Intent.createChooser(share, "导出日志").apply {
+                                // Android 13+ 的系统分享面板不会总是继承原 Intent 的 URI 授权，
+                                // 必须在 chooser 上也携带 ClipData 和读取权限。
+                                clipData = android.content.ClipData.newRawUri("English Study log", uri)
+                                addFlags(
+                                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                        or android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            }
                             context.startActivity(chooser)
                         }.onFailure { error ->
                             android.util.Log.d("ExportLog", "导出失败: ${error.message}", error)
