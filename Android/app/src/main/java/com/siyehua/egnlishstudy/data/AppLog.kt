@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 object AppLog {
 
@@ -36,6 +37,11 @@ object AppLog {
     fun file(context: Context): File? {
         init(context)
         return logFile
+    }
+
+    /** 同步等待异步写队列清空，确保导出前日志已落盘。 */
+    fun flush() {
+        runCatching { executor.submit {}.get(3, TimeUnit.SECONDS) }
     }
 
     fun text(context: Context): String {

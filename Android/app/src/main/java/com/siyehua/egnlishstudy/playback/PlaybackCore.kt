@@ -6,6 +6,7 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.core.content.ContextCompat
+import com.siyehua.egnlishstudy.data.AppLog
 import com.siyehua.egnlishstudy.data.CaptionStyleStore
 import com.siyehua.egnlishstudy.data.TtsAudioManager
 import com.siyehua.egnlishstudy.data.TtsAudioResult
@@ -380,6 +381,7 @@ object PlaybackCore {
 
     fun toggleLessonLoop() {
         loopLesson = !loopLesson
+        AppLog.log("PlaybackCore", "toggleLessonLoop -> loopLesson=$loopLesson uiState=${_uiState.value::class.simpleName}")
         _loopingLesson.value = loopLesson
 
         when (val s = _uiState.value) {
@@ -588,6 +590,7 @@ object PlaybackCore {
     private fun finishPlayback() {
         val wasFullLesson = lessonPlayMode
         val wasLoopLesson = loopLesson
+        AppLog.log("PlaybackCore", "finishPlayback wasFullLesson=$wasFullLesson wasLoopLesson=$wasLoopLesson current=${_currentLesson.value?.title}")
         stop(resetState = false)
 
         if (wasFullLesson && wasLoopLesson) {
