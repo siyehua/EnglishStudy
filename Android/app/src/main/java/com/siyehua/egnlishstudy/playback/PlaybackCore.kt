@@ -73,6 +73,8 @@ object PlaybackCore {
     private var queueIndex = -1
 
     private var lessonPlayMode = false
+    // 防止 MediaPlayer completion 与进度检查在同一结尾重复进入 finishPlayback。
+    private var finishingPlayback = false
 
     private var loopLesson = false
     private val _loopingLesson = MutableStateFlow(false)
@@ -182,6 +184,8 @@ object PlaybackCore {
     }
 
     private fun play(content: Content) {
+        // 新一轮播放开始，允许之后再次处理结束事件。
+        finishingPlayback = false
         stop(resetState = false)
         lessonPlayMode = true
         _currentLesson.value = content
@@ -250,6 +254,7 @@ object PlaybackCore {
     }
 
     fun playSentence(sentence: String, sentenceIndex: Int) {
+        finishingPlayback = false
         val target = sentence.trim()
         if (target.isBlank()) return
         lessonPlayMode = false
@@ -282,6 +287,7 @@ object PlaybackCore {
         fallbackText: String,
         sentenceIndex: Int
     ) {
+        finishingPlayback = false
         currentTitle = content.title
         lessonPlayMode = false
         val audioUrl = content.audioUrl
@@ -315,6 +321,7 @@ object PlaybackCore {
     }
 
     fun loopSegmentUrl(url: String, sentenceIndex: Int, title: String? = null, sentence: String? = null) {
+        finishingPlayback = false
         title?.let { currentTitle = it }
         sentence?.let { currentSentence = it.take(80) }
         lessonPlayMode = false
@@ -346,8 +353,11 @@ object PlaybackCore {
         if (queueItems.map { it.id } == items.map { it.id } &&
             queueItems.getOrNull(queueIndex)?.id == currentId
         ) return
+        val playingId = _currentLesson.value?.id.orEmpty()
         queueItems = items
-        queueIndex = items.indexOfFirst { it.id == currentId }
+        // 首页刷新队列时优先保留正在播放的课程，不让当前课程被刷新结果改掉。
+        val keepId = playingId.ifBlank { currentId }
+        queueIndex = items.indexOfFirst { it.id == keepId }
     }
 
     fun toggleCaptionOverlay() {
@@ -460,6 +470,7 @@ object PlaybackCore {
     }
 
     fun playSegmentUrl(url: String, fallbackText: String, sentenceIndex: Int, title: String? = null, sentence: String? = null) {
+        finishingPlayback = false
         title?.let { currentTitle = it }
         sentence?.let { currentSentence = it.take(80) }
         lessonPlayMode = false
@@ -580,6 +591,7 @@ object PlaybackCore {
     }
 
     private fun advancePlaylist() {
+        if (finishingPlayback) return
         stopProgressUpdates()
         mediaPlayer?.release()
         mediaPlayer = null
@@ -588,17 +600,18 @@ object PlaybackCore {
     }
 
     private fun finishPlayback() {
+        if (finishingPlayback) return
+        finishingPlayback = true
         val wasFullLesson = lessonPlayMode
         val wasLoopLesson = loopLesson
-        AppLog.log("PlaybackCore", "finishPlayback wasFullLesson=$wasFullLesson wasLoopLesson=$wasLoopLesson current=${_currentLesson.value?.title}")
+        val current = _currentLesson.value
+        AppLog.log("PlaybackCore", "finishPlayback wasFullLesson=$wasFullLesson wasLoopLesson=$wasLoopLesson current=${current?.title}")
         stop(resetState = false)
 
-        if (wasFullLesson && wasLoopLesson) {
-            val current = _currentLesson.value
-            if (current != null) {
-                playAll(current)
-                return
-            }
+        if (wasFullLesson && wasLoopLesson && current != null) {
+            // 整课循环固定重播当前课程，不能落入下一课队列逻辑。
+            playAll(current)
+            return
         }
         if (wasFullLesson) {
             val next = queueItems.getOrNull(queueIndex + 1)
