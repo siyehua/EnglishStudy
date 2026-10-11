@@ -8,6 +8,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 object AppLog {
 
@@ -47,6 +49,26 @@ object AppLog {
     fun text(context: Context): String {
         val file = file(context) ?: return ""
         return runCatching { file.readText() }.getOrDefault("")
+    }
+
+    /** 将当前日志及轮转备份打成 zip，供系统分享。 */
+    fun createExportArchive(context: Context): File? {
+        flush()
+        val current = file(context) ?: return null
+        val old = File(current.parentFile, OLD_FILE_NAME)
+        val sources = listOf(current, old).filter { it.exists() && it.length() > 0 }
+        if (sources.isEmpty()) return null
+        val archive = File(current.parentFile, "english-study-logs.zip")
+        return runCatching {
+            ZipOutputStream(archive.outputStream().buffered()).use { zip ->
+                sources.forEach { source ->
+                    zip.putNextEntry(ZipEntry(source.name))
+                    source.inputStream().buffered().use { input -> input.copyTo(zip) }
+                    zip.closeEntry()
+                }
+            }
+            archive
+        }.getOrNull()
     }
 
     fun clear(context: Context) {

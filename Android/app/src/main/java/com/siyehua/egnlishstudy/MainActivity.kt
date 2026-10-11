@@ -123,20 +123,28 @@ fun MainNavigation() {
                 },
                 onOpenFavorites = { navController.navigate("favorites") },
                 onExportLog = {
-                    AppLog.flush()
-                    val logText = AppLog.text(context)
-                    if (logText.isBlank()) {
+                    val archive = AppLog.createExportArchive(context)
+                    if (archive == null) {
                         android.widget.Toast.makeText(context, "暂无日志", android.widget.Toast.LENGTH_SHORT).show()
                     } else {
                         val share = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study log")
-                            putExtra(android.content.Intent.EXTRA_TEXT, logText)
+                            type = "application/zip"
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.fileprovider",
+                                archive
+                            )
+                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                            clipData = android.content.ClipData.newRawUri("English Study logs", uri)
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "English Study logs")
+                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         runCatching {
-                            context.startActivity(
-                                android.content.Intent.createChooser(share, "导出日志")
-                            )
+                            val chooser = android.content.Intent.createChooser(share, "导出日志").apply {
+                                clipData = share.clipData
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(chooser)
                         }.onFailure { error ->
                             AppLog.log("export", "failed: ${error.message}")
                             android.widget.Toast.makeText(
