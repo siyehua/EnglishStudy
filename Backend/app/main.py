@@ -109,6 +109,14 @@ def _precache_enabled() -> bool:
     return get_config_value("PRECACHE_AUDIO", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _precache_limit() -> int:
+    """How many lessons to warm (0 = all)."""
+    try:
+        return max(0, int(get_config_value("PRECACHE_AUDIO_LIMIT", "0")))
+    except ValueError:
+        return 0
+
+
 def start_audio_precache() -> None:
     """Warm the audio cache in the background so first play is instant."""
     if not _precache_enabled():
@@ -120,13 +128,16 @@ def start_audio_precache() -> None:
         except Exception:  # noqa: BLE001
             logger.warning("audio precache: cannot load lesson index")
             return
+        limit = _precache_limit()
+        if limit:
+            numbers = numbers[:limit]
         logger.info("audio precache: warming %s lessons", len(numbers))
         for number in numbers:
             path = AUDIO_CACHE_DIR / f"{number}.mp3"
             if path.exists() and path.stat().st_size > 0:
                 continue
             ensure_lesson_audio(number)
-            time.sleep(1)
+            time.sleep(2)
         logger.info("audio precache: done")
 
     threading.Thread(target=_worker, name="audio-precache", daemon=True).start()
