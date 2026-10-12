@@ -197,8 +197,33 @@ class TtsAudioManager(context: Context) {
             onFailure = { WordAudioResult.Failure(it.message ?: "Dictionary audio download failed.") }
         )
 
-    suspend fun ensureRealAudioForContent(content: Content): WordAudioResult =
-        ensureContentAudio(content.audioUrl, "content")
+    suspend fun ensureRealAudioForContent(content: Content): WordAudioResult {
+        val url = content.audioUrl?.let(::normalizeLessonAudioUrl)
+        AppLog.log("audio", "lesson audio url=$url (cached=${content.audioUrl})")
+        val result = ensureContentAudio(url, "content")
+        val label = when (result) {
+            is WordAudioResult.Success -> "success"
+            is WordAudioResult.Failure -> "failure: ${result.message}"
+        }
+        AppLog.log("audio", "lesson audio result=$label title=${content.title}")
+        return result
+    }
+
+    /**
+     * Old cached content still points at cdn.jsdelivr.net, which is slow/unreliable
+     * and used to make playback fall back to TTS. Rewrite those lesson-audio URLs to
+     * our own backend proxy so playback always downloads from handwriter.asia.
+     */
+    private fun normalizeLessonAudioUrl(url: String): String {
+        val marker = "/englishpod365@main/"
+        val index = url.indexOf(marker)
+        if (index < 0) return url
+        val parts = url.substring(index + marker.length).split('/')
+        if (parts.size < 3) return url
+        val lesson = parts[1].trimStart('0').ifBlank { "0" }
+        if (!lesson.all { it.isDigit() }) return url
+        return "${WordFormApiClient.DEFAULT_BASE_URL}/ting/audio?lesson=$lesson"
+    }
 
     suspend fun ensureRemoteAudio(url: String): WordAudioResult =
         ensureContentAudio(url, "seg")
@@ -319,10 +344,23 @@ class TtsAudioManager(context: Context) {
     }
 
     private fun downloadAudio(audioUrl: String): ByteArray {
+        var lastError: Exception? = null
+        repeat(2) { attempt ->
+            try {
+                return downloadAudioOnce(audioUrl)
+            } catch (error: Exception) { // noqa
+                lastError = error
+                if (attempt == 0) runCatching { Thread.sleep(700) }
+            }
+        }
+        throw lastError ?: IllegalStateException("Audio download failed.")
+    }
+
+    private fun downloadAudioOnce(audioUrl: String): ByteArray {
         val connection = (URL(audioUrl).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            connectTimeout = REQUEST_TIMEOUT_MS
-            readTimeout = REQUEST_TIMEOUT_MS
+            connectTimeout = AUDIO_TIMEOUT_MS
+            readTimeout = AUDIO_TIMEOUT_MS
             setRequestProperty("User-Agent", USER_AGENT)
             setRequestProperty("Accept", "audio/mpeg, audio/wav, audio/*, */*")
         }
@@ -378,6 +416,7 @@ class TtsAudioManager(context: Context) {
         private const val AUDIO_DIR_NAME = "tts_audio"
         private const val WORD_AUDIO_DIR_NAME = "word_tts_audio"
         private const val REQUEST_TIMEOUT_MS = 60_000
+        private const val AUDIO_TIMEOUT_MS = 120_000
         private const val MAX_SENTENCES_PER_CONTENT = 80
         private const val MIN_SENTENCE_LENGTH = 2
         private const val HASH_LENGTH = 16
