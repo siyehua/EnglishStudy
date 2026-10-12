@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from time import monotonic
 
+from app.config import get_config_value
 from app.schemas import (
     ContentFilterOptionResponse,
     ContentFiltersResponse,
@@ -30,6 +31,11 @@ ENGLISH_POD_LESSON_URL_TEMPLATE = (
     "https://cdn.jsdelivr.net/gh/bitter999/EnglishPod@main/data/lesson_{number}.json"
 )
 LINYUANZKY_BASE = "https://cdn.jsdelivr.net/gh/linyuanzky/englishpod365@main/"
+# Public base URL of this backend, used to build absolute audio links the app
+# can download directly (proxied + cached here instead of hitting jsdelivr).
+PUBLIC_BASE_URL = get_config_value(
+    "PUBLIC_BASE_URL", "https://handwriter.asia/english"
+).rstrip("/")
 AUDIO_MAP_PATH = Path(__file__).resolve().parent / "englishpod_audio_map.json"
 TIMESTAMPS_DIR = Path(__file__).resolve().parent / "englishpod_timestamps"
 
@@ -231,7 +237,7 @@ def lesson_to_content_items(
         return []
 
     content = lesson.get("content") or []
-    _, full_url, _ = englishpod_audio_urls(number)
+    audio_url = lesson_audio_proxy_url(number)
 
     # Use the downloaded transcript as-is (each line already has accurate text,
     # Chinese translation and timestamps). No re-recognition, no re-cutting.
@@ -272,7 +278,7 @@ def lesson_to_content_items(
             source=ENGLISH_POD_SOURCE_NAME,
             date="",
             lines=lines,
-            audioUrl=full_url,
+            audioUrl=audio_url,
             audioStart=start,
             audioEnd=end,
         )
@@ -446,6 +452,11 @@ def englishpod_original_audio_url(number: int) -> str | None:
         return None
     rel = str(meta.get("audio") or "").lstrip("./")
     return ENGLISH_POD_RAW_BASE + rel if rel else None
+
+
+def lesson_audio_proxy_url(number: int) -> str:
+    """Absolute URL of the full-lesson audio served by this backend."""
+    return f"{PUBLIC_BASE_URL}/ting/audio?lesson={number}"
 
 
 def englishpod_audio_urls(number: int) -> tuple[str | None, str | None, str | None]:

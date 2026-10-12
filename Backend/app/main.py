@@ -2,15 +2,22 @@ import logging
 import os
 import subprocess
 import tempfile
+import threading
+import time
 import urllib.request
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response as RawResponse
+from fastapi.responses import FileResponse, Response as RawResponse
 
 from app.cache import store as cache_store
-from app.content.client import ContentClient, englishpod_original_audio_url
+from app.config import get_config_value
+from app.content.client import (
+    ContentClient,
+    download_lesson_index,
+    englishpod_original_audio_url,
+)
 from app.dictionary.client import DictionaryClient
 from app.meaning.client import WordMeaningClient
 from app.schemas import (
@@ -77,6 +84,52 @@ def ensure_lesson_audio(number: int) -> Path | None:
     except Exception:
         return None
     return path if path.exists() and path.stat().st_size > 0 else None
+
+
+@app.get("/ting/audio")
+def ting_audio(lesson: int) -> FileResponse:
+    """Whole-lesson audio served from our own cache.
+
+    The first request downloads the original once and caches it on disk; every
+    later request is served locally. The app downloads this instead of pulling
+    the file straight from jsdelivr, which is often slow/unreliable and used to
+    make playback fall back to TTS.
+    """
+    audio = ensure_lesson_audio(lesson)
+    if audio is None:
+        raise HTTPException(status_code=404, detail="audio unavailable")
+    return FileResponse(
+        path=str(audio),
+        media_type="audio/mpeg",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+def _precache_enabled() -> bool:
+    return get_config_value("PRECACHE_AUDIO", "0").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def start_audio_precache() -> None:
+    """Warm the audio cache in the background so first play is instant."""
+    if not _precache_enabled():
+        return
+
+    def _worker() -> None:
+        try:
+            numbers = sorted(download_lesson_index())
+        except Exception:  # noqa: BLE001
+            logger.warning("audio precache: cannot load lesson index")
+            return
+        logger.info("audio precache: warming %s lessons", len(numbers))
+        for number in numbers:
+            path = AUDIO_CACHE_DIR / f"{number}.mp3"
+            if path.exists() and path.stat().st_size > 0:
+                continue
+            ensure_lesson_audio(number)
+            time.sleep(1)
+        logger.info("audio precache: done")
+
+    threading.Thread(target=_worker, name="audio-precache", daemon=True).start()
 
 
 @app.get("/ting/segment")
@@ -234,6 +287,11 @@ def fetch_contents(request: ContentFetchRequest) -> ContentFetchResponse:
         sources=request.sources,
     )
     return ContentFetchResponse(items=items, filters=filters)
+
+
+@app.on_event("startup")
+def _warm_audio_cache() -> None:
+    start_audio_precache()
 
 
 if __name__ == "__main__":
