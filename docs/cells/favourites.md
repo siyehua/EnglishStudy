@@ -19,6 +19,9 @@
 | `ui/screens/SentenceDetailScreen.kt` | 句子详情 |
 | `ui/wordinsight/WordInsightScreen.kt` | 单词详情（全屏释义） |
 | `data/ContentCacheDatabase.kt` | `favorite` 表读写 |
+| `data/favorites/FavoritesSync.kt` | 云端同步调度（本地改动后推送 / 启动与进收藏页时拉取） |
+| `data/favorites/FavoritesApiClient.kt` | `POST /favorites/sync` 的 HTTP 客户端 |
+| `Backend/app/favorites/store.py` | 服务端收藏存储（SQLite，含墓碑） |
 
 ## 数据结构
 
@@ -33,6 +36,9 @@
 | `translation` | 中文翻译 |
 | `lessonTitle` | 课程名（用于展示与定位） |
 | `startTime` / `endTime` | 在原课音频中的区间 |
+| `syncId` | 同步用的稳定 id（首次写入时生成 UUID） |
+| `updatedAt` | 最后一次修改时间（毫秒），同步时用于比较新旧 |
+| `deleted` | 墓碑标记，删除不是真删而是置 1 |
 
 句子收藏的去重键是 `(kind, text, lessonTitle, start)`。
 
@@ -172,6 +178,58 @@
   `ensureAudioForWord` 合成读音。
 
 也就是说"有原课音频就播原声，没有就用 TTS"，两条路径共用同一套缓存。
+
+## 云端同步
+
+收藏会同步到服务端，**卸载重装后自动恢复**。
+
+单用户场景（当前只有本人使用），服务端**不做账号鉴权**，所有收藏存在同一个桶里
+（`bucket = "default"`，服务端默认值）。
+
+### 协议
+
+`POST {BASE}/favorites/sync`
+
+```json
+{
+  "bucket": "default",
+  "items": [
+    { "syncId": "…", "kind": "word", "text": "apple", "audioUrl": null,
+      "contentId": "", "translation": "苹果", "lessonTitle": "手动添加",
+      "startTime": 0.0, "endTime": 0.0, "updatedAt": 1750000000000, "deleted": false }
+  ]
+}
+```
+
+响应：`{ "items": [ …同结构… ], "serverTime": 1750000000000 }`
+
+- 请求即「推送本地全量（含墓碑）」，响应即「服务端全量（含墓碑）」，一次往返完成双向同步。
+- 服务端按 `syncId` 归并，冲突时 **`updatedAt` 大的赢**（LWW）。
+- 删除写墓碑（`deleted = true`）而不是真删，否则删掉的收藏会在下次拉取时复活。
+
+### 触发时机
+
+| 时机 | 行为 |
+| --- | --- |
+| `addFavorite` / `deleteFavorite` / `deleteFavoriteByKey` / `updateFavoriteTranslation` | 去抖 1.5s 后推送 |
+| App 启动（`MainNavigation`） | 立即拉取一次 |
+| 进入收藏页（`ON_RESUME`） | 拉取后刷新列表 |
+
+拉取到服务端数据后写回本地，界面刷新即可看到别的设备/重装前的收藏。
+
+### 数据库迁移（v32 → v33）
+
+`favorite` 表新增 `sync_id` / `updated_at` / `deleted` 三列：
+
+- `updated_at` 用旧的 `created_at` 回填；
+- `sync_id` 为空的行逐条补一个 UUID；
+- 迁移写在 `onUpgrade` **最前面**，不能放在 `if (oldVersion < 32)` 分支之后
+  （那个分支会提前 `return`，导致新增列永远加不上）。
+
+### 已知限制
+
+- 没有账号体系，服务端是单桶；换手机靠同一个后端地址恢复。
+- 服务端不做鉴权，任何人知道地址且指定 `bucket` 就能读写该桶（当前内网/自用场景可接受）。
 
 ## 句子详情
 

@@ -12,6 +12,7 @@ import com.siyehua.egnlishstudy.model.ContentType
 import com.siyehua.egnlishstudy.model.Dialogue
 import com.siyehua.egnlishstudy.model.DialogueLine
 import com.siyehua.egnlishstudy.model.News
+import com.siyehua.egnlishstudy.data.favorites.FavoritesSync
 import com.siyehua.egnlishstudy.data.wordform.WordFormRelation
 import com.siyehua.egnlishstudy.data.wordform.WordFormResponse
 import com.siyehua.egnlishstudy.data.wordform.WordFormVariantGroup
@@ -28,6 +29,8 @@ import java.security.MessageDigest
 
 class ContentCacheDatabase(context: Context) :
     SQLiteOpenHelper(context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    private val appContext: Context = context.applicationContext
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -65,6 +68,24 @@ class ContentCacheDatabase(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // 收藏同步字段：放到最前面，避免被其它分支的提前 return 跳过。
+        // 表在 oldVersion < 29 时才会创建（带新字段），所以只在 29..32 时补列。
+        if (oldVersion >= 29 && oldVersion < 33) {
+            db.execSQL(
+                "ALTER TABLE $TABLE_FAVORITES ADD COLUMN $COLUMN_FAVORITE_SYNC_ID TEXT NOT NULL DEFAULT ''"
+            )
+            db.execSQL(
+                "ALTER TABLE $TABLE_FAVORITES ADD COLUMN $COLUMN_FAVORITE_UPDATED_AT INTEGER NOT NULL DEFAULT 0"
+            )
+            db.execSQL(
+                "ALTER TABLE $TABLE_FAVORITES ADD COLUMN $COLUMN_FAVORITE_DELETED INTEGER NOT NULL DEFAULT 0"
+            )
+            db.execSQL(
+                "UPDATE $TABLE_FAVORITES SET $COLUMN_FAVORITE_UPDATED_AT = $COLUMN_FAVORITE_CREATED_AT " +
+                    "WHERE $COLUMN_FAVORITE_UPDATED_AT = 0"
+            )
+            backfillFavoriteSyncIds(db)
+        }
         if (oldVersion < 32) {
             // key 规则变更：词形/读音拆分不再依赖句子，直接重建这几张表
             listOf(
@@ -273,13 +294,33 @@ class ContentCacheDatabase(context: Context) :
                 $COLUMN_FAVORITE_LESSON_TITLE TEXT NOT NULL DEFAULT '',
                 $COLUMN_FAVORITE_START REAL NOT NULL DEFAULT 0,
                 $COLUMN_FAVORITE_END REAL NOT NULL DEFAULT 0,
-                $COLUMN_FAVORITE_CREATED_AT INTEGER NOT NULL
+                $COLUMN_FAVORITE_CREATED_AT INTEGER NOT NULL,
+                $COLUMN_FAVORITE_SYNC_ID TEXT NOT NULL DEFAULT '',
+                $COLUMN_FAVORITE_UPDATED_AT INTEGER NOT NULL DEFAULT 0,
+                $COLUMN_FAVORITE_DELETED INTEGER NOT NULL DEFAULT 0
             )
             """.trimIndent()
         )
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_favorite_kind ON $TABLE_FAVORITES($COLUMN_FAVORITE_KIND)"
         )
+    }
+
+    /** 给历史收藏补一个稳定的同步 id（老版本没有这个字段）。 */
+    private fun backfillFavoriteSyncIds(db: SQLiteDatabase) {
+        val ids = mutableListOf<Long>()
+        db.rawQuery(
+            "SELECT $COLUMN_FAVORITE_ID FROM $TABLE_FAVORITES WHERE $COLUMN_FAVORITE_SYNC_ID = ''",
+            null
+        ).use { cursor ->
+            while (cursor.moveToNext()) ids += cursor.getLong(0)
+        }
+        ids.forEach { id ->
+            db.execSQL(
+                "UPDATE $TABLE_FAVORITES SET $COLUMN_FAVORITE_SYNC_ID = ? WHERE $COLUMN_FAVORITE_ID = ?",
+                arrayOf(java.util.UUID.randomUUID().toString(), id)
+            )
+        }
     }
 
     fun addFavorite(record: FavoriteRecord): Long =
@@ -300,12 +341,35 @@ class ContentCacheDatabase(context: Context) :
                         COLUMN_FAVORITE_CREATED_AT,
                         if (record.createdAt > 0) record.createdAt else System.currentTimeMillis()
                     )
+                    put(
+                        COLUMN_FAVORITE_SYNC_ID,
+                        record.syncId.ifBlank { java.util.UUID.randomUUID().toString() }
+                    )
+                    put(
+                        COLUMN_FAVORITE_UPDATED_AT,
+                        if (record.updatedAt > 0) record.updatedAt else System.currentTimeMillis()
+                    )
+                    put(COLUMN_FAVORITE_DELETED, 0)
                 },
                 SQLiteDatabase.CONFLICT_REPLACE
             )
-        }
+        }.also { FavoritesSync.schedule(appContext) }
 
     fun loadFavorites(): List<FavoriteRecord> =
+        readableDatabase.use { db ->
+            db.query(
+                TABLE_FAVORITES,
+                null,
+                "$COLUMN_FAVORITE_DELETED = 0",
+                null,
+                null,
+                null,
+                "$COLUMN_FAVORITE_CREATED_AT DESC"
+            ).use { cursor -> cursor.toFavoriteRecords() }
+        }
+
+    /** 同步用：包含已删除的墓碑，让「删除」也能同步到服务端。 */
+    fun loadFavoritesForSync(): List<FavoriteRecord> =
         readableDatabase.use { db ->
             db.query(
                 TABLE_FAVORITES,
@@ -314,58 +378,123 @@ class ContentCacheDatabase(context: Context) :
                 null,
                 null,
                 null,
-                "$COLUMN_FAVORITE_CREATED_AT DESC"
-            ).use { cursor ->
-                buildList {
-                    while (cursor.moveToNext()) {
-                        add(
-                            FavoriteRecord(
-                                id = cursor.getLong(cursor.columnIndex(COLUMN_FAVORITE_ID)),
-                                kind = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_KIND)),
-                                text = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_TEXT)),
-                                audioUrl = cursor.getNullableString(COLUMN_FAVORITE_AUDIO_URL),
-                                contentId = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_CONTENT_ID)),
-                                translation = cursor.getString(cursor.columnIndex(COLUMN_FAVORITE_TRANSLATION)),
-                                lessonTitle = cursor.getString(
-                                    cursor.columnIndex(COLUMN_FAVORITE_LESSON_TITLE)
-                                ),
-                                startTime = cursor.getDouble(cursor.columnIndex(COLUMN_FAVORITE_START)),
-                                endTime = cursor.getDouble(cursor.columnIndex(COLUMN_FAVORITE_END)),
-                                createdAt = cursor.getLong(cursor.columnIndex(COLUMN_FAVORITE_CREATED_AT))
-                            )
+                "$COLUMN_FAVORITE_UPDATED_AT ASC"
+            ).use { cursor -> cursor.toFavoriteRecords() }
+        }
+
+    /** 应用服务端返回的全量收藏（按 updatedAt 最后写入者优先）。 */
+    fun applySyncItems(items: List<FavoriteRecord>) {
+        if (items.isEmpty()) return
+        writableDatabase.use { db ->
+            db.beginTransaction()
+            try {
+                items.forEach { item ->
+                    if (item.syncId.isBlank()) return@forEach
+                    val localUpdatedAt = db.rawQuery(
+                        "SELECT $COLUMN_FAVORITE_UPDATED_AT FROM $TABLE_FAVORITES " +
+                            "WHERE $COLUMN_FAVORITE_SYNC_ID = ? LIMIT 1",
+                        arrayOf(item.syncId)
+                    ).use { if (it.moveToFirst()) it.getLong(0) else -1L }
+                    if (localUpdatedAt > item.updatedAt) return@forEach
+                    val values = ContentValues().apply {
+                        put(COLUMN_FAVORITE_SYNC_ID, item.syncId)
+                        put(COLUMN_FAVORITE_KIND, item.kind)
+                        put(COLUMN_FAVORITE_TEXT, item.text)
+                        put(COLUMN_FAVORITE_AUDIO_URL, item.audioUrl)
+                        put(COLUMN_FAVORITE_CONTENT_ID, item.contentId)
+                        put(COLUMN_FAVORITE_TRANSLATION, item.translation)
+                        put(COLUMN_FAVORITE_LESSON_TITLE, item.lessonTitle)
+                        put(COLUMN_FAVORITE_START, item.startTime)
+                        put(COLUMN_FAVORITE_END, item.endTime)
+                        put(COLUMN_FAVORITE_UPDATED_AT, item.updatedAt)
+                        put(COLUMN_FAVORITE_DELETED, if (item.deleted) 1 else 0)
+                    }
+                    val updated = db.update(
+                        TABLE_FAVORITES,
+                        values,
+                        "$COLUMN_FAVORITE_SYNC_ID = ?",
+                        arrayOf(item.syncId)
+                    )
+                    if (updated == 0) {
+                        values.put(
+                            COLUMN_FAVORITE_CREATED_AT,
+                            if (item.createdAt > 0) item.createdAt else item.updatedAt
                         )
+                        db.insert(TABLE_FAVORITES, null, values)
                     }
                 }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
             }
         }
+    }
 
     fun updateFavoriteTranslation(id: Long, translation: String) {
         writableDatabase.use { db ->
             db.update(
                 TABLE_FAVORITES,
-                ContentValues().apply { put(COLUMN_FAVORITE_TRANSLATION, translation) },
+                ContentValues().apply {
+                    put(COLUMN_FAVORITE_TRANSLATION, translation)
+                    put(COLUMN_FAVORITE_UPDATED_AT, System.currentTimeMillis())
+                },
                 "$COLUMN_FAVORITE_ID = ?",
                 arrayOf(id.toString())
             )
         }
+        FavoritesSync.schedule(appContext)
     }
 
     fun deleteFavorite(id: Long) {
-        writableDatabase.use { db ->
-            db.delete(TABLE_FAVORITES, "$COLUMN_FAVORITE_ID = ?", arrayOf(id.toString()))
-        }
+        tombstoneFavorite("$COLUMN_FAVORITE_ID = ?", arrayOf(id.toString()))
     }
 
     fun deleteFavoriteByKey(kind: String, text: String, lessonTitle: String, startTime: Double) {
+        tombstoneFavorite(
+            "$COLUMN_FAVORITE_KIND = ? AND $COLUMN_FAVORITE_TEXT = ? " +
+                "AND $COLUMN_FAVORITE_LESSON_TITLE = ? AND $COLUMN_FAVORITE_START = ?",
+            arrayOf(kind, text, lessonTitle, startTime.toString())
+        )
+    }
+
+    /** 删除改成写墓碑（deleted = 1），这样删除也能同步到服务端。 */
+    private fun tombstoneFavorite(where: String, args: Array<String>) {
         writableDatabase.use { db ->
-            db.delete(
+            db.update(
                 TABLE_FAVORITES,
-                "$COLUMN_FAVORITE_KIND = ? AND $COLUMN_FAVORITE_TEXT = ? " +
-                    "AND $COLUMN_FAVORITE_LESSON_TITLE = ? AND $COLUMN_FAVORITE_START = ?",
-                arrayOf(kind, text, lessonTitle, startTime.toString())
+                ContentValues().apply {
+                    put(COLUMN_FAVORITE_DELETED, 1)
+                    put(COLUMN_FAVORITE_UPDATED_AT, System.currentTimeMillis())
+                },
+                where,
+                args
             )
         }
+        FavoritesSync.schedule(appContext)
     }
+
+    private fun android.database.Cursor.toFavoriteRecords(): List<FavoriteRecord> =
+        buildList {
+            while (moveToNext()) {
+                add(
+                    FavoriteRecord(
+                        id = getLong(columnIndex(COLUMN_FAVORITE_ID)),
+                        kind = getString(columnIndex(COLUMN_FAVORITE_KIND)),
+                        text = getString(columnIndex(COLUMN_FAVORITE_TEXT)),
+                        audioUrl = getNullableString(COLUMN_FAVORITE_AUDIO_URL),
+                        contentId = getString(columnIndex(COLUMN_FAVORITE_CONTENT_ID)),
+                        translation = getString(columnIndex(COLUMN_FAVORITE_TRANSLATION)),
+                        lessonTitle = getString(columnIndex(COLUMN_FAVORITE_LESSON_TITLE)),
+                        startTime = getDouble(columnIndex(COLUMN_FAVORITE_START)),
+                        endTime = getDouble(columnIndex(COLUMN_FAVORITE_END)),
+                        createdAt = getLong(columnIndex(COLUMN_FAVORITE_CREATED_AT)),
+                        syncId = getNullableString(COLUMN_FAVORITE_SYNC_ID).orEmpty(),
+                        updatedAt = getLong(columnIndex(COLUMN_FAVORITE_UPDATED_AT)),
+                        deleted = getInt(columnIndex(COLUMN_FAVORITE_DELETED)) == 1
+                    )
+                )
+            }
+        }
 
     fun isFavorited(kind: String, text: String, lessonTitle: String, startTime: Double): Boolean =
         readableDatabase.use { db ->
@@ -1252,7 +1381,7 @@ class ContentCacheDatabase(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "english_study_cache.db"
-        private const val DATABASE_VERSION = 32
+        private const val DATABASE_VERSION = 33
         internal const val CACHE_KEY_VERSION = "v2"
 
         private const val TABLE_CONTENT = "content_cache"
@@ -1350,6 +1479,9 @@ class ContentCacheDatabase(context: Context) :
         private const val COLUMN_FAVORITE_START = "start_time"
         private const val COLUMN_FAVORITE_END = "end_time"
         private const val COLUMN_FAVORITE_CREATED_AT = "created_at"
+        private const val COLUMN_FAVORITE_SYNC_ID = "sync_id"
+        private const val COLUMN_FAVORITE_UPDATED_AT = "updated_at"
+        private const val COLUMN_FAVORITE_DELETED = "deleted"
 
         private const val LINE_SEPARATOR = "\n---LINE---\n"
         private const val SPEAKER_SEPARATOR = "::"
@@ -1386,5 +1518,8 @@ data class FavoriteRecord(
     val lessonTitle: String,
     val startTime: Double = 0.0,
     val endTime: Double = 0.0,
-    val createdAt: Long = 0
+    val createdAt: Long = 0,
+    val syncId: String = "",
+    val updatedAt: Long = 0,
+    val deleted: Boolean = false
 )

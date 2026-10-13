@@ -15,6 +15,7 @@ import com.siyehua.egnlishstudy.data.AppLog
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.LessonQueueHolder
 import com.siyehua.egnlishstudy.data.FavoriteRecord
+import com.siyehua.egnlishstudy.data.favorites.FavoritesSync
 import com.siyehua.egnlishstudy.model.*
 import com.siyehua.egnlishstudy.playback.AudioUiState
 import com.siyehua.egnlishstudy.playback.PlaybackCore
@@ -78,6 +79,11 @@ fun MainNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val database = remember { ContentCacheDatabase(context) }
+
+    // App 启动时从云端拉一次收藏（卸载重装后靠这里恢复）
+    LaunchedEffect(Unit) {
+        FavoritesSync.syncNow(context)
+    }
 
     val activity = context as? androidx.activity.ComponentActivity
     val audioViewModel: ContentAudioViewModel = if (activity != null) {

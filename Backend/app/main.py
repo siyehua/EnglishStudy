@@ -18,11 +18,15 @@ from app.content.client import (
     download_lesson_index,
     englishpod_original_audio_url,
 )
+from app.favorites import store as favorites_store
 from app.dictionary.client import DictionaryClient
 from app.meaning.client import WordMeaningClient
 from app.schemas import (
     ContentFetchRequest,
     ContentFetchResponse,
+    FavoriteItem,
+    FavoritesSyncRequest,
+    FavoritesSyncResponse,
     TtsAudioRequest,
     WordFormRequest,
     WordFormResponse,
@@ -57,6 +61,7 @@ meaning_client = WordMeaningClient()
 tts_client = TtsClient()
 content_client = ContentClient()
 cache_store.init_db()
+favorites_store.init_db()
 phonics_client = WordPhonicsClient()
 logger = logging.getLogger("uvicorn.error")
 
@@ -267,6 +272,22 @@ def resolve_word_insight(request: WordInsightRequest) -> WordInsightResponse:
         pronunciation=pronunciation,
         phonics=phonics,
         meaning=meaning,
+    )
+
+
+@app.post("/favorites/sync", response_model=FavoritesSyncResponse)
+def sync_favorites(request: FavoritesSyncRequest) -> FavoritesSyncResponse:
+    """收藏同步（单用户）。
+
+    客户端把本地收藏（含本地新增/删除）上报，服务端按 updatedAt 做最后写入者优先
+    合并，并把全量（含墓碑）返回，客户端据此对齐本地。
+    """
+    merged = favorites_store.merge(
+        request.bucket, [item.model_dump() for item in request.items]
+    )
+    return FavoritesSyncResponse(
+        items=[FavoriteItem(**item) for item in merged],
+        serverTime=int(time.time() * 1000),
     )
 
 

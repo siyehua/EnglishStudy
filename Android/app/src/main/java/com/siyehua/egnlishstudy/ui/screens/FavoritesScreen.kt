@@ -63,6 +63,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.siyehua.egnlishstudy.data.ContentCacheDatabase
 import com.siyehua.egnlishstudy.data.FavoriteRecord
 import com.siyehua.egnlishstudy.data.ManualFavorite
+import com.siyehua.egnlishstudy.data.favorites.FavoritesSync
 import com.siyehua.egnlishstudy.data.wordform.WordMeaningRepository
 import com.siyehua.egnlishstudy.ui.theme.StudyGreen
 import com.siyehua.egnlishstudy.ui.theme.StudyYellow
@@ -92,6 +93,11 @@ fun FavoritesScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 reloadFavorites()
+                // 进收藏页时先从云端拉一次（卸载重装后靠这一步恢复收藏）
+                scope.launch {
+                    FavoritesSync.syncNow(context)
+                    reloadFavorites()
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

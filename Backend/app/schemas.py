@@ -180,3 +180,27 @@ class ContentFiltersResponse(BaseModel):
 class ContentFetchResponse(BaseModel):
     items: list[ContentItemResponse]
     filters: ContentFiltersResponse | None = None
+
+
+class FavoriteItem(BaseModel):
+    syncId: str = Field(..., min_length=1)
+    kind: str = "word"
+    text: str = ""
+    audioUrl: str | None = None
+    contentId: str = ""
+    translation: str = ""
+    lessonTitle: str = ""
+    startTime: float = 0.0
+    endTime: float = 0.0
+    updatedAt: int = 0
+    deleted: bool = False
+
+
+class FavoritesSyncRequest(BaseModel):
+    bucket: str = "default"
+    items: list[FavoriteItem] = []
+
+
+class FavoritesSyncResponse(BaseModel):
+    items: list[FavoriteItem]
+    serverTime: int

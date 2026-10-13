@@ -33,10 +33,10 @@ android {
         targetSdk = 36
         
         // Internal version number used for updates
-        versionCode = 2
+        versionCode = 3
         
         // Human-readable version string
-        versionName = "2.0"
+        versionName = "2.1"
 
         // Runner for instrumentation tests
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
