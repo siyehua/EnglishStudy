@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>单词本 · 设置</title>
+<style>
+  body {
+    margin: 0;
+    padding: 32px 24px;
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #1f2a24;
+    background: #f6f8f6;
+  }
+  .card {
+    max-width: 520px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e3e9e5;
+    border-radius: 12px;
+    padding: 22px 24px;
+  }
+  h1 { margin: 0 0 4px; font-size: 18px; }
+  p.hint { margin: 0 0 18px; color: #6b7a72; font-size: 13px; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid #cfd8d2;
+    border-radius: 8px;
+    font-size: 14px;
+    color: inherit;
+  }
+  input:focus { outline: 2px solid #2E8B57; outline-offset: -1px; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 14px; }
+  button {
+    border: none;
+    background: #2E8B57;
+    color: #fff;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button.ghost { background: #eef3f0; color: #2E8B57; }
+  #status { color: #2E8B57; font-size: 13px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>单词本</h1>
+    <p class="hint">收藏会保存到这台服务器，手机端 App 打开收藏页时会自动同步过来。</p>
+    <label for="backendBase">后端地址</label>
+    <input id="backendBase" type="text" placeholder="https://handwriter.asia/english" autocomplete="off">
+    <div class="row">
+      <button id="save">保存</button>
+      <button id="reset" class="ghost">恢复默认</button>
+      <span id="status"></span>
+    </div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

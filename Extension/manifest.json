@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "英语学习 · 添加到单词本",
+  "version": "1.0.0",
+  "description": "选中网页上的英文，右键即可加入单词本，与手机端收藏同步。",
+  "permissions": ["contextMenus", "storage", "scripting", "activeTab"],
+  "host_permissions": [
+    "https://handwriter.asia/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "添加到单词本",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
