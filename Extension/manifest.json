@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "英语学习 · 添加到单词本",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "选中网页上的英文，右键即可加入单词本，与手机端收藏同步。",
   "permissions": ["contextMenus", "storage", "scripting", "activeTab"],
   "host_permissions": [

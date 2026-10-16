@@ -60,7 +60,12 @@
     color: #6b7a72;
     border-top: 1px solid #e3e9e5;
     margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .section .title { flex: 1; }
+  .section .freshness { color: #9aa8a1; }
   ul { list-style: none; margin: 0; padding: 0 14px 14px; max-height: 300px; overflow-y: auto; }
   li {
     background: #fff;
@@ -84,7 +89,7 @@
     <button id="submit">添加</button>
   </div>
   <div id="status" class="status"></div>
-  <div class="section">最近添加</div>
+  <div class="section"><span class="title">最近添加</span><span class="freshness" id="freshness"></span></div>
   <ul id="list"><li class="empty">加载中…</li></ul>
   <script src="popup.js"></script>
 </body>

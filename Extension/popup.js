@@ -1,4 +1,7 @@
 const byId = id => document.getElementById(id);
+const CACHE_KEY = "recentCache";
+const CACHE_AT_KEY = "recentCacheAt";
+const LIMIT = 20;
 let busy = false;
 
 function setStatus(text, ok) {
@@ -11,21 +14,14 @@ function send(message) {
   return chrome.runtime.sendMessage(message);
 }
 
-async function loadRecent() {
+function renderList(items) {
   const list = byId("list");
-  list.innerHTML = '<li class="empty">加载中…</li>';
-  const response = await send({ type: "recent", limit: 20 });
-  if (!response || !response.ok) {
-    const reason = response ? response.error : "扩展后台无响应";
-    list.innerHTML = '<li class="empty">读取失败：' + reason + '</li>';
-    return;
-  }
-  if (!response.items.length) {
+  if (!items.length) {
     list.innerHTML = '<li class="empty">还没有收藏</li>';
     return;
   }
   list.innerHTML = "";
-  response.items.forEach(item => {
+  items.forEach(item => {
     const row = document.createElement("li");
     const word = document.createElement("div");
     word.className = "word";
@@ -37,6 +33,42 @@ async function loadRecent() {
     row.appendChild(trans);
     list.appendChild(row);
   });
+}
+
+function showAge(at) {
+  const node = byId("freshness");
+  if (!at) {
+    node.textContent = "";
+    return;
+  }
+  const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
+  if (seconds < 60) node.textContent = seconds + " 秒前更新";
+  else if (seconds < 3600) node.textContent = Math.round(seconds / 60) + " 分钟前更新";
+  else node.textContent = Math.round(seconds / 3600) + " 小时前更新";
+}
+
+async function refresh() {
+  byId("freshness").textContent = "同步中…";
+  const response = await send({ type: "recent", limit: LIMIT });
+  if (!response || !response.ok) {
+    byId("freshness").textContent = "同步失败";
+    if (!byId("list").children.length || byId("list").querySelector(".empty")) {
+      const reason = response ? response.error : "扩展后台无响应";
+      byId("list").innerHTML = '<li class="empty">读取失败：' + reason + '</li>';
+    }
+    return;
+  }
+  renderList(response.items);
+  showAge(Date.now());
+}
+
+async function paintFromCache() {
+  const cached = await chrome.storage.local.get([CACHE_KEY, CACHE_AT_KEY]);
+  const items = cached[CACHE_KEY];
+  if (!Array.isArray(items)) return false;
+  renderList(items.slice(0, LIMIT));
+  showAge(cached[CACHE_AT_KEY]);
+  return true;
 }
 
 async function submit() {
@@ -57,8 +89,8 @@ async function submit() {
     return;
   }
   byId("text").value = "";
-  setStatus("已添加：" + (response.result.translation || response.result.text), true);
-  loadRecent();
+  setStatus(response.view.message, response.view.tone === "ok");
+  refresh();
 }
 
 byId("submit").addEventListener("click", submit);
@@ -66,4 +98,9 @@ byId("text").addEventListener("keydown", event => {
   if (event.key === "Enter") submit();
 });
 byId("openOptions").addEventListener("click", () => chrome.runtime.openOptionsPage());
-loadRecent();
+
+(async () => {
+  const painted = await paintFromCache();
+  if (!painted) byId("list").innerHTML = '<li class="empty">加载中…</li>';
+  refresh();
+})();
